@@ -1,0 +1,184 @@
+theme: "gcp-architecture"
+renderOrder: nodes-first
+direction: right
+spacing: 28
+
+const GcpBlue = "#1a73e8"
+const GcpGreen = "#1e8e3e"
+const Purple = "#9334e6"
+const Amber = "#e37400"
+const BusStroke = "#334155"
+const DarkSlate = "#202124"
+const SubText = "#5f6368"
+const CardBorder = "#dadce0"
+const SurfaceWhite = "#ffffff"
+
+Style @Ghost {
+  fill: transparent, strokeWidth: 0, fontColor: transparent, padding: 0
+}
+Style @ArchitectureRoot {
+  fill: "#f8fafd", strokeColor: "#c2d7f5", strokeWidth: 1.5, borderRadius: 16,
+  padding: 24, gap: 24, fontColor: "#3c4043", fontSize: 22, labelWeight: bold,
+  icon: "GoogleCloud", iconSize: 26
+}
+Style @ChannelZone {
+  fill: "#e8f0fe", strokeColor: "#8ab4f8", strokeWidth: 1.5, borderRadius: 12,
+  padding: 16, gap: 22, fontColor: $DarkSlate, fontSize: 15, labelWeight: bold
+}
+Style @RunZone {
+  fill: "#fce8e6", strokeColor: "#f6aea9", strokeWidth: 1.5, borderRadius: 12,
+  padding: 16, gap: 34, fontColor: $DarkSlate, fontSize: 15, labelWeight: bold
+}
+Style @PeachSubGroup {
+  fill: "#f8d3c8", strokeColor: darken("#f8d3c8", 12), strokeWidth: 1, borderRadius: 10,
+  padding: 12, gap: 12, fontColor: $DarkSlate, fontSize: 13.5, labelWeight: bold
+}
+Style @AIZone {
+  fill: "#f3e8fd", strokeColor: "#c084fc", strokeWidth: 1.5, borderRadius: 12,
+  padding: 16, gap: 22, fontColor: $DarkSlate, fontSize: 15, labelWeight: bold
+}
+Style @DataZone {
+  fill: "#fef7e0", strokeColor: "#fde293", strokeWidth: 1.5, borderRadius: 12,
+  padding: 16, gap: 18, fontColor: $DarkSlate, fontSize: 15, labelWeight: bold
+}
+Style @ActorCard {
+  width: 184, height: 58,
+  fill: $SurfaceWhite, strokeColor: $CardBorder, strokeWidth: 1, borderRadius: 8,
+  fontColor: $DarkSlate, subFontColor: $SubText,
+  fontSize: 14, subFontSize: 11, labelWeight: bold,
+  textAlign: "left", textVAlign: "middle",
+  iconPosition: "left", iconSize: 28, padding: 12, shadow: true
+}
+Style @ProductCard {
+  width: 186, height: 60,
+  fill: $SurfaceWhite, strokeColor: $CardBorder, strokeWidth: 1, borderRadius: 8,
+  fontColor: $DarkSlate, subFontColor: $SubText,
+  fontSize: 13.5, subFontSize: 11, labelWeight: bold,
+  textAlign: "left", textVAlign: "middle",
+  iconPosition: "left", iconSize: 28, padding: 10, shadow: true
+}
+Style @HubCard {
+  base: @ProductCard,
+  width: 200, height: 68, strokeColor: $GcpBlue, strokeWidth: 2, fontSize: 14.5, iconSize: 30
+}
+
+Zone @GCP {
+  title: "Google Cloud · mb-poc-352009 · us-central1"
+  subtitle: "Two-Wheeler AI Showroom — TVS Motor & Hero MotoCorp (Kavya, Gemini Live)"
+  style: @ArchitectureRoot
+  layout: matrix
+  areas: [
+    "z1 z2 z2 z3",
+    "z4 z4 z4 z4"
+  ]
+  sizes: ["0.9fr", "1.1fr", "1.1fr", "0.95fr"]
+
+  Zone @Channels {
+    area: "z1"
+    title: "1. Customer Channels"
+    subtitle: "Browser & mobile"
+    style: @ChannelZone
+    layout: column, align: center, justify: center
+    [rider: "Rider · Web Showroom" | "Voice chat · test ride"] {
+      style: @ActorCard, icon: "Laptop",
+      description: "Pre-sales: live voice with Kavya, vehicle spotlight, compare, in-chat test-ride calendar, Brand Studio"
+    }
+    [sales_app: "Sales Consultant App" | "Record test ride"] {
+      style: @ActorCard, icon: "Smartphone",
+      description: "Mobile PWA: loads the lead from pre-sales, selects bike, records test-ride audio, shows insights & checklist"
+    }
+    [customer_phone: "Customer · Outbound" | "Post-ride call · EMI"] {
+      style: @ActorCard, icon: "Phone",
+      description: "Post test-ride feedback call by Kavya plus two-wheeler financing (EMI) and document upload"
+    }
+  }
+
+  Zone @CloudRun {
+    area: "z2"
+    title: "2. Cloud Run · auto-interaction-bikes"
+    subtitle: "Single container · session affinity · WebSockets"
+    style: @RunZone
+    layout: row, align: center, justify: center
+
+    [nextjs: "Next.js Frontend" | "UI + /api /ws rewrites"] {
+      style: @HubCard, icon: "GcpCloudRun",
+      description: "Next.js App Router UI on $PORT (8080); proxies /api, /ws and /uploads to FastAPI on 127.0.0.1:8000"
+    }
+
+    Zone @FastAPI {
+      title: "FastAPI Backend (:8000)"
+      style: @PeachSubGroup
+      layout: matrix, cols: 2
+      areas: [
+        "brand live",
+        "catalog sales",
+        "finance outbound"
+      ]
+      [brand_studio: "Brand Studio" | "Official-site crawler"] {
+        area: "brand", style: @ProductCard, icon: "Search",
+        description: "httpx + BeautifulSoup crawl of tvsmotor.com / heromotocorp.com: JSON-LD, 360°/colour frames, Gemini extraction, (approx.) gap-fill, Gemini vision hero-image pick"
+      }
+      [live_proxy: "Live Voice Proxy" | "ws_live · Kavya"] {
+        area: "live", style: @ProductCard, icon: "Activity",
+        description: "Browser ⇄ Vertex AI Bidi WebSocket proxy; tool calls (spotlight, compare, book test ride, end call); female-only voice; en-IN + dynamic language mirroring"
+      }
+      [catalog: "Catalog & Bookings" | "Test rides · dealers"] {
+        area: "catalog", style: @ProductCard, icon: "Layers",
+        description: "Brand catalogs, spec comparisons, slots, dealerships, customers (name + phone), per-day conversation view"
+      }
+      [sales_insights: "Test-Ride Insights" | "Recording analysis"] {
+        area: "sales", style: @ProductCard, icon: "BarChart3",
+        description: "Uploads test-ride audio, transcribes and extracts insights: pickup, ABS confidence, rider fit, mileage, rivals, next steps"
+      }
+      [financing: "Financing / EMI" | "12–48 mo · docs"] {
+        area: "finance", style: @ProductCard, icon: "PieChart",
+        description: "Two-wheeler EMI calculator (10–25% down, 9.5–16% p.a.) and KYC document upload"
+      }
+      [outbound: "Outbound Call" | "Post-ride feedback"] {
+        area: "outbound", style: @ProductCard, icon: "Phone",
+        description: "Kavya post-test-ride call using the ride transcript as context; SMS follow-up"
+      }
+    }
+  }
+
+  Zone @VertexAI {
+    area: "z3"
+    title: "3. Vertex AI · Gemini"
+    subtitle: "ADC on Cloud Run"
+    style: @AIZone
+    layout: column, align: center, justify: center
+    [gemini_live: "Gemini Live 2.5" | "Native audio · Aoede"] {
+      style: @ProductCard, icon: "Gemini",
+      description: "gemini-live-2.5-flash-native-audio over Bidi WebSocket; female Indian-accent persona Kavya, en-IN"
+    }
+    [gemini_flash: "Gemini 2.5 Flash" | "Insights · chat · JSON"] {
+      style: @ProductCard, icon: "VertexAI",
+      description: "Test-ride & call insights, REST chat fallback, crawler extraction and vision image pick (thinking_budget=0)"
+    }
+  }
+
+  Zone @Data {
+    area: "z4"
+    title: "4. Data, Storage & Sources"
+    style: @DataZone
+    layout: row, align: center, justify: center
+    [official_sites: "TVS & Hero Websites" | "tvsmotor · heromotocorp"] { style: @ProductCard, width: 200, icon: "Globe" }
+    [catalog_json: "Brand Catalogs" | "JSON + /uploads images"] { style: @ProductCard, width: 196, icon: "HardDrive" }
+    [sqlite: "SQLite auto.db" | "Leads · bookings · logs"] { style: @ProductCard, width: 196, icon: "Database" }
+    [gcs: "Cloud Storage" | "Test-ride recordings"] { style: @ProductCard, width: 190, icon: "GcpStorageBucket" }
+    [logging: "Cloud Logging" | "Revision logs"] { style: @ProductCard, width: 180, icon: "CloudLogging" }
+  }
+}
+
+[rider] --> [nextjs] { color: $GcpBlue, strokeWidth: 2, sourceAnchor: "right", targetAnchor: "left", curve: "step", label: "HTTPS / WSS", sequenceBadge: "1", badgeFill: $GcpBlue, badgeFontColor: $SurfaceWhite }
+[sales_app] --> [nextjs] { color: $GcpBlue, strokeWidth: 2, sourceAnchor: "right", targetAnchor: "left", curve: "step" }
+[customer_phone] --> [nextjs] { color: $GcpBlue, strokeWidth: 2, sourceAnchor: "right", targetAnchor: "left", curve: "step" }
+[nextjs] --> [FastAPI] { color: $GcpBlue, strokeWidth: 2, sourceAnchor: "right", targetAnchor: "left", curve: "step", label: "/api  /ws", sequenceBadge: "2", badgeFill: $GcpBlue, badgeFontColor: $SurfaceWhite }
+[live_proxy] <--> [gemini_live] { color: $Purple, strokeWidth: 2, sourceAnchor: "right", targetAnchor: "left", curve: "step", label: "Bidi audio", sequenceBadge: "3", badgeFill: $Purple, badgeFontColor: $SurfaceWhite }
+[outbound] --> [gemini_live] { color: $Purple, strokeWidth: 1.8, dashed: true, sourceAnchor: "right", targetAnchor: "left", curve: "step" }
+[sales_insights] --> [gemini_flash] { color: $Purple, strokeWidth: 2, sourceAnchor: "right", targetAnchor: "left", curve: "step", label: "Insights" }
+[brand_studio] --> [official_sites] { color: $Amber, strokeWidth: 2, sourceAnchor: "bottom", targetAnchor: "top", curve: "step", label: "Crawl", sequenceBadge: "4", badgeFill: $Amber, badgeFontColor: $SurfaceWhite }
+[financing] --> [catalog_json] { color: $BusStroke, strokeWidth: 1.8, sourceAnchor: "bottom", targetAnchor: "top", curve: "step", label: "Prices" }
+[outbound] --> [sqlite] { color: $BusStroke, strokeWidth: 1.8, sourceAnchor: "bottom", targetAnchor: "top", curve: "step", label: "Transcripts" }
+[sales_insights] --> [gcs] { color: $GcpGreen, strokeWidth: 1.8, sourceAnchor: "bottom", targetAnchor: "top", curve: "step", label: "Audio" }
+[gemini_flash] --> [logging] { color: $BusStroke, strokeWidth: 1.5, dashed: true, sourceAnchor: "bottom", targetAnchor: "top", curve: "step" }

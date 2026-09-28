@@ -10,6 +10,23 @@ The catalogs are **crawled from the official brand websites** (`tvsmotor.com`, `
 
 ---
 
+## 🏗️ Architecture
+
+![Two-Wheeler AI Showroom architecture](docs/architecture/architecture.png)
+
+| Zone | What runs there |
+| :--- | :--- |
+| **1. Customer Channels** | Rider web showroom (voice chat, test-ride booking), Sales Consultant mobile app (test-ride recording), customer post-ride call & EMI |
+| **2. Cloud Run `auto-interaction-bikes`** | One container: Next.js frontend on `$PORT` rewrites `/api`, `/ws`, `/uploads` to FastAPI on `:8000`. Backend modules: Brand Studio crawler, Live Voice Proxy (Kavya), Catalog & Bookings, Test-Ride Insights, Financing/EMI, Outbound Call |
+| **3. Vertex AI · Gemini** | **Gemini Live 2.5 native audio** (female voice `Aoede`, `en-IN`) over the Bidi WebSocket for live and outbound calls; **Gemini 2.5 Flash** for insights, REST chat fallback, crawler extraction and vision image pick |
+| **4. Data, Storage & Sources** | Official TVS / Hero websites (crawl source), brand catalog JSON + `/uploads` images, SQLite `auto.db`, Cloud Storage (test-ride audio), Cloud Logging |
+
+Numbered badges: **①** rider connects over HTTPS/WSS → **②** frontend proxies to the backend → **③** live audio streams to Gemini Live → **④** Brand Studio crawls the official brand sites.
+
+The diagram is generated with **Dendrite**. Edit [`docs/architecture/bike_showroom_architecture.dendrite`](docs/architecture/bike_showroom_architecture.dendrite) in Dendrite Studio (go/dendrite), or open [`bike_showroom_architecture.drawio`](docs/architecture/bike_showroom_architecture.drawio) in draw.io.
+
+---
+
 ## 🎬 End-to-End Demo Flow
 
 ### 1. Pre-Sales — Website voice journey

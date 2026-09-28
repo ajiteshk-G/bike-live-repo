@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2026-07-15T12:00:00.000Z" agent="Dendrite" version="24.0.0" type="device">
+  <diagram id="Dendrite_Diagram" name="Architecture">
+    <mxGraphModel dx="1422" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="3000" pageHeight="4000" math="0" shadow="1">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="cell_2" value="Google Cloud · mb-poc-352009 · us-central1" style="swimlane;fontStyle=1;horizontal=1;startSize=30;collapsible=1;rounded=1;fillColor=#f8fafd;strokeColor=#c2d7f5;strokeWidth=1.5;fontColor=#3c4043;fontSize=14;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="40" width="1262" height="636" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_3" value="1. Customer Channels" style="swimlane;fontStyle=1;horizontal=1;startSize=30;collapsible=1;rounded=1;fillColor=#e8f0fe;strokeColor=#8ab4f8;strokeWidth=1.5;fontColor=#202124;fontSize=14;shadow=1;" vertex="1" parent="cell_2">
+          <mxGeometry x="24" y="86" width="216" height="360" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_4" value="2. Cloud Run · auto-interaction-bikes" style="swimlane;fontStyle=1;horizontal=1;startSize=30;collapsible=1;rounded=1;fillColor=#fce8e6;strokeColor=#f6aea9;strokeWidth=1.5;fontColor=#202124;fontSize=14;shadow=1;" vertex="1" parent="cell_2">
+          <mxGeometry x="280" y="86" width="700" height="360" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_5" value="FastAPI Backend (:8000)" style="swimlane;fontStyle=1;horizontal=1;startSize=30;collapsible=1;rounded=1;fillColor=#f8d3c8;strokeColor=#f1a892;strokeWidth=1;fontColor=#202124;fontSize=14;shadow=1;" vertex="1" parent="cell_4">
+          <mxGeometry x="258" y="66" width="426" height="278" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_6" value="3. Vertex AI · Gemini" style="swimlane;fontStyle=1;horizontal=1;startSize=30;collapsible=1;rounded=1;fillColor=#f3e8fd;strokeColor=#c084fc;strokeWidth=1.5;fontColor=#202124;fontSize=14;shadow=1;" vertex="1" parent="cell_2">
+          <mxGeometry x="1020" y="86" width="218" height="360" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_7" value="4. Data, Storage &amp; Sources" style="swimlane;fontStyle=1;horizontal=1;startSize=30;collapsible=1;rounded=1;fillColor=#fef7e0;strokeColor=#fde293;strokeWidth=1.5;fontColor=#202124;fontSize=14;shadow=1;" vertex="1" parent="cell_2">
+          <mxGeometry x="24" y="486" width="1214" height="126" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_8" value="&lt;b&gt;[Laptop] Rider · Web Showroom&lt;/b&gt;&lt;br&gt;&lt;font color=&#39;#64748B&#39; size=&#39;1&#39;&gt;Voice chat · test ride&lt;/font&gt;" style="rounded=1;arcSize=15;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#dadce0;strokeWidth=1;fontColor=#202124;fontSize=13;shadow=1;" vertex="1" parent="cell_3">
+          <mxGeometry x="16" y="78.85714285714286" width="184" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_9" value="&lt;b&gt;[Smartphone] Sales Consultant App&lt;/b&gt;&lt;br&gt;&lt;font color=&#39;#64748B&#39; size=&#39;1&#39;&gt;Record test ride&lt;/font&gt;" style="rounded=1;arcSize=15;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#dadce0;strokeWidth=1;fontColor=#202124;fontSize=13;shadow=1;" vertex="1" parent="cell_3">
+          <mxGeometry x="16" y="176" width="184" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_10" value="&lt;b&gt;[Phone] Customer · Outbound&lt;/b&gt;&lt;br&gt;&lt;font color=&#39;#64748B&#39; size=&#39;1&#39;&gt;Post-ride call · EMI&lt;/font&gt;" style="rounded=1;arcSize=15;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#dadce0;strokeWidth=1;fontColor=#202124;fontSize=13;shadow=1;" vertex="1" parent="cell_3">
+          <mxGeometry x="16" y="273.1428571428571" width="184" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_11" value="&lt;b&gt;[GcpCloudRun] Next.js Frontend&lt;/b&gt;&lt;br&gt;&lt;font color=&#39;#64748B&#39; size=&#39;1&#39;&gt;UI + /api /ws rewrites&lt;/font&gt;" style="rounded=1;arcSize=15;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1a73e8;strokeWidth=2;fontColor=#202124;fontSize=13;shadow=1;" vertex="1" parent="cell_4">
+          <mxGeometry x="16" y="171" width="200" height="68" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_12" value="&lt;b&gt;[Search] Brand Studio&lt;/b&gt;&lt;br&gt;&lt;font color=&#39;#64748B&#39; size=&#39;1&#39;&gt;Official-site crawler&lt;/font&gt;" style="rounded=1;arcSize=15;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#dadce0;strokeWidth=1;fontColor=#202124;fontSize=13;shadow=1;" vertex="1" parent="cell_5">
+          <mxGeometry x="18" y="44" width="186" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_13" value="&lt;b&gt;[Activity] Live Voice Proxy&lt;/b&gt;&lt;br&gt;&lt;font color=&#39;#64748B&#39; size=&#39;1&#39;&gt;ws_live · Kavya&lt;/font&gt;" style="rounded=1;arcSize=15;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#dadce0;strokeWidth=1;fontColor=#202124;fontSize=13;shadow=1;" vertex="1" parent="cell_5">
+          <mxGeometry x="222" y="44" width="186" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_14" value="&lt;b&gt;[Layers] Catalog &amp; Bookings&lt;/b&gt;&lt;br&gt;&lt;font color=&#39;#64748B&#39; size=&#39;1&#39;&gt;Test rides · dealers&lt;/font&gt;" style="rounded=1;arcSize=15;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#dadce0;strokeWidth=1;fontColor=#202124;fontSize=13;shadow=1;" vertex="1" parent="cell_5">
+          <mxGeometry x="18" y="122" width="186" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_15" value="&lt;b&gt;[BarChart3] Test-Ride Insights&lt;/b&gt;&lt;br&gt;&lt;font color=&#39;#64748B&#39; size=&#39;1&#39;&gt;Recording analysis&lt;/font&gt;" style="rounded=1;arcSize=15;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#dadce0;strokeWidth=1;fontColor=#202124;fontSize=13;shadow=1;" vertex="1" parent="cell_5">
+          <mxGeometry x="222" y="122" width="186" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_16" value="&lt;b&gt;[PieChart] Financing / EMI&lt;/b&gt;&lt;br&gt;&lt;font color=&#39;#64748B&#39; size=&#39;1&#39;&gt;12–48 mo · docs&lt;/font&gt;" style="rounded=1;arcSize=15;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#dadce0;strokeWidth=1;fontColor=#202124;fontSize=13;shadow=1;" vertex="1" parent="cell_5">
+          <mxGeometry x="18" y="200" width="186" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_17" value="&lt;b&gt;[Phone] Outbound Call&lt;/b&gt;&lt;br&gt;&lt;font color=&#39;#64748B&#39; size=&#39;1&#39;&gt;Post-ride feedback&lt;/font&gt;" style="rounded=1;arcSize=15;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#dadce0;strokeWidth=1;fontColor=#202124;fontSize=13;shadow=1;" vertex="1" parent="cell_5">
+          <mxGeometry x="222" y="200" width="186" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_18" value="&lt;b&gt;[Gemini] Gemini Live 2.5&lt;/b&gt;&lt;br&gt;&lt;font color=&#39;#64748B&#39; size=&#39;1&#39;&gt;Native audio · Aoede&lt;/font&gt;" style="rounded=1;arcSize=15;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#dadce0;strokeWidth=1;fontColor=#202124;fontSize=13;shadow=1;" vertex="1" parent="cell_6">
+          <mxGeometry x="16" y="110" width="186" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_19" value="&lt;b&gt;[VertexAI] Gemini 2.5 Flash&lt;/b&gt;&lt;br&gt;&lt;font color=&#39;#64748B&#39; size=&#39;1&#39;&gt;Insights · chat · JSON&lt;/font&gt;" style="rounded=1;arcSize=15;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#dadce0;strokeWidth=1;fontColor=#202124;fontSize=13;shadow=1;" vertex="1" parent="cell_6">
+          <mxGeometry x="16" y="240" width="186" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_20" value="&lt;b&gt;[Globe] TVS &amp; Hero Websites&lt;/b&gt;&lt;br&gt;&lt;font color=&#39;#64748B&#39; size=&#39;1&#39;&gt;tvsmotor · heromotocorp&lt;/font&gt;" style="rounded=1;arcSize=15;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#dadce0;strokeWidth=1;fontColor=#202124;fontSize=13;shadow=1;" vertex="1" parent="cell_7">
+          <mxGeometry x="90" y="50" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_21" value="&lt;b&gt;[HardDrive] Brand Catalogs&lt;/b&gt;&lt;br&gt;&lt;font color=&#39;#64748B&#39; size=&#39;1&#39;&gt;JSON + /uploads images&lt;/font&gt;" style="rounded=1;arcSize=15;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#dadce0;strokeWidth=1;fontColor=#202124;fontSize=13;shadow=1;" vertex="1" parent="cell_7">
+          <mxGeometry x="308" y="50" width="196" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_22" value="&lt;b&gt;[Database] SQLite auto.db&lt;/b&gt;&lt;br&gt;&lt;font color=&#39;#64748B&#39; size=&#39;1&#39;&gt;Leads · bookings · logs&lt;/font&gt;" style="rounded=1;arcSize=15;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#dadce0;strokeWidth=1;fontColor=#202124;fontSize=13;shadow=1;" vertex="1" parent="cell_7">
+          <mxGeometry x="522" y="50" width="196" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_23" value="&lt;b&gt;[GcpStorageBucket] Cloud Storage&lt;/b&gt;&lt;br&gt;&lt;font color=&#39;#64748B&#39; size=&#39;1&#39;&gt;Test-ride recordings&lt;/font&gt;" style="rounded=1;arcSize=15;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#dadce0;strokeWidth=1;fontColor=#202124;fontSize=13;shadow=1;" vertex="1" parent="cell_7">
+          <mxGeometry x="736" y="50" width="190" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="cell_24" value="&lt;b&gt;[CloudLogging] Cloud Logging&lt;/b&gt;&lt;br&gt;&lt;font color=&#39;#64748B&#39; size=&#39;1&#39;&gt;Revision logs&lt;/font&gt;" style="rounded=1;arcSize=15;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#dadce0;strokeWidth=1;fontColor=#202124;fontSize=13;shadow=1;" vertex="1" parent="cell_7">
+          <mxGeometry x="944" y="50" width="180" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_25" value="HTTPS / WSS" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1a73e8;strokeWidth=2;fontColor=#334155;fontSize=11;endArrow=block;endFill=1;" edge="1" parent="1" source="cell_8" target="cell_11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_26" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1a73e8;strokeWidth=2;fontColor=#334155;fontSize=11;endArrow=block;endFill=1;" edge="1" parent="1" source="cell_9" target="cell_11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_27" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1a73e8;strokeWidth=2;fontColor=#334155;fontSize=11;endArrow=block;endFill=1;" edge="1" parent="1" source="cell_10" target="cell_11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_28" value="/api  /ws" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1a73e8;strokeWidth=2;fontColor=#334155;fontSize=11;endArrow=block;endFill=1;" edge="1" parent="1" source="cell_11" target="cell_5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_29" value="Bidi audio" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#9334e6;strokeWidth=2;startArrow=block;startFill=1;fontColor=#334155;fontSize=11;endArrow=block;endFill=1;" edge="1" parent="1" source="cell_13" target="cell_18">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_30" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#9334e6;strokeWidth=1.8;dashed=1;fontColor=#334155;fontSize=11;endArrow=block;endFill=1;" edge="1" parent="1" source="cell_17" target="cell_18">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_31" value="Insights" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#9334e6;strokeWidth=2;fontColor=#334155;fontSize=11;endArrow=block;endFill=1;" edge="1" parent="1" source="cell_15" target="cell_19">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_32" value="Crawl" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#e37400;strokeWidth=2;fontColor=#334155;fontSize=11;endArrow=block;endFill=1;" edge="1" parent="1" source="cell_12" target="cell_20">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_33" value="Prices" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#334155;strokeWidth=1.8;fontColor=#334155;fontSize=11;endArrow=block;endFill=1;" edge="1" parent="1" source="cell_16" target="cell_21">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_34" value="Transcripts" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#334155;strokeWidth=1.8;fontColor=#334155;fontSize=11;endArrow=block;endFill=1;" edge="1" parent="1" source="cell_17" target="cell_22">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_35" value="Audio" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1e8e3e;strokeWidth=1.8;fontColor=#334155;fontSize=11;endArrow=block;endFill=1;" edge="1" parent="1" source="cell_15" target="cell_23">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_36" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#334155;strokeWidth=1.5;dashed=1;fontColor=#334155;fontSize=11;endArrow=block;endFill=1;" edge="1" parent="1" source="cell_19" target="cell_24">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
