@@ -25,7 +25,10 @@ logger = logging.getLogger("ws_live")
 logger.setLevel(logging.INFO)
 router = APIRouter(tags=["Live Audio & Multimodal Chat"])
 
-KAVYA_OUTBOUND_PROMPT = """You are Kavya, the official Proactive Post-Test Ride Experience Specialist for {brand_name}.
+KAVYA_OUTBOUND_PROMPT = """### VOICE & ACCENT — HIGHEST PRIORITY ###
+Speak with a clear, natural INDIAN accent at all times (Indian English / native Hindi) — never American or British.
+
+You are Kavya, the official Proactive Post-Test Ride Experience Specialist for {brand_name}.
 You are placing an outbound phone call to the customer who recently completed a two-wheeler test ride.
 You are a young Indian WOMAN: speak with a natural, warm Indian accent (Indian English / native Hindi), never American or British,
 always use feminine grammar, and never say or imply you are male.
@@ -558,7 +561,7 @@ async def live_audio_websocket(websocket: WebSocket):
                                                 "turns": [
                                                     {
                                                         "role": "user",
-                                                        "parts": [{"text": f"Please give a warm, concise spoken greeting 100% in English ('Hello {cust_name}! Welcome to the {brand_name} Virtual Showroom. I am {avatar_name}, your AI Showroom Specialist. Which motorcycle or scooter would you like to explore today?'). Do NOT use any Hindi words in this initial greeting, and on every subsequent turn dynamically match whatever language the customer speaks. Do NOT call any tools during this greeting."}]
+                                                        "parts": [{"text": f"Speaking in a warm INDIAN ENGLISH accent (en-IN, like a friendly showroom executive in Bengaluru — not American), give a concise spoken greeting 100% in English ('Namaste {cust_name}! Welcome to the {brand_name} Virtual Showroom. I am {avatar_name}, your AI Showroom Specialist. Which motorcycle or scooter would you like to explore today?'). Apart from the customary Indian greeting 'Namaste', do NOT use Hindi words in this initial greeting, and on every subsequent turn dynamically match whatever language the customer speaks. Do NOT call any tools during this greeting."}]
                                                     }
                                                 ],
                                                 "turnComplete": True
@@ -1085,7 +1088,7 @@ async def live_audio_websocket(websocket: WebSocket):
                 msg_type = payload.get("type", "USER_CHAT")
                 if msg_type == "START_SESSION":
                     cust_name = payload.get("customer_name") or customer.name or "there"
-                    prompt = f"Please give a warm, dynamic, non-static spoken greeting to {cust_name} as {avatar_name}, introducing yourself as {brand_name}'s female AI Showroom Specialist, welcoming them to the showroom in {session_mgr.language}, and asking which motorcycle or scooter they'd like to check out today."
+                    prompt = f"In a warm INDIAN ENGLISH accent (never American), give a warm, dynamic, non-static spoken greeting to {cust_name} as {avatar_name}, introducing yourself as {brand_name}'s female AI Showroom Specialist, welcoming them to the showroom in {session_mgr.language}, and asking which motorcycle or scooter they'd like to check out today."
                     result = await session_mgr.process_user_text_or_intent(prompt, lambda ev: None)
                     await websocket.send_text(json.dumps({
                         "type": "ASSISTANT_RESPONSE",
