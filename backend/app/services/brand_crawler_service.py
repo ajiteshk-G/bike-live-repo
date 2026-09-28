@@ -650,8 +650,9 @@ RULES:
         if d.get("data_completeness") == "knowledge":
             usp += " (Details compiled from public model information; official page provided limited data.)"
 
+        model_slug = cls._slug(re.sub("^" + re.escape(brand_name.split()[0]) + r"\s+", "", name, flags=re.I))
         return VehicleItem(
-            id=f"{brand_id}_{cls._slug(re.sub(rf'^{re.escape(brand_name.split()[0])}\s+', '', name, flags=re.I))}"[:64],
+            id=f"{brand_id}_{model_slug}"[:64],
             name=name,
             tagline=s("tagline", page.get("meta_description", "")[:120]),
             category=category,
