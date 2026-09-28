@@ -319,7 +319,7 @@ export async function fetchCustomerSessions(customerIdOrPhone: string) {
   return res.json();
 }
 
-export async function fetchCustomerProfile(customerId = "CUST-9820155432", phone?: string, brandId?: string) {
+export async function fetchCustomerProfile(customerId?: string, phone?: string, brandId?: string) {
   try {
     const q = new URLSearchParams();
     if (customerId) q.set("customer_id", customerId);
@@ -332,7 +332,7 @@ export async function fetchCustomerProfile(customerId = "CUST-9820155432", phone
   }
 }
 
-export async function updateCustomerPhase(phase: string, customerId = "CUST-9820155432", brandId?: string) {
+export async function updateCustomerPhase(phase: string, customerId: string, brandId?: string) {
   const q = new URLSearchParams({ customer_id: customerId, phase });
   if (brandId) q.set("brand_id", brandId);
   const res = await fetch(`${API_BASE}/customer/update-phase?${q.toString()}`, {

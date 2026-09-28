@@ -32,11 +32,11 @@ async def submit_insurance_claim(
     brand_id: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db)
 ):
-    b_id = (brand_id or (BrandService.get_active_brand().id if BrandService.get_active_brand() else "mahindra")).lower()
+    b_id = (brand_id or (BrandService.get_active_brand().id if BrandService.get_active_brand() else "tvs")).lower()
     customer = await CustomerService.get_customer_by_id(db, req.customer_id, brand_id=b_id)
     if not customer:
-        customer = await CustomerService.get_or_create_default_customer(db, brand_id=b_id)
-        
+        raise HTTPException(status_code=404, detail="Customer not found for this brand.")
+
     claim = await DiagnosticsService.file_insurance_claim(db, customer.id, req, brand_id=b_id)
     customer.current_phase = "POST_SALES"
     await db.commit()
@@ -48,13 +48,13 @@ async def list_customer_claims(
     brand_id: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db)
 ):
-    b_id = (brand_id or (BrandService.get_active_brand().id if BrandService.get_active_brand() else "mahindra")).lower()
+    b_id = (brand_id or (BrandService.get_active_brand().id if BrandService.get_active_brand() else "tvs")).lower()
     customer = None
     if customer_id:
         customer = await CustomerService.get_customer_by_id(db, customer_id, brand_id=b_id)
     if not customer:
-        customer = await CustomerService.get_or_create_default_customer(db, brand_id=b_id)
-        
+        return []
+
     stmt = (
         select(InsuranceClaim)
         .where(InsuranceClaim.customer_id == customer.id, InsuranceClaim.brand_id == b_id)

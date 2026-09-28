@@ -12,7 +12,6 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from app.database import engine, Base, AsyncSessionLocal
 import app.models
 from seeds.seed_dealerships import seed_dealerships
-from app.services.customer_service import CustomerService
 from app.models.dealership import Dealership
 from sqlalchemy import select
 
@@ -36,11 +35,8 @@ async def main():
     logger.info("Seeding dealerships, holidays, and slots...")
     await seed_dealerships()
 
-    # 3. Seed default customer
+    # 3. No synthetic customers are seeded (clean demo DB, no fabricated PII).
     async with AsyncSessionLocal() as db:
-        cust = await CustomerService.get_or_create_default_customer(db)
-        logger.info(f"✓ Default Customer ready: {cust.name} ({cust.customer_id})")
-
         d_res = await db.execute(select(Dealership))
         all_dealers = d_res.scalars().all()
         logger.info(f"✓ Total Dealerships in Database: {len(all_dealers)}")

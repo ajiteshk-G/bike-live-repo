@@ -33,7 +33,7 @@ class GeminiImageService:
         timeout_seconds: int = 40
     ) -> Optional[str]:
         """
-        Generates a non-proprietary concept car PNG using Gemini and saves it to static uploads.
+        Generates a realistic, non-proprietary motorcycle / scooter PNG using Gemini and saves it to static uploads.
         Returns the public URL path: /uploads/{brand_id}/vehicles/{filename}
         """
         b_id = brand_id.lower().strip()
@@ -44,19 +44,29 @@ class GeminiImageService:
         filename = f"{v_id}_concept_{int(time.time())}.png"
         dest_path = os.path.join(dest_dir, filename)
 
-        # Build prompt ensuring realistic, normal contemporary production road cars (strictly not futuristic, sci-fi, or far-future concept designs)
+        # Build prompt ensuring a realistic, contemporary production two-wheeler (never a car, never sci-fi)
         notes_str = f" Features: {styling_notes}." if styling_notes else ""
+        cat_l = (category or "").lower()
+        if "scooter" in cat_l or "moped" in cat_l:
+            body = "a contemporary production step-through scooter with a flat floorboard, front apron, under-seat storage body panels and small-diameter wheels"
+        elif "adventure" in cat_l:
+            body = "a contemporary production adventure motorcycle with long-travel suspension, tall stance, spoked wheels and a small windscreen"
+        elif "cruiser" in cat_l or "retro" in cat_l:
+            body = "a contemporary production retro / cruiser motorcycle with a round headlamp, teardrop tank and relaxed riding posture"
+        elif "supersport" in cat_l:
+            body = "a contemporary production fully-faired sport motorcycle with clip-on handlebars and twin headlamps"
+        else:
+            body = "a contemporary production street motorcycle (naked / commuter style) with a fuel tank, single-piece or split seat and alloy wheels"
         prompt = prompt_override or (
-            f"A crisp photorealistic photograph of a normal, contemporary production road car: '{vehicle_name}', "
-            f"body style: {category}.{notes_str} "
-            f"Realistic, standard commercial production car styling as seen driven on real city roads today. "
-            f"Believable modern passenger vehicle design, standard production alloy wheels, realistic headlights, real side mirrors, normal door handles, authentic street vehicle proportions. "
-            f"Strictly a normal everyday production passenger car — NOT futuristic, NOT a sci-fi vehicle, NOT a spaceship, NOT a far-future prototype concept car. "
-            f"Clean unbranded bodywork with no trademarked logos or commercial manufacturer emblems. "
-            f"Professional real-world automotive showroom photography, clean showroom floor with gentle natural daylight reflections, 3/4 front angle view, high quality 4k resolution, authentic realistic car finish."
+            f"A crisp photorealistic photograph of a real, contemporary production two-wheeler: '{vehicle_name}', "
+            f"which is {body}. Segment: {category}.{notes_str} "
+            f"Realistic Indian-market two-wheeler proportions: two wheels, handlebars, mirrors, LED headlamp, indicators, number-plate holder, disc brakes, rider and pillion seat. "
+            f"Strictly a two-wheeler — NOT a car, NOT a four-wheeler, NOT futuristic, NOT a sci-fi or far-future concept vehicle. "
+            f"Clean unbranded bodywork with no trademarked logos or manufacturer emblems. "
+            f"Professional showroom photography, clean showroom floor with soft natural daylight reflections, 3/4 front side angle, parked on its side stand, no rider, high quality 4k resolution."
         )
 
-        logger.info(f"Generating realistic normal road car image for {vehicle_name} ({b_id}/{v_id})...")
+        logger.info(f"Generating realistic two-wheeler image for {vehicle_name} ({b_id}/{v_id})...")
 
         if os.path.exists(GENERATE_CLI):
             try:
@@ -94,7 +104,7 @@ class GeminiImageService:
         concurrency: int = 2
     ) -> Dict[str, str]:
         """
-        Generates concept car images for a batch of vehicles with bounded concurrency.
+        Generates realistic two-wheeler images for a batch of vehicles with bounded concurrency.
         Returns a mapping of vehicle_id -> public_image_url.
         """
         semaphore = asyncio.Semaphore(concurrency)
@@ -102,8 +112,8 @@ class GeminiImageService:
 
         async def _worker(v: Dict[str, Any]):
             v_id = v.get("id") or "vehicle"
-            v_name = v.get("name") or "Concept Vehicle"
-            cat = v.get("category") or "Electric Vehicle"
+            v_name = v.get("name") or "Two-Wheeler"
+            cat = v.get("category") or "Commuter Motorcycle"
             usp = v.get("usp") or ""
             async with semaphore:
                 url = await cls.generate_concept_car_image(

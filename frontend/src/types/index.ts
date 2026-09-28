@@ -22,7 +22,20 @@ export interface VehicleItem {
   usp: string;
   variants: VehicleVariant[];
   is_custom_source_of_truth?: boolean;
-  uploaded_image_url?: string;
+  uploaded_image_url?: string | null;
+  // Optional two-wheeler specification fields (populated by the brand crawler).
+  source_url?: string | null;
+  displacement_cc?: string | null;
+  max_power?: string | null;
+  max_torque?: string | null;
+  kerb_weight?: string | null;
+  seat_height?: string | null;
+  fuel_tank_or_battery?: string | null;
+  top_speed?: string | null;
+  braking?: string | null;
+  riding_modes?: string[] | null;
+  colors?: string[] | null;
+  competitors?: string[] | null;
 }
 
 export interface BrandSummary {

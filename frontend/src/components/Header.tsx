@@ -64,7 +64,7 @@ export function Header({
               />
             )}
             <span className="text-lg font-black tracking-wider text-slate-900 uppercase">
-              {brand?.name ? brand.name.replace(/\(.*\)/, "").trim() : "MAHINDRA"}
+              {brand?.name ? brand.name.replace(/\(.*\)/, "").trim() : "TVS MOTOR"}
             </span>
           </div>
           <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 font-bold border border-slate-200 hidden sm:inline-block">

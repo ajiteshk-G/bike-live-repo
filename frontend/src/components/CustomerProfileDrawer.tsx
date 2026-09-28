@@ -2,7 +2,7 @@
 
 import React from "react";
 import { CustomerProfile, BrandCatalog } from "@/types";
-import { X, User, Phone, Mail, MapPin, ShieldCheck, Car, CreditCard, Sparkles, Clock, RefreshCw } from "lucide-react";
+import { X, User, Phone, Mail, MapPin, ShieldCheck, Bike, CreditCard, Sparkles, Clock, RefreshCw } from "lucide-react";
 
 interface CustomerProfileDrawerProps {
   isOpen: boolean;
@@ -24,13 +24,13 @@ export function CustomerProfileDrawer({
   if (!isOpen || !profile) return null;
 
   const brandColor = brand?.primary_color || "#e31837";
-  const brandName = brand?.name || "Official Auto";
+  const brandName = brand?.name || "Official Dealer";
 
   return (
     <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex justify-end">
-      <div className="bg-mahindra-card border-l border-mahindra-border w-full max-w-md h-full flex flex-col shadow-2xl overflow-y-auto">
+      <div className="bg-moto-card border-l border-moto-border w-full max-w-md h-full flex flex-col shadow-2xl overflow-y-auto">
         {/* Drawer Header */}
-        <div className="p-4 border-b border-mahindra-border flex items-center justify-between sticky top-0 bg-mahindra-card z-10">
+        <div className="p-4 border-b border-moto-border flex items-center justify-between sticky top-0 bg-moto-card z-10">
           <div className="flex items-center gap-2">
             <User className="w-5 h-5" style={{ color: brandColor }} />
             <div>
@@ -55,7 +55,7 @@ export function CustomerProfileDrawer({
         {/* Content */}
         <div className="p-5 space-y-5 text-xs">
           {/* Identity Card */}
-          <div className="bg-mahindra-dark p-4 rounded-xl border border-mahindra-border space-y-3">
+          <div className="bg-moto-dark p-4 rounded-xl border border-moto-border space-y-3">
             <div className="flex items-center justify-between">
               <div className="font-bold text-white text-sm">{profile.name}</div>
               <span className="font-mono text-[10px] text-gray-400">{profile.customer_id}</span>
@@ -87,8 +87,8 @@ export function CustomerProfileDrawer({
                 onClick={() => onSetPhase("PRE_SALES")}
                 className={`p-2.5 rounded-xl border text-left transition-all ${
                   profile.current_phase === "PRE_SALES"
-                    ? "bg-mahindra-red/20 border-mahindra-red text-white font-bold"
-                    : "bg-mahindra-dark border-mahindra-border text-gray-400"
+                    ? "bg-moto-red/20 border-moto-red text-white font-bold"
+                    : "bg-moto-dark border-moto-border text-gray-400"
                 }`}
               >
                 1. Pre-Sales Discovery
@@ -98,8 +98,8 @@ export function CustomerProfileDrawer({
                 onClick={() => onSetPhase("FINANCING")}
                 className={`p-2.5 rounded-xl border text-left transition-all ${
                   profile.current_phase === "FINANCING"
-                    ? "bg-mahindra-red/20 border-mahindra-red text-white font-bold"
-                    : "bg-mahindra-dark border-mahindra-border text-gray-400"
+                    ? "bg-moto-red/20 border-moto-red text-white font-bold"
+                    : "bg-moto-dark border-moto-border text-gray-400"
                 }`}
               >
                 2. Test Ride Completed
@@ -109,8 +109,8 @@ export function CustomerProfileDrawer({
                 onClick={() => onSetPhase("POST_SALES")}
                 className={`p-2.5 rounded-xl border text-left transition-all col-span-2 ${
                   profile.current_phase === "POST_SALES"
-                    ? "bg-mahindra-red/20 border-mahindra-red text-white font-bold"
-                    : "bg-mahindra-dark border-mahindra-border text-gray-400"
+                    ? "bg-moto-red/20 border-moto-red text-white font-bold"
+                    : "bg-moto-dark border-moto-border text-gray-400"
                 }`}
               >
                 3. Post-Ride Feedback Call
@@ -121,10 +121,10 @@ export function CustomerProfileDrawer({
 
 
           {/* Owned Vehicle Record */}
-          <div className="bg-mahindra-dark p-4 rounded-xl border border-mahindra-border space-y-2.5">
+          <div className="bg-moto-dark p-4 rounded-xl border border-moto-border space-y-2.5">
             <div className="font-bold text-white flex items-center gap-1.5">
-              <Car className="w-4 h-4 text-mahindra-red" />
-              Allocated Vehicle Details
+              <Bike className="w-4 h-4 text-moto-red" />
+              Allocated Two-Wheeler Details
             </div>
             <div className="text-gray-300 space-y-1">
               <div>{profile.owned_vehicle_name}</div>

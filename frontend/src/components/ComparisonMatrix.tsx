@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { VehicleItem } from "@/types";
+import { buildCompareRows } from "@/lib/compareHelper";
+import { BIKE_PLACEHOLDER_IMAGE } from "@/lib/defaultCatalog";
 import { X, Layers, Check, Shield, Zap, ArrowLeftRight, ChevronDown } from "lucide-react";
 
 interface ComparisonMatrixProps {
@@ -53,9 +55,6 @@ export function ComparisonMatrix({
     }
   };
 
-  const isV1Electric = selectedV1.category === "Born Electric SUV";
-  const isV2Electric = selectedV2.category === "Born Electric SUV";
-
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200">
       <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-5xl max-h-[92vh] overflow-y-auto shadow-2xl flex flex-col">
@@ -67,7 +66,7 @@ export function ComparisonMatrix({
             </div>
             <div>
               <h2 className="text-base font-black text-slate-900 tracking-tight">Side-by-Side Spec Comparison</h2>
-              <p className="text-xs text-slate-500">Compare pricing, powertrain, real-world mileage, and ADAS technology</p>
+              <p className="text-xs text-slate-500">Compare engine, power, mileage / range, weight, braking and pricing</p>
             </div>
           </div>
 
@@ -105,6 +104,9 @@ export function ComparisonMatrix({
                 <img
                   src={selectedV1.hero_image}
                   alt={selectedV1.name}
+                  onError={(e) => {
+                    if (!e.currentTarget.src.endsWith(BIKE_PLACEHOLDER_IMAGE)) e.currentTarget.src = BIKE_PLACEHOLDER_IMAGE;
+                  }}
                   className="w-full h-full object-contain filter drop-shadow-md"
                 />
               </div>
@@ -147,6 +149,9 @@ export function ComparisonMatrix({
                 <img
                   src={selectedV2.hero_image}
                   alt={selectedV2.name}
+                  onError={(e) => {
+                    if (!e.currentTarget.src.endsWith(BIKE_PLACEHOLDER_IMAGE)) e.currentTarget.src = BIKE_PLACEHOLDER_IMAGE;
+                  }}
                   className="w-full h-full object-contain filter drop-shadow-md"
                 />
               </div>
@@ -161,61 +166,32 @@ export function ComparisonMatrix({
 
           {/* Side-by-Side Comparison Specs Table */}
           <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs divide-y divide-slate-100 text-xs">
-            {/* Powertrain Row */}
-            <div className="grid grid-cols-12 p-4 items-center gap-4 bg-slate-50/50">
-              <div className="col-span-3 font-extrabold text-slate-500 uppercase tracking-wider text-[11px]">
-                Powertrain & Engine
+            {/* Two-wheeler spec rows */}
+            {buildCompareRows(selectedV1, selectedV2).map((row, idx) => (
+              <div
+                key={row.key}
+                className={`grid grid-cols-12 p-4 items-center gap-4 ${idx % 2 === 0 ? "bg-slate-50/50" : ""}`}
+              >
+                <div className="col-span-3 font-extrabold text-slate-500 uppercase tracking-wider text-[11px]">
+                  {row.label}
+                </div>
+                <div
+                  className={`col-span-4 leading-relaxed ${
+                    row.key === "mileage" || row.key === "price" ? "font-black text-emerald-600" : "font-bold text-slate-900"
+                  }`}
+                >
+                  {row.v1}
+                </div>
+                <div className="col-span-1 text-center text-slate-300 font-bold">|</div>
+                <div
+                  className={`col-span-4 leading-relaxed ${
+                    row.key === "mileage" || row.key === "price" ? "font-black text-emerald-600" : "font-bold text-slate-900"
+                  }`}
+                >
+                  {row.v2}
+                </div>
               </div>
-              <div className="col-span-4 font-bold text-slate-900 leading-relaxed">
-                {selectedV1.engine_specs}
-              </div>
-              <div className="col-span-1 text-center text-slate-300 font-bold">|</div>
-              <div className="col-span-4 font-bold text-slate-900 leading-relaxed">
-                {selectedV2.engine_specs}
-              </div>
-            </div>
-
-            {/* Range / Mileage Row */}
-            <div className="grid grid-cols-12 p-4 items-center gap-4">
-              <div className="col-span-3 font-extrabold text-slate-500 uppercase tracking-wider text-[11px]">
-                Certified Range / Economy
-              </div>
-              <div className="col-span-4 font-black text-emerald-600">
-                {selectedV1.range_or_mileage}
-              </div>
-              <div className="col-span-1 text-center text-slate-300 font-bold">|</div>
-              <div className="col-span-4 font-black text-emerald-600">
-                {selectedV2.range_or_mileage}
-              </div>
-            </div>
-
-            {/* Seating Row */}
-            <div className="grid grid-cols-12 p-4 items-center gap-4 bg-slate-50/50">
-              <div className="col-span-3 font-extrabold text-slate-500 uppercase tracking-wider text-[11px]">
-                Seating & Layout
-              </div>
-              <div className="col-span-4 font-medium text-slate-700">
-                {selectedV1.seating_capacity}
-              </div>
-              <div className="col-span-1 text-center text-slate-300 font-bold">|</div>
-              <div className="col-span-4 font-medium text-slate-700">
-                {selectedV2.seating_capacity}
-              </div>
-            </div>
-
-            {/* Fuel / Battery Row */}
-            <div className="grid grid-cols-12 p-4 items-center gap-4">
-              <div className="col-span-3 font-extrabold text-slate-500 uppercase tracking-wider text-[11px]">
-                Fuel / Battery System
-              </div>
-              <div className="col-span-4 font-bold text-slate-800">
-                {selectedV1.fuel_or_battery}
-              </div>
-              <div className="col-span-1 text-center text-slate-300 font-bold">|</div>
-              <div className="col-span-4 font-bold text-slate-800">
-                {selectedV2.fuel_or_battery}
-              </div>
-            </div>
+            ))}
 
             {/* USP Row */}
             <div className="grid grid-cols-12 p-4 items-start gap-4 bg-slate-50/50">
@@ -234,7 +210,7 @@ export function ComparisonMatrix({
             {/* Key Technology Highlights Row */}
             <div className="grid grid-cols-12 p-4 items-start gap-4">
               <div className="col-span-3 font-extrabold text-slate-500 uppercase tracking-wider text-[11px] pt-1">
-                Key Tech Highlights
+                Key Highlights
               </div>
               <div className="col-span-4 space-y-1.5">
                 {selectedV1.key_highlights.map((h, i) => (

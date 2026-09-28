@@ -1,353 +1,732 @@
 import { VehicleItem } from "@/types";
 
+// Offline fallback catalog for TVS Motor, generated from backend/data/brands/tvs.json.
+// Used only when the backend catalog API is unreachable.
+export const DEFAULT_BRAND_ID = "tvs";
+export const DEFAULT_VEHICLE_ID = "tvs_apache_rtr_160_4v";
+export const BIKE_PLACEHOLDER_IMAGE = "/assets/placeholder-bike.svg";
+
 export const DEFAULT_VEHICLES: VehicleItem[] = [
   {
-    id: "thar_roxx",
-    name: "Mahindra Thar ROXX (5-Door)",
-    tagline: "The SUV That Rules Every Terrain with Refinement & Luxury",
-    category: "Authentic SUV",
-    price_range: "₹12.52 Lakh - ₹23.52 Lakh (Ex-Showroom)",
-    hero_image: "/assets/thar-roxx.png",
-    engine_specs: "2.0L mStallion Turbo Petrol (177 PS) & 2.2L mHawk Diesel (175 PS / 370 Nm)",
-    seating_capacity: "5-Seater Extended Wheelbase",
-    fuel_or_battery: "Diesel / Petrol (6-Speed MT / AT)",
-    range_or_mileage: "15.2 km/l (Diesel AT ARAI)",
-    key_highlights: [
-      "Frequency Selective Damping (FSD) Suspension with Penta-Link Rear",
-      "Intelli-Turn Electronic Turning Radius Reducer",
-      "Level 2 ADAS (10+ Autonomous Features)",
-      "Panoramic Skyroof & Harmon Kardon 9-Speaker Audio",
-      "Dual 10.25-inch Digital Cockpit Screens"
+    "id": "tvs_apache_rtr_160_4v",
+    "name": "TVS Apache RTR 160 4V",
+    "tagline": "SMARTER PERFORMANCE",
+    "category": "Sports Motorcycle",
+    "price_range": "₹1,14,390 - ₹1,44,690",
+    "hero_image": "/uploads/tvs/vehicles/tvs_apache_rtr_160_4v.png",
+    "engine_specs": "159.7cc, 4-valve O3C engine, oil-cooled, SOHC, Fuel Injection, 17.55 PS, 14.73 Nm",
+    "seating_capacity": "Rider + Pillion",
+    "fuel_or_battery": "Petrol",
+    "range_or_mileage": "",
+    "key_highlights": [
+      "17.55 PS power",
+      "Race-tuned USD suspension",
+      "Dual-channel ABS with RLP Control",
+      "Class-D Projector Headlamp",
+      "Advanced Traction Control System",
+      "5-inch TFT cluster with Google Map Mirroring"
     ],
-    usp: "Combines rugged 4x4 off-road heritage with plush city ride comfort and luxury cabin.",
-    variants: [
+    "usp": "Smarter performance with RT-Fi technology, race-tuned features, and advanced connectivity via 5-inch TFT cluster.",
+    "variants": [
       {
-        name: "AX7L Diesel AT 4x4",
-        price_ex_showroom: "₹22.49 Lakh",
-        engine_or_battery: "2.2L mHawk Diesel (175 PS)",
-        transmission: "6-Speed Torque Converter AT",
-        key_features: ["4XPLOR Terrain Modes", "FSD Suspension", "Level 2 ADAS", "Panoramic Skyroof", "Ventilated Front Seats"]
+        "name": "TVS Apache RTR 160 4V (Single Channel ABS)",
+        "price_ex_showroom": "₹1,14,390",
+        "engine_or_battery": "159.7cc, 4-valve O3C engine",
+        "transmission": "5-speed manual",
+        "key_features": [
+          "Telescopic Fork",
+          "Single Channel ABS"
+        ]
       },
       {
-        name: "AX5L Diesel AT 4x2",
-        price_ex_showroom: "₹18.99 Lakh",
-        engine_or_battery: "2.2L mHawk Diesel (152 PS)",
-        transmission: "6-Speed Torque Converter AT",
-        key_features: ["Dual 10.25-inch Screens", "Wireless CarPlay", "Electronic Parking Brake"]
+        "name": "TVS Apache RTR 160 4V (Dual Channel ABS with TFT Map)",
+        "price_ex_showroom": "₹1,44,690",
+        "engine_or_battery": "159.7cc, 4-valve O3C engine",
+        "transmission": "5-speed manual",
+        "key_features": [
+          "Dual Channel ABS with RLP Control",
+          "37mm Upside Down Suspension",
+          "5-inch TFT Cluster with Google Map Mirroring",
+          "Traction Control System",
+          "Adjustable Levers",
+          "Type-C Charger"
+        ]
       }
+    ],
+    "source_url": "https://www.tvsmotor.com/tvs-apache/apache-rtr-160-4v",
+    "displacement_cc": "159.7",
+    "max_power": "17.55 PS @ 9250 rpm",
+    "max_torque": "14.73 Nm @ 7500 rpm",
+    "top_speed": "103 km/h (Urban/Rain mode)",
+    "braking": "Dual Channel ABS With RLP Control",
+    "riding_modes": [
+      "Sport",
+      "Urban",
+      "Rain"
+    ],
+    "colors": [
+      "Arctic Teal"
+    ],
+    "competitors": [
+      "Bajaj Pulsar N160",
+      "Hero Xtreme 160R",
+      "Yamaha FZ-S FI"
     ]
   },
   {
-    id: "thar_3door",
-    name: "Mahindra Thar (3-Door)",
-    tagline: "The Iconic Pure Off-Roader for Adventure Enthusiasts",
-    category: "Authentic SUV",
-    price_range: "₹11.35 Lakh - ₹17.60 Lakh (Ex-Showroom)",
-    hero_image: "/assets/thar.png",
-    engine_specs: "2.0L mStallion Petrol (150 PS) & 2.2L mHawk Diesel (130 PS / 300 Nm)",
-    seating_capacity: "4-Seater Hard Top & Convertible",
-    fuel_or_battery: "Diesel / Petrol (4x4 & RWD)",
-    range_or_mileage: "15.2 km/l",
-    key_highlights: [
-      "Shift-on-the-fly 4x4 with Low Range Transfer Case",
-      "Mechanical Locking Rear Differential (MLD)",
-      "650mm Water Wading Capability & Washable Interior Floor",
-      "Roll Cage Construction with 4-Star Global NCAP Safety"
+    "id": "tvs_apache_rr_310",
+    "name": "TVS Apache RR 310",
+    "tagline": "High-performance 310cc sport bike",
+    "category": "Supersport",
+    "price_range": "₹2,66,190 - ₹3,34,440",
+    "hero_image": "/uploads/tvs/vehicles/tvs_apache_rr_310.png",
+    "engine_specs": "312.2cc single-cylinder liquid-cooled, 34 PS, 27.3 Nm",
+    "seating_capacity": "Rider + Pillion",
+    "fuel_or_battery": "Petrol",
+    "range_or_mileage": "33.1 kmpl (claimed)",
+    "key_highlights": [
+      "312.2cc liquid-cooled reverse-inclined engine",
+      "Race-tuned USD forks and monoshock",
+      "Dual-channel ABS",
+      "Ride Modes (Urban, Rain, Sport, Track)",
+      "5-inch TFT display with SmartXonnect",
+      "Slipper clutch"
     ],
-    usp: "Pure go-anywhere authentic off-road freedom with iconic classic stance.",
-    variants: [
+    "usp": "Best 310 cc engine!",
+    "variants": [
       {
-        name: "LX Hard Top Diesel 4x4 AT",
-        price_ex_showroom: "₹17.60 Lakh",
-        engine_or_battery: "2.2L mHawk Diesel (130 PS)",
-        transmission: "6-Speed Automatic 4x4",
-        key_features: ["4x4 Low Range", "MLD", "Touchscreen Audio", "18-inch Deep Silver Alloys"]
+        "name": "TVS Apache RR 310",
+        "price_ex_showroom": "₹2,66,190",
+        "engine_or_battery": "312.2cc single-cylinder liquid-cooled",
+        "transmission": "6-speed manual",
+        "key_features": [
+          "Race-tuned USD forks",
+          "Dual-channel ABS",
+          "Ride Modes",
+          "5-inch TFT display"
+        ]
       }
+    ],
+    "source_url": "https://www.tvsmotor.com/tvs-apache/rr-310",
+    "displacement_cc": "312.2",
+    "max_power": "34 PS",
+    "max_torque": "27.3 Nm",
+    "kerb_weight": "174 kg",
+    "seat_height": "810 mm",
+    "fuel_tank_or_battery": "11 litres",
+    "top_speed": "160 kmph",
+    "braking": "Dual-channel ABS, 300mm front disc, 240mm rear disc",
+    "riding_modes": [
+      "Urban",
+      "Rain",
+      "Sport",
+      "Track"
+    ],
+    "colors": [
+      "Titanium Black",
+      "Racing Red"
+    ],
+    "competitors": [
+      "KTM RC 390",
+      "Kawasaki Ninja 300",
+      "BMW G 310 RR"
     ]
   },
   {
-    id: "scorpio_n",
-    name: "Mahindra Scorpio-N",
-    tagline: "The Big Daddy of SUVs — Commanding Power & Presence",
-    category: "Authentic SUV",
-    price_range: "₹13.69 Lakh - ₹25.49 Lakh (Ex-Showroom)",
-    hero_image: "/assets/scorpio-n.png",
-    engine_specs: "2.0L mStallion Petrol (203 PS / 380 Nm) & 2.2L mHawk Diesel (175 PS / 400 Nm)",
-    seating_capacity: "6 / 7-Seater Captain & Bench options",
-    fuel_or_battery: "Diesel / Petrol (6-Speed MT / AT)",
-    range_or_mileage: "14.5 km/l (ARAI)",
-    key_highlights: [
-      "4XPLOR Intelligent Terrain Management (Mud, Sand, Snow, Normal)",
-      "Watt's Linkage Rear Suspension for flat cornering",
-      "Sony 12-Speaker 3D Immersive Sound System",
-      "Dual-Zone Climate Control & Electric Sunroof",
-      "AdrenoX Connected Car Tech with 70+ Apps"
+    "id": "tvs_ronin",
+    "name": "TVS Ronin",
+    "tagline": "A stylish 225 cc motorcycle that's evolved like no other.",
+    "category": "Cruiser / Retro",
+    "price_range": "₹1,49,200 - ₹1,72,700 (approx.)",
+    "hero_image": "/uploads/tvs/vehicles/tvs_ronin.png",
+    "engine_specs": "225.9cc single-cylinder oil-cooled, 20.4 PS, 19.93 Nm",
+    "seating_capacity": "Rider + Pillion",
+    "fuel_or_battery": "Petrol",
+    "range_or_mileage": "40 kmpl (claimed)",
+    "key_highlights": [
+      "225.9cc Single-cylinder Engine",
+      "All-LED Lighting",
+      "SmartXonnect Bluetooth Connectivity",
+      "USD Front Forks",
+      "Assist & Slipper Clutch",
+      "GTT (Glide Through Technology)"
     ],
-    usp: "Unmatched commanding road presence, body-on-frame toughness, and punchy 400Nm torque.",
-    variants: [
+    "usp": "Modern-retro design with advanced features and a refined engine, offering a versatile riding experience.",
+    "variants": [
       {
-        name: "Z8L Diesel 4WD AT",
-        price_ex_showroom: "₹24.54 Lakh",
-        engine_or_battery: "2.2L mHawk Diesel (175 PS / 400 Nm)",
-        transmission: "6-Speed Automatic",
-        key_features: ["4XPLOR 4WD", "Sony 3D Sound", "Driver Drowsiness Alert", "Powered Driver Seat"]
+        "name": "TVS Ronin SS",
+        "price_ex_showroom": "₹1,49,200 (approx.)",
+        "engine_or_battery": "225.9cc Petrol",
+        "transmission": "5-speed manual",
+        "key_features": [
+          "Single-channel ABS",
+          "All-LED lighting",
+          "Digital instrument cluster"
+        ]
+      },
+      {
+        "name": "TVS Ronin DS",
+        "price_ex_showroom": "₹1,56,500 (approx.)",
+        "engine_or_battery": "225.9cc Petrol",
+        "transmission": "5-speed manual",
+        "key_features": [
+          "Single-channel ABS",
+          "All-LED lighting",
+          "Digital instrument cluster",
+          "TVS SmartXonnect"
+        ]
+      },
+      {
+        "name": "TVS Ronin TD",
+        "price_ex_showroom": "₹1,72,700 (approx.)",
+        "engine_or_battery": "225.9cc Petrol",
+        "transmission": "5-speed manual",
+        "key_features": [
+          "Dual-channel ABS",
+          "All-LED lighting",
+          "TVS SmartXonnect",
+          "USD front forks",
+          "Assist & Slipper Clutch",
+          "Riding Modes (Urban, Rain)"
+        ]
       }
+    ],
+    "source_url": "https://www.tvsmotor.com/tvs-ronin",
+    "displacement_cc": "225.9",
+    "max_power": "20.4 PS @ 7750 rpm",
+    "max_torque": "19.93 Nm @ 3750 rpm",
+    "kerb_weight": "160 kg",
+    "seat_height": "795 mm",
+    "fuel_tank_or_battery": "14 litres",
+    "top_speed": "120 km/h",
+    "braking": "Disc (front & rear) with Single-channel ABS / Dual-channel ABS",
+    "riding_modes": [
+      "Urban",
+      "Rain"
+    ],
+    "colors": [
+      "Galactic Grey",
+      "Delta Blue",
+      "Stargaze Black",
+      "Dawn Orange",
+      "Magma Orange",
+      "Lightning Black"
+    ],
+    "competitors": [
+      "Royal Enfield Hunter 350",
+      "Honda CB350RS",
+      "Bajaj Avenger 220 Cruise"
     ]
   },
   {
-    id: "scorpio_classic",
-    name: "Mahindra Scorpio Classic",
-    tagline: "The Undisputed Legend of Indian Roads",
-    category: "Authentic SUV",
-    price_range: "₹13.62 Lakh - ₹17.42 Lakh (Ex-Showroom)",
-    hero_image: "/assets/scorpio-classic.png",
-    engine_specs: "2.2L Gen-2 mHawk Diesel (132 PS / 300 Nm)",
-    seating_capacity: "7 / 9-Seater Options",
-    fuel_or_battery: "Diesel (6-Speed Cable Shift MT)",
-    range_or_mileage: "15.0 km/l",
-    key_highlights: [
-      "All-Aluminum Gen-2 mHawk Diesel Engine",
-      "Classic Muscular Bonnet Scoop & Red Tower Tail Lamps",
-      "9-inch Touchscreen Infotainment with Phone Mirroring",
-      "Dual-Tone Plush Interiors with Wood Finish Accents"
+    "id": "tvs_radeon",
+    "name": "TVS Radeon",
+    "tagline": "TVS Radeon with 20 Best-In-Class Features & 15% More Mileage is the best Commuter Bike in India.",
+    "category": "Commuter Motorcycle",
+    "price_range": "₹62,405 - ₹95,954",
+    "hero_image": "/uploads/tvs/vehicles/tvs_radeon.jpg",
+    "engine_specs": "109.7cc single-cylinder air-cooled, 8.08 PS, 8.7 Nm",
+    "seating_capacity": "Rider + Pillion",
+    "fuel_or_battery": "Petrol",
+    "range_or_mileage": "69.3 kmpl (claimed)",
+    "key_highlights": [
+      "Real Time Mileage Display",
+      "USB Charger",
+      "Chrome bezel headlamp with DRL",
+      "Long Lasting Dura Life Engine",
+      "18” bigger wheels",
+      "Highest Ground Clearance & Longest Wheel Base"
     ],
-    usp: "Legendary rugged durability, low maintenance, and commanding high seating posture.",
-    variants: [
+    "usp": "The perfect blend of style, performance, and safety makes the TVS Radeon an ideal choice for commuters.",
+    "variants": [
       {
-        name: "S11 7-Seater",
-        price_ex_showroom: "₹17.42 Lakh",
-        engine_or_battery: "2.2L Gen-2 mHawk (132 PS)",
-        transmission: "6-Speed MT",
-        key_features: ["Projector Headlamps with DRLs", "17-inch Diamond Cut Alloys", "Auto AC"]
+        "name": "TVS Radeon Base Edition (Drum)",
+        "price_ex_showroom": "₹62,405",
+        "engine_or_battery": "109.7cc single-cylinder air-cooled",
+        "transmission": "4-speed manual",
+        "key_features": [
+          "Real Time Mileage Display",
+          "Longest Seat",
+          "Drum Brakes with SBT"
+        ]
+      },
+      {
+        "name": "TVS Radeon Dual Tone Edition (Disc)",
+        "price_ex_showroom": "₹95,954",
+        "engine_or_battery": "109.7cc single-cylinder air-cooled",
+        "transmission": "4-speed manual",
+        "key_features": [
+          "Dual Tone Graphics",
+          "Front Disc Brake with SBT",
+          "USB Charger",
+          "Chrome bezel headlamp with DRL"
+        ]
       }
+    ],
+    "source_url": "https://www.tvsmotor.com/tvs-radeon",
+    "displacement_cc": "109.7",
+    "max_power": "8.08 PS @ 7350 rpm",
+    "max_torque": "8.7 Nm @ 4500 rpm",
+    "kerb_weight": "116 kg",
+    "seat_height": "780 mm",
+    "fuel_tank_or_battery": "10 litres",
+    "top_speed": "90 kmph",
+    "braking": "Front Disc / Drum, Rear Drum with SBT",
+    "colors": [
+      "Metal Black",
+      "Pearl White",
+      "Royal Purple",
+      "Golden Beige",
+      "Titanium Grey",
+      "Volcano Red",
+      "Dual Tone Blue & Black",
+      "Dual Tone Red & Black"
+    ],
+    "competitors": [
+      "Hero Splendor Plus",
+      "Bajaj Platina 110",
+      "Honda CD 110 Dream"
     ]
   },
   {
-    id: "bolero",
-    name: "Mahindra Bolero",
-    tagline: "India's Most Trusted Workhorse & Rural Powerhouse",
-    category: "Authentic SUV",
-    price_range: "₹9.90 Lakh - ₹10.90 Lakh (Ex-Showroom)",
-    hero_image: "/assets/bolero.png",
-    engine_specs: "1.5L mHawk75 Diesel (75 PS / 210 Nm)",
-    seating_capacity: "7-Seater Spacious Layout",
-    fuel_or_battery: "Diesel (5-Speed Manual)",
-    range_or_mileage: "16.0 km/l",
-    key_highlights: [
-      "Full Metal Body Construction for extreme resilience",
-      "Micro-Hybrid Technology for superior fuel economy",
-      "High Ground Clearance (180mm) with Heavy Duty Suspension",
-      "Proven Reliability across millions of rural & semi-urban miles"
+    "id": "tvs_star_city_plus",
+    "name": "TVS Star City Plus",
+    "tagline": "premium motorcycle with a 110cc engine, enhanced style and best-in-class features.",
+    "category": "Commuter Motorcycle",
+    "price_range": "₹69,600 - ₹79,600",
+    "hero_image": "/uploads/tvs/vehicles/tvs_star_city_plus.jpg",
+    "engine_specs": "109.7cc single-cylinder air-cooled, 8.08 PS, 8.7 Nm",
+    "seating_capacity": "Rider + Pillion",
+    "fuel_or_battery": "Petrol",
+    "range_or_mileage": "70 kmpl (approx.)",
+    "key_highlights": [
+      "ETFi Technology",
+      "110 cc 'Eco thurst' engine",
+      "15% Higher Mileage",
+      "LED Tech Headlamp",
+      "Roto Petal Disc Brake",
+      "SBT (Synchronized Braking Technology)"
     ],
-    usp: "Indestructible metal reliability, low cost of ownership, and exceptional resale value.",
-    variants: [
+    "usp": "only bike in the 110cc segment to have LED Tech Headlamp",
+    "variants": [
       {
-        name: "B6 (Opt)",
-        price_ex_showroom: "₹10.90 Lakh",
-        engine_or_battery: "1.5L mHawk75 (75 PS)",
-        transmission: "5-Speed Manual",
-        key_features: ["Static Bending Headlamps", "Driver Airbag & ABS", "Remote Fuel Lid Opener"]
+        "name": "TVS Star City Plus Drum",
+        "price_ex_showroom": "₹69,600",
+        "engine_or_battery": "109.7cc 'Eco thurst' engine",
+        "transmission": "4-speed manual",
+        "key_features": [
+          "ETFi Technology",
+          "LED Headlamp",
+          "SBT"
+        ]
+      },
+      {
+        "name": "TVS Star City Plus Disc",
+        "price_ex_showroom": "₹79,600",
+        "engine_or_battery": "109.7cc 'Eco thurst' engine",
+        "transmission": "4-speed manual",
+        "key_features": [
+          "ETFi Technology",
+          "LED Headlamp",
+          "240 mm Front Disc Brake",
+          "SBT"
+        ]
       }
+    ],
+    "source_url": "https://www.tvsmotor.com/tvs-star-city-plus",
+    "displacement_cc": "110",
+    "max_power": "8.08 PS",
+    "max_torque": "8.7 Nm",
+    "braking": "240 mm front disc brake, SBT",
+    "competitors": [
+      "Hero Splendor Plus",
+      "Bajaj Platina 110",
+      "Honda CD 110 Dream"
     ]
   },
   {
-    id: "bolero_neo",
-    name: "Mahindra Bolero Neo",
-    tagline: "Toughness of Bolero, Style of Modern Urban SUV",
-    category: "Authentic SUV",
-    price_range: "₹9.95 Lakh - ₹12.15 Lakh (Ex-Showroom)",
-    hero_image: "/assets/bolero-neo.png",
-    engine_specs: "1.5L mHawk100 Diesel (100 PS / 260 Nm)",
-    seating_capacity: "7-Seater Modern Cabin",
-    fuel_or_battery: "Diesel (5-Speed Manual)",
-    range_or_mileage: "17.2 km/l",
-    key_highlights: [
-      "Multi-Terrain Technology (MTT) Mechanical Locking Differential",
-      "Italian Design Center Cabin Styling by Pininfarina",
-      "7-inch Touchscreen Infotainment & Reverse Parking Camera",
-      "Cruise Control & ECO Drive Mode"
+    "id": "tvs_ntorq_125",
+    "name": "TVS NTORQ 125",
+    "tagline": "",
+    "category": "Performance Scooter",
+    "price_range": "₹85,000 - ₹1,06,000 (approx.)",
+    "hero_image": "/assets/placeholder-bike.svg",
+    "engine_specs": "Single Cylinder, 4 - Stroke, SI, Air Cooled, Fuel Injected, 124.8 cc (3V), 7 KW @7000 RPM, 10.6 Nm @ 5500 RPM",
+    "seating_capacity": "Rider + Pillion",
+    "fuel_or_battery": "Petrol",
+    "range_or_mileage": "47 kmpl (claimed)",
+    "key_highlights": [
+      "Fuel Injected 124.8cc Engine",
+      "Telescopic Front Suspension",
+      "Front Disc Brake option (220mm)",
+      "Tubeless Tyres",
+      "LED Headlamp (Race Edition)",
+      "Quick Acceleration (8.9 sec)"
     ],
-    usp: "Modern authentic SUV toughness paired with Pininfarina styling and MLD traction.",
-    variants: [
+    "usp": "Performance-oriented 125cc engine with quick acceleration and advanced braking options.",
+    "variants": [
       {
-        name: "N10 (O) with MTT",
-        price_ex_showroom: "₹12.15 Lakh",
-        engine_or_battery: "1.5L mHawk100 (100 PS)",
-        transmission: "5-Speed Manual",
-        key_features: ["Mechanical Locking Differential", "Alloy Wheels", "Armrests on Front & Middle Row"]
+        "name": "TVS NTORQ 125 Standard",
+        "price_ex_showroom": "₹85,000 (approx.)",
+        "engine_or_battery": "124.8 cc, 7 KW, 10.6 Nm",
+        "transmission": "CVT automatic",
+        "key_features": [
+          "Front Drum 130mm with SBT",
+          "Telescopic Suspension",
+          "Tubeless Tyres"
+        ]
+      },
+      {
+        "name": "TVS NTORQ 125 Race Edition",
+        "price_ex_showroom": "₹95,000 (approx.)",
+        "engine_or_battery": "124.8 cc, 7 KW, 10.6 Nm",
+        "transmission": "CVT automatic",
+        "key_features": [
+          "Front Disc 220mm with SBT",
+          "LED Headlamp",
+          "Telescopic Suspension",
+          "Tubeless Tyres"
+        ]
       }
+    ],
+    "source_url": "https://www.tvsmotor.com/commuter/tvs-ntorq",
+    "displacement_cc": "124.8 cc",
+    "max_power": "7 KW @7000 RPM",
+    "max_torque": "10.6 Nm @ 5500 RPM",
+    "kerb_weight": "111 Kg",
+    "seat_height": "770 mm",
+    "fuel_tank_or_battery": "5.8 litre",
+    "top_speed": "95 km/h",
+    "braking": "Front Disc 220mm with SBT / Drum 130mm with SBT, Rear Dia Drum 130mm",
+    "competitors": [
+      "Honda Dio 125",
+      "Suzuki Avenis 125",
+      "Aprilia SR 125"
     ]
   },
   {
-    id: "xuv700",
-    name: "Mahindra XUV700",
-    tagline: "Rush of Technology, Power and Sophistication",
-    category: "Tech SUV",
-    price_range: "₹13.99 Lakh - ₹25.94 Lakh (Ex-Showroom)",
-    hero_image: "/assets/xuv700.png",
-    engine_specs: "2.0L mStallion Turbo Petrol (200 PS) & 2.2L mHawk Turbo Diesel (185 PS / 450 Nm)",
-    seating_capacity: "5 / 7-Seater Luxury Cabin",
-    fuel_or_battery: "Petrol / Diesel (MT / AT / AWD)",
-    range_or_mileage: "15.8 km/l (ARAI)",
-    key_highlights: [
-      "Dual 10.25-inch Monolith HD Digital Screens",
-      "Level 2 ADAS with Adaptive Cruise & Auto Emergency Braking",
-      "Smart Door Handles & Memory Seat Access",
-      "Custom Drive Modes: Zip, Zap, Zoom & Custom",
-      "AWD Capability for High-Speed Highway Traction"
+    "id": "tvs_jupiter_disc_smartxonnect",
+    "name": "TVS Jupiter Disc SmartXonnect",
+    "tagline": "The best scooter featuring ETFi technology, a digital-analogue speedometer, and exceptional comfort.",
+    "category": "Scooter",
+    "price_range": "₹90,441 - ₹91,591",
+    "hero_image": "/assets/placeholder-bike.svg",
+    "engine_specs": "113.3 cc single-cylinder, 4-stroke, 5.9KW (8.02 PS) @ 6500 rpm, 9.8 Nm @ 5000 rpm",
+    "seating_capacity": "Rider + Pillion",
+    "fuel_or_battery": "Petrol",
+    "range_or_mileage": "50 kmpl (approx.)",
+    "key_highlights": [
+      "First in segment - Follow Me Headlamp",
+      "Connected Navigation with voice assist",
+      "TVS iGO Assist (Integrated Start Stop)",
+      "External Front Fuel Fill",
+      "First in segment - Emergency Brake Warning",
+      "Largest underseat storage (33L)"
     ],
-    usp: "Segment-defining 200PS horsepower, high-speed stability, and benchmark safety scores.",
-    variants: [
+    "usp": "Advanced Bluetooth connectivity, digital console, LED headlamp, and front disc brake, offering a smart, safe, and stylish ride for urban commuters.",
+    "variants": [
       {
-        name: "AX7L Diesel AWD AT",
-        price_ex_showroom: "₹26.99 Lakh",
-        engine_or_battery: "2.2L mHawk Diesel (185 PS / 450 Nm)",
-        transmission: "6-Speed Automatic AWD",
-        key_features: ["AWD", "Level 2 ADAS", "360 Surround View", "Blind View Monitor", "Wireless Charging"]
+        "name": "TVS Jupiter Disc SmartXonnect",
+        "price_ex_showroom": "₹90,441 - ₹91,591",
+        "engine_or_battery": "113.3 cc single-cylinder, 4-stroke",
+        "transmission": "CVT Automatic",
+        "key_features": [
+          "Front Disc Brake",
+          "Bluetooth connectivity",
+          "Fully digital colored speedometer",
+          "Voice assisted navigation",
+          "Call & SMS alerts",
+          "Smart mileage indicators"
+        ]
       }
+    ],
+    "source_url": "https://www.tvsmotor.com/tvs-jupiter/jupiter-disc-smartxonnect",
+    "displacement_cc": "113.3",
+    "max_power": "5.9KW @ 6500 rpm",
+    "max_torque": "9.8 Nm @ 5000 rpm",
+    "kerb_weight": "106 Kg",
+    "seat_height": "770 mm",
+    "fuel_tank_or_battery": "5.8 litres",
+    "braking": "Front Disc, Rear Drum with Synchronous Braking System (SBT)",
+    "riding_modes": [
+      "Eco",
+      "Power"
+    ],
+    "colors": [
+      "Dawn Blue Matte",
+      "Galactic Copper Matte",
+      "Starlight Blue Gloss"
+    ],
+    "competitors": [
+      "Honda Activa 6G",
+      "Suzuki Access 125",
+      "Hero Pleasure Plus Xtec"
     ]
   },
   {
-    id: "xuv_3xo",
-    name: "Mahindra XUV 3XO",
-    tagline: "Everything You Want & More in a Compact Tech SUV",
-    category: "Tech SUV",
-    price_range: "₹7.49 Lakh - ₹15.49 Lakh (Ex-Showroom)",
-    hero_image: "/assets/xuv-3xo.png",
-    engine_specs: "1.2L mStallion TGDi Turbo Petrol (130 PS / 230 Nm) & 1.5L Diesel (117 PS)",
-    seating_capacity: "5-Seater Smart Cockpit",
-    fuel_or_battery: "Petrol / Diesel (6-Speed MT / 6-Speed AISIN AT)",
-    range_or_mileage: "20.1 km/l",
-    key_highlights: [
-      "First-in-Segment Panoramic Skyroof (Largest in Class)",
-      "Level 2 ADAS with 360-degree Surround Vision Camera",
-      "Dual 10.25-inch Screens with Wireless CarPlay / Android Auto",
-      "Harman Kardon Premium 7-Speaker Sound System"
+    "id": "tvs_zest_110_bs6",
+    "name": "TVS Zest 110 BS6",
+    "tagline": "Best Mileage Scooter in its class",
+    "category": "Scooter",
+    "price_range": "₹65,450 - ₹82,549",
+    "hero_image": "/uploads/tvs/vehicles/tvs_zest_110_bs6.png",
+    "engine_specs": "110cc Eco Thrust Engine with ETFi technology",
+    "seating_capacity": "Rider + Pillion",
+    "fuel_or_battery": "Petrol",
+    "range_or_mileage": "15% More Mileage (claimed)",
+    "key_highlights": [
+      "ETFi Technology",
+      "Eco Thrust Engine",
+      "19L Underseat Storage",
+      "Front Glove Box",
+      "EaZy* Centre Stand",
+      "LED Tail Lamp"
     ],
-    usp: "Unmatched segment-first panoramic skyroof and Level 2 ADAS safety at an accessible price.",
-    variants: [
+    "usp": "Best Mileage Scooter in its class",
+    "variants": [
       {
-        name: "AX7L TGDi Petrol AT",
-        price_ex_showroom: "₹15.49 Lakh",
-        engine_or_battery: "1.2L Turbo Petrol (130 PS)",
-        transmission: "6-Speed AISIN AT",
-        key_features: ["Panoramic Skyroof", "Level 2 ADAS", "Harman Kardon Sound", "Electronic Parking Brake"]
+        "name": "TVS Zest 110 BS6",
+        "price_ex_showroom": "₹65,450 - ₹82,549",
+        "engine_or_battery": "110cc Eco Thrust Engine",
+        "transmission": "CVT automatic",
+        "key_features": [
+          "ETFi Technology",
+          "Eco Thrust Engine",
+          "19L Underseat Storage",
+          "Front Glove Box",
+          "EaZy* Centre Stand",
+          "LED Tail Lamp"
+        ]
       }
+    ],
+    "source_url": "https://www.tvsmotor.com/tvs-zest",
+    "displacement_cc": "110",
+    "kerb_weight": "102 kg",
+    "colors": [
+      "Turquoise Blue",
+      "Matte Black",
+      "Purple",
+      "Red",
+      "Yellow"
+    ],
+    "competitors": [
+      "Honda Activa 6G",
+      "Hero Pleasure+",
+      "Suzuki Access 125"
     ]
   },
   {
-    id: "be_6e",
-    name: "Mahindra BE 6e (Born Electric)",
-    tagline: "Pure EV Architecture Built from Ground Up",
-    category: "Born Electric SUV",
-    price_range: "₹18.90 Lakh - ₹26.90 Lakh (Ex-Showroom)",
-    hero_image: "/assets/be-6e.png",
-    engine_specs: "Rear Permanent Magnet Synchronous Motor (285 PS / 380 Nm) on INGLO Platform",
-    seating_capacity: "5-Seater Aero Coupe SUV",
-    fuel_or_battery: "79 kWh LFP Blade Battery (175 kW DC Fast Charge)",
-    range_or_mileage: "682 km (ARAI Certified Range)",
-    key_highlights: [
-      "INGLO Platform with Ultra-Low Center of Gravity",
-      "0-100 km/h in 6.7 seconds",
-      "175 kW Ultra-Fast Charging (20% to 80% in 20 minutes)",
-      "Augmented Reality Head-Up Display & Halo Light Bar",
-      "Semi-Active Intelligent Suspension with Pitch & Roll Control"
+    "id": "tvs_iqube",
+    "name": "TVS iQube",
+    "tagline": "Reinventing mobility solutions",
+    "category": "Electric Scooter",
+    "price_range": "₹94,434 - ₹1,58,834",
+    "hero_image": "/uploads/tvs/vehicles/tvs_iqube.png",
+    "engine_specs": "4.4 kW hub motor, 2.3 kWh to 5.3 kWh battery options",
+    "seating_capacity": "Rider + Pillion",
+    "fuel_or_battery": "Electric (2.3 kWh / 3.1 kWh / 3.5 kWh / 4.7 kWh / 5.3 kWh)",
+    "range_or_mileage": "212 km IDC range",
+    "key_highlights": [
+      "0 to 40 km/h in 4.2 seconds",
+      "Q-Park Assist",
+      "Up to 212 km IDC range",
+      "SmartXonnect connectivity",
+      "Portable 950W charger",
+      "3 year/50,000 kms battery warranty"
     ],
-    usp: "Longest real-world highway range in India with futuristic concept-car coupe aerodynamics.",
-    variants: [
+    "usp": "Ultra-low running cost of ₹0.18/km",
+    "variants": [
       {
-        name: "BE 6e Pack Three (79kWh)",
-        price_ex_showroom: "₹26.90 Lakh",
-        engine_or_battery: "285 PS Electric Motor / 79 kWh Battery",
-        transmission: "Single-Speed e-Drive",
-        key_features: ["682km Range", "AR-HUD", "Level 2+ ADAS", "16-Speaker Dolby Atmos", "175kW Charging"]
+        "name": "iQube 2.3 kWh",
+        "price_ex_showroom": "₹94,434",
+        "engine_or_battery": "2.3 kWh battery, 4.4 kW motor",
+        "transmission": "Single-speed",
+        "key_features": [
+          "114 km IDC range",
+          "10-80% charging in 2 h 25 min",
+          "Top speed 68 km/h"
+        ]
+      },
+      {
+        "name": "iQube 3.1 kWh",
+        "price_ex_showroom": "₹1,00,000",
+        "engine_or_battery": "3.1 kWh battery, 4.4 kW motor",
+        "transmission": "Single-speed",
+        "key_features": [
+          "123 km IDC range",
+          "10-80% charging in 3 h 30 min",
+          "Top speed 82 km/h"
+        ]
+      },
+      {
+        "name": "iQube 3.5 kWh",
+        "price_ex_showroom": "₹1,08,993",
+        "engine_or_battery": "3.5 kWh battery, 4.4 kW motor",
+        "transmission": "Single-speed",
+        "key_features": [
+          "145 km IDC range",
+          "10-80% charging in 3 h 45 min",
+          "Top speed 82 km/h"
+        ]
+      },
+      {
+        "name": "iQube MillionR Edition",
+        "price_ex_showroom": "₹1,08,993",
+        "engine_or_battery": "3.5 kWh battery, 4.4 kW motor",
+        "transmission": "Single-speed",
+        "key_features": [
+          "145 km IDC range",
+          "10-80% charging in 3 h 45 min",
+          "Top speed 82 km/h"
+        ]
+      },
+      {
+        "name": "iQube S 4.7 kWh",
+        "price_ex_showroom": "₹1,17,642",
+        "engine_or_battery": "4.7 kWh battery, 4.4 kW motor",
+        "transmission": "Single-speed",
+        "key_features": [
+          "175 km IDC range",
+          "10-80% charging in 3 h 15 min",
+          "Top speed 82 km/h"
+        ]
+      },
+      {
+        "name": "iQube ST 5.3 kWh",
+        "price_ex_showroom": "₹1,58,834",
+        "engine_or_battery": "5.3 kWh battery, 4.4 kW motor",
+        "transmission": "Single-speed",
+        "key_features": [
+          "212 km IDC range",
+          "10-80% charging in 4 h 00 min",
+          "Top speed 82 km/h"
+        ]
       }
+    ],
+    "source_url": "https://www.tvsmotor.com/electric-scooters/tvs-iqube",
+    "max_power": "4.4 kW",
+    "fuel_tank_or_battery": "2.3 kWh / 3.1 kWh / 3.5 kWh / 4.7 kWh / 5.3 kWh",
+    "top_speed": "82 km/h",
+    "riding_modes": [
+      "Power Mode"
+    ],
+    "competitors": [
+      "Ola S1 Pro",
+      "Ather 450X",
+      "Bajaj Chetak"
     ]
   },
   {
-    id: "xev_9e",
-    name: "Mahindra XEV 9e (Born Electric)",
-    tagline: "India's First Executive Electric SUV Lounge",
-    category: "Born Electric SUV",
-    price_range: "₹21.90 Lakh - ₹29.90 Lakh (Ex-Showroom)",
-    hero_image: "/assets/xev-9e.png",
-    engine_specs: "Dual / Single Motor Setup up to 335 PS on INGLO Skate Platform",
-    seating_capacity: "5-Seater Flagship Cinema Lounge",
-    fuel_or_battery: "79 kWh Cell-to-Pack LFP Battery",
-    range_or_mileage: "656 km (ARAI Certified Range)",
-    key_highlights: [
-      "Triple-Screen Panoramic Display (Driver, Center, Passenger Cinema)",
-      "Lounge Reclining Rear Seats with Executive Footrests",
-      "Active Noise Cancellation in Headrests",
-      "Vehicle-to-Load (V2L) and Vehicle-to-Vehicle (V2V) Power Share",
-      "Illuminated Glass Roof with Multi-Color Ambient Patterns"
+    "id": "tvs_orbiter_electric_scooter",
+    "name": "TVS Orbiter Electric Scooter",
+    "tagline": "All new TVS Orbiter electric scooter 2025 with 158 km range & 68 km/h speed. Check all about TVS Orbiter's price, specs, colour options & more. Experience this affordable e-scooter - book your test ride now!",
+    "category": "Electric Scooter",
+    "price_range": "₹1,03,650 - ₹1,15,000 (approx.)",
+    "hero_image": "/assets/placeholder-bike.svg",
+    "engine_specs": "Electric motor with 1.8 kWh (V1) / 3.1 kWh (V2) battery",
+    "seating_capacity": "Rider + Pillion",
+    "fuel_or_battery": "Electric (1.8 kWh / 3.1 kWh)",
+    "range_or_mileage": "92 km (V1), 158 km (V2) IDC range",
+    "key_highlights": [
+      "Minimalistic Design",
+      "Unmatched Comfort",
+      "Built for Convenience",
+      "SmartXonnect App connectivity",
+      "600+ rigorous safety tests",
+      "5 year/70000 KM extended warranty"
     ],
-    usp: "Ultra-luxury passenger cinema lounge with uninterrupted coast-to-coast electric range.",
-    variants: [
+    "usp": "Affordable e-scooter with smart features and extended warranty",
+    "variants": [
       {
-        name: "XEV 9e Pack Four Executive Lounge",
-        price_ex_showroom: "₹29.90 Lakh",
-        engine_or_battery: "335 PS Electric Powertrain / 79 kWh",
-        transmission: "Single-Speed e-Drive",
-        key_features: ["Triple 12.3-inch Dashboard", "Rear Passenger Cinema", "V2L Power Bank", "Air Suspension"]
+        "name": "TVS Orbiter V1",
+        "price_ex_showroom": "₹1,03,650",
+        "engine_or_battery": "1.8 kWH battery",
+        "transmission": "Single-speed",
+        "key_features": [
+          "92 km IDC Range",
+          "0%-80% charge in 2 h 20m (with 650W Charger Included)",
+          "5 year/70000 KM extended warranty"
+        ]
+      },
+      {
+        "name": "TVS Orbiter V2",
+        "price_ex_showroom": "₹1,15,000 (approx.)",
+        "engine_or_battery": "3.1 kWH battery",
+        "transmission": "Single-speed",
+        "key_features": [
+          "158 km IDC Range",
+          "0%-80% charge in 4 h 10m (with 650W Charger Included)",
+          "0%-80% charge in 2 h 38m (with Add-On 950W Charger)",
+          "5 year/70000 KM extended warranty"
+        ]
       }
+    ],
+    "source_url": "https://www.tvsmotor.com/electric-scooters/tvs-orbiter",
+    "fuel_tank_or_battery": "1.8 kWh (V1), 3.1 kWh (V2)",
+    "top_speed": "68 km/h",
+    "colors": [
+      "Neon Sunburst",
+      "Stratos Blue",
+      "Martian Copper",
+      "Cosmic Titanium",
+      "Stellar Silver",
+      "Lunar Grey"
+    ],
+    "competitors": [
+      "Ola S1 Air",
+      "Ather 450S",
+      "Bajaj Chetak Urbane",
+      "Vida V1 Plus"
     ]
   },
   {
-    id: "xuv400_ev",
-    name: "Mahindra XUV400 EV Pro",
-    tagline: "Electrifying Performance with Everyday Practicality",
-    category: "Born Electric SUV",
-    price_range: "₹15.49 Lakh - ₹19.39 Lakh (Ex-Showroom)",
-    hero_image: "/assets/xuv400-ev.png",
-    engine_specs: "Electric Motor (150 PS / 310 Nm) with 39.4 kWh Battery",
-    seating_capacity: "5-Seater Compact SUV",
-    fuel_or_battery: "39.4 kWh Lithium-ion Battery",
-    range_or_mileage: "456 km (MIDC Certified Range)",
-    key_highlights: [
-      "0-100 km/h in 8.3 seconds (Fastest in Segment)",
-      "Dual 10.25-inch Infotainment & Driver Cluster",
-      "Wireless Android Auto & Apple CarPlay",
-      "Dual-Zone Auto AC with Memory",
-      "50 kW DC Fast Charging"
+    "id": "tvs_x",
+    "name": "TVS X",
+    "tagline": "Electric goes TVS X has arrived Born Of Thrill",
+    "category": "Electric Scooter",
+    "price_range": "₹ 2,66,141",
+    "hero_image": "/uploads/tvs/vehicles/tvs_x.webp",
+    "engine_specs": "11 kW peak power, 4.44 kWh battery",
+    "seating_capacity": "Rider + Pillion",
+    "fuel_or_battery": "Electric (4.44 kWh)",
+    "range_or_mileage": "140 km IDC range",
+    "key_highlights": [
+      "All-new TVS Xleton platform with aluminium exposed frame",
+      "Cutting-edge LED headlamps and lean-activated bend lamps",
+      "Expansive tiltable 10.2 inch TFT Panoramic display",
+      "Segment-first regen selection choice",
+      "Smart Hill Hold technology",
+      "Intuitive navigation system with full map view"
     ],
-    usp: "Zippy city electric performance with spacious boot and proven safety.",
-    variants: [
+    "usp": "Crossover of Disciplines with Lean, Mean, Clean Design and expansive tiltable 10.2 inch TFT Panoramic display",
+    "variants": [
       {
-        name: "EL Pro 39.4 kWh FC",
-        price_ex_showroom: "₹19.39 Lakh",
-        engine_or_battery: "150 PS / 39.4 kWh Battery",
-        transmission: "Single-Speed Automatic",
-        key_features: ["456km Range", "7.2kW AC Fast Charger", "Sunroof", "Leatherette Seats"]
+        "name": "TVS X",
+        "price_ex_showroom": "₹ 2,66,141",
+        "engine_or_battery": "4.44 kWh battery, 11 kW peak power",
+        "transmission": "Single-speed",
+        "key_features": [
+          "10.2 inch TFT Panoramic display",
+          "Smart Hill Hold",
+          "Regen selection",
+          "LED headlamps with lean-activated bend lamps",
+          "Aluminium exposed frame"
+        ]
       }
-    ]
-  },
-  {
-    id: "bolero_maxx",
-    name: "Mahindra Bolero Maxx Pik-Up HD",
-    tagline: "The Ultimate Commercial King of Payload & Profitability",
-    category: "Commercial",
-    price_range: "₹8.49 Lakh - ₹10.35 Lakh (Ex-Showroom)",
-    hero_image: "/assets/bolero-camper.png",
-    engine_specs: "2.5L m2Di Diesel (80 PS / 220 Nm)",
-    seating_capacity: "3-Seater Driver & Co-Driver Cabin",
-    fuel_or_battery: "Diesel (5-Speed Manual)",
-    range_or_mileage: "17.2 km/l (ARAI)",
-    key_highlights: [
-      "2000 kg (2.0 Ton) Certified Heavy Duty Payload Capacity",
-      "iMAXX Telematics Connected Fleet Management & Geo-tracking",
-      "Height Adjustable Driver Seat & Digital Cluster",
-      "Heavy Duty 7R16 Tires with Rugged Rigid Axles"
     ],
-    usp: "Highest payload capacity in its class with iMAXX fleet telematics for maximum business ROI.",
-    variants: [
-      {
-        name: "HD 2.0L Diesel",
-        price_ex_showroom: "₹10.35 Lakh",
-        engine_or_battery: "2.5L m2Di Turbo (80 PS)",
-        transmission: "5-Speed Manual",
-        key_features: ["2-Ton Payload", "iMAXX Telematics", "Power Steering", "Rigid Suspension"]
-      }
+    "source_url": "https://www.tvsmotor.com/electric-scooters/tvs-x",
+    "max_power": "11 kW",
+    "fuel_tank_or_battery": "4.44 kWh",
+    "top_speed": "105 Kmph",
+    "riding_modes": [
+      "Xtealth",
+      "Xtride"
+    ],
+    "competitors": [
+      "Ather 450X",
+      "Ola S1 Pro",
+      "Bajaj Chetak",
+      "Vida V1 Pro"
     ]
   }
 ];

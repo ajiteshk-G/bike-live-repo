@@ -23,7 +23,7 @@ import {
   CheckCircle2,
   Sparkles,
   Layers,
-  Car,
+  Bike,
   Globe,
   Palette,
   Loader2,
@@ -211,7 +211,7 @@ export function BrandStudioModal({
         }
         setStatusMessage({
           type: "success",
-          text: `Generated realistic road car design for ${updatedVehicle.name} using Gemini AI!`
+          text: `Generated realistic two-wheeler design for ${updatedVehicle.name} using Gemini AI!`
         });
       }
     } catch (err: any) {
@@ -436,7 +436,7 @@ export function BrandStudioModal({
                   Automated Multi-URL Ingestion & AI Fictional Brand Synthesis
                 </p>
                 <p>
-                  Provide a real automotive brand name with official URLs to scrape, or <strong>leave the URLs blank</strong> for any brand (e.g. <em>Apex Hypercars, CyberMotors, Quantum EV</em>). Gemini will synthesize an imaginative, high-performance vehicle catalog with verified high-resolution images, specifications, and auto-seeded CRM data!
+                  Provide a real two-wheeler brand name with official URLs to scrape (e.g. <em>https://www.tvsmotor.com/</em>, <em>https://www.heromotocorp.com/en-in.html</em>), or <strong>leave the URLs blank</strong> for a fictional brand (e.g. <em>Apex Moto, Volt Riders</em>). Gemini will synthesize a motorcycle &amp; scooter catalog with verified high-resolution images, specifications, and auto-seeded CRM data!
                 </p>
               </div>
 
@@ -446,7 +446,7 @@ export function BrandStudioModal({
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. BMW, Porsche, CyberMotors, Apex Hypercars, Quantum EV"
+                  placeholder="e.g. TVS Motor, Hero MotoCorp, Bajaj Auto, Royal Enfield, Ather Energy"
                   value={newBrandName}
                   onChange={(e) => setNewBrandName(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 shadow-xs"
@@ -463,7 +463,7 @@ export function BrandStudioModal({
                     <div key={idx} className="flex items-center gap-2">
                       <input
                         type="url"
-                        placeholder="https://brand.com/vehicles (Optional: leave empty for AI generated brand)"
+                        placeholder={idx === 0 ? "e.g. https://www.tvsmotor.com/" : "e.g. https://www.heromotocorp.com/en-in.html"}
                         value={url}
                         onChange={(e) => handleUrlChange(idx, e.target.value)}
                         className="flex-1 px-3.5 py-2 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-indigo-600 shadow-xs"
@@ -598,12 +598,12 @@ export function BrandStudioModal({
                             referrerPolicy="no-referrer"
                             onError={(e) => {
                               e.currentTarget.onerror = null;
-                              e.currentTarget.src = "/assets/placeholder-car.svg";
+                              e.currentTarget.src = "/assets/placeholder-bike.svg";
                             }}
                           />
                         ) : (
                           <div className="w-full h-full flex flex-col items-center justify-center text-slate-400">
-                            <Car className="w-8 h-8 mb-1" />
+                            <Bike className="w-8 h-8 mb-1" />
                             <span className="text-[10px]">No image uploaded</span>
                           </div>
                         )}
@@ -638,7 +638,7 @@ export function BrandStudioModal({
                             ) : (
                               <>
                                 <Sparkles className="w-3.5 h-3.5 text-yellow-300" />
-                                <span>Generate Realistic AI Car</span>
+                                <span>Generate Realistic AI Bike</span>
                               </>
                             )}
                           </button>

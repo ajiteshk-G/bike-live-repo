@@ -1,5 +1,5 @@
 """
-Omnichannel Notification Service for Mahindra Virtual Showroom & Test Drive Bookings.
+Omnichannel Notification Service for the Two-Wheeler Virtual Showroom & Test Ride Bookings.
 Sends live SMS via Twilio API immediately upon test ride confirmation.
 """
 
@@ -11,6 +11,17 @@ import httpx
 from app.config import settings
 
 logger = logging.getLogger(__name__)
+
+
+def _active_brand_label() -> str:
+    """Display name of the active two-wheeler brand for customer-facing SMS text."""
+    try:
+        import re
+        from app.services.brand_service import BrandService
+        name = BrandService.get_active_brand().name
+        return re.sub(r"\s*\(.*?\)", "", name).strip() or "your dealership"
+    except Exception:
+        return "your dealership"
 
 # Cached secrets
 _TWILIO_CACHE: Dict[str, Optional[str]] = {
@@ -89,6 +100,7 @@ class NotificationService:
         from_phone = creds.get("phone_number") or "+13369154920"
 
         formatted_phone = clean_recipient_phone(customer_phone)
+        brand_label = _active_brand_label()
 
         address_line = (
             f"📍 Doorstep Address: {delivery_address} (PIN: {pin_code})"
@@ -97,15 +109,16 @@ class NotificationService:
         )
 
         message_body = (
-            f"🚗 Namaste {customer_name}! Your Mahindra Test Ride is CONFIRMED.\n\n"
+            f"🏍️ Namaste {customer_name}! Your {brand_label} Test Ride is CONFIRMED.\n\n"
             f"📋 Booking ID: {booking_reference}\n"
-            f"🚘 Vehicle: {vehicle_name}\n"
+            f"🏍️ Model: {vehicle_name}\n"
             f"⚙️ Variant: {variant}\n"
             f"🗓️ Date & Slot: {slot_date} at {slot_time}\n"
             f"🏢 Dealership: {dealership_name}\n"
             f"{address_line}\n"
-            f"👨‍💼 Specialist: {sales_advisor_name}\n\n"
-            f"Thank you for choosing Mahindra & Mahindra!"
+            f"👨‍💼 Specialist: {sales_advisor_name}\n"
+            f"🪖 Please carry your driving licence (MCWG) and a helmet.\n\n"
+            f"Thank you for choosing {brand_label}!"
         )
 
         result: Dict[str, Any] = {

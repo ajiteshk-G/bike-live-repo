@@ -36,7 +36,7 @@ def clean_name(name_str: Optional[str]) -> str:
 
 def make_customer_id(name: str, phone: str, brand_id: str) -> str:
     """Generates a deterministic customer_id combining Brand + Normalized Name + Phone."""
-    b_prefix = (brand_id or "mah").upper()[:3]
+    b_prefix = (brand_id or DEFAULT_BRAND_ID).upper()[:3]
     norm_n = clean_name(name)
     name_slug = re.sub(r"[^A-Z0-9]", "", norm_n.upper())[:12] or "USER"
     digits = re.sub(r"\D", "", str(phone or ""))
@@ -44,6 +44,15 @@ def make_customer_id(name: str, phone: str, brand_id: str) -> str:
     return f"CUST-{b_prefix}-{name_slug}-{phone_slug}"
 
 from app.services.brand_service import BrandService
+
+DEFAULT_BRAND_ID = "tvs"
+# Flagship model per two-wheeler brand, used only as a neutral default interest.
+BRAND_DEFAULT_VEHICLE = {
+    "tvs": "tvs_apache_rtr_160_4v",
+    "hero_motocorp": "hero_motocorp_splendor",
+}
+DEFAULT_VEHICLE_ID = BRAND_DEFAULT_VEHICLE[DEFAULT_BRAND_ID]
+DEFAULT_BUDGET_RANGE = "₹80,000 – ₹1,50,000"
 
 def resolve_brand(brand_id: Optional[str] = None) -> str:
     if brand_id and brand_id.strip():
@@ -54,45 +63,196 @@ def resolve_brand(brand_id: Optional[str] = None) -> str:
             return active.id.lower()
     except Exception:
         pass
-    return "mahindra"
+    return DEFAULT_BRAND_ID
 
+def default_vehicle_for_brand(brand_id: Optional[str]) -> str:
+    """Returns the brand's flagship vehicle id (first catalog vehicle if not in the static map)."""
+    b_id = (brand_id or DEFAULT_BRAND_ID).lower()
+    if b_id in BRAND_DEFAULT_VEHICLE:
+        return BRAND_DEFAULT_VEHICLE[b_id]
+    try:
+        brand = BrandService.get_brand(b_id)
+        if brand and brand.vehicles:
+            return brand.vehicles[0].id
+    except Exception:
+        pass
+    return DEFAULT_VEHICLE_ID
+
+# Static fallback (name, ex-showroom price band) for two-wheeler models. Live catalog values
+# from BrandService take precedence via lookup_vehicle_price().
 VEHICLE_PRICE_MAP = {
-    "thar_roxx": ("Mahindra Thar ROXX", "₹12.99 Lakh – ₹22.49 Lakh"),
-    "xuv700": ("Mahindra XUV700", "₹13.99 Lakh – ₹26.99 Lakh"),
-    "scorpio_n": ("Mahindra Scorpio-N", "₹13.85 Lakh – ₹24.54 Lakh"),
-    "xuv_3xo": ("Mahindra XUV 3XO", "₹7.79 Lakh – ₹15.49 Lakh"),
-    "be_6": ("Mahindra BE 6", "₹18.90 Lakh – ₹26.90 Lakh"),
-    "xev_9e": ("Mahindra XEV 9e", "₹21.90 Lakh – ₹30.50 Lakh"),
-    "bolero_neo": ("Mahindra Bolero Neo", "₹9.95 Lakh – ₹12.15 Lakh"),
-    "xuv400": ("Mahindra XUV400 EV", "₹15.49 Lakh – ₹19.39 Lakh"),
-    "bmw_x5": ("BMW X5", "₹96.00 Lakh – ₹1.09 Crore"),
-    "creta": ("Hyundai Creta", "₹11.00 Lakh – ₹20.15 Lakh"),
-    "grand_vitara": ("Maruti Suzuki Grand Vitara", "₹10.99 Lakh – ₹20.09 Lakh"),
+    # TVS Motor
+    "tvs_apache_rtr_160_4v": ("TVS Apache RTR 160 4V", "₹1,14,390 – ₹1,44,690"),
+    "tvs_apache_rtr_200_4v": ("TVS Apache RTR 200 4V", "₹1,48,240 – ₹1,53,290"),
+    "tvs_apache_rtr_310": ("TVS Apache RTR 310", "₹2,42,990 – ₹2,63,990"),
+    "tvs_apache_rr_310": ("TVS Apache RR 310", "₹2,79,000"),
+    "tvs_ronin_225": ("TVS Ronin", "₹1,49,200 – ₹1,72,700"),
+    "tvs_raider_125_igo": ("TVS Raider 125 iGO", "₹95,219 – ₹1,02,735"),
+    "tvs_radeon": ("TVS Radeon", "₹62,405 – ₹95,954"),
+    "tvs_star_city_plus": ("TVS Star City+", "₹69,600 – ₹79,600"),
+    "tvs_sport": ("TVS Sport", "₹66,358 – ₹68,516"),
+    "tvs_jupiter_disc_smartxonnect": ("TVS Jupiter Disc SmartXonnect", "₹90,441 – ₹91,591"),
+    "tvs_jupiter_125_smartxonnect": ("TVS Jupiter 125 SmartXonnect", "₹89,935"),
+    "tvs_ntorq": ("TVS Ntorq", "₹84,000 – ₹95,000"),
+    "tvs_zest_110": ("TVS Zest 110", "₹65,450 – ₹82,549"),
+    "tvs_orbiter": ("TVS Orbiter", "₹1,03,650 – ₹1,06,804"),
+    "tvs_iqube": ("TVS iQube", "₹94,434 – ₹1,58,834"),
+    "tvs_x": ("TVS X", "₹2,66,141"),
+    # Hero MotoCorp
+    "hero_motocorp_splendor": ("Hero Splendor+", "₹75,141 – ₹77,988"),
+    "hero_motocorp_super_splendor_xtec": ("Hero Super Splendor XTEC", "₹84,448 – ₹85,844"),
+    "hero_motocorp_hf_deluxe": ("Hero HF Deluxe", "₹62,002 – ₹68,522"),
+    "hero_motocorp_passion_plus": ("Hero Passion Plus", "₹76,941 – ₹78,324"),
+    "hero_motocorp_glamour_x": ("Hero Glamour X", "₹87,998 – ₹91,998"),
+    "hero_motocorp_xtreme_125r": ("Hero Xtreme 125R", "₹92,500 – ₹1,04,500"),
+    "hero_motocorp_xtreme_160r_4v": ("Hero Xtreme 160R 4V", "₹1,27,300 – ₹1,32,800"),
+    "hero_motocorp_xpulse_210": ("Hero Xpulse 210", "₹1,40,000"),
+    "hero_motocorp_xpulse_200_4v": ("Hero Xpulse 200 4V", "₹1,47,000 – ₹1,54,797"),
+    "hero_motocorp_karizma_xmr": ("Hero Karizma XMR", "₹1,84,144 – ₹1,85,757"),
+    "hero_motocorp_destini_125": ("Hero Destini 125", "₹75,838 – ₹84,919"),
+    "hero_motocorp_pleasure_plus_xtec": ("Hero Pleasure Plus XTEC", "₹69,766 – ₹75,712"),
+    "hero_motocorp_xoom": ("Hero Xoom", "₹72,351 – ₹77,283"),
+    "hero_motocorp_xoom_125": ("Hero Xoom 125", "₹80,494 – ₹86,025"),
+    "hero_motocorp_xoom_160": ("Hero Xoom 160", "₹1,20,000"),
 }
 
+def lookup_vehicle_price(vehicle_id: Optional[str]) -> Tuple[str, str]:
+    """(display name, price band) for a vehicle id; live brand catalogs first, then static map."""
+    vid = (vehicle_id or "").lower()
+    try:
+        for summary in BrandService.list_brands():
+            brand = BrandService.get_brand(summary.id)
+            for v in (brand.vehicles if brand else []):
+                if v.id.lower() == vid:
+                    return (v.name, v.price_range or DEFAULT_BUDGET_RANGE)
+    except Exception:
+        pass
+    if vid in VEHICLE_PRICE_MAP:
+        return VEHICLE_PRICE_MAP[vid]
+    return (vid.replace("_", " ").title() if vid else "Two-Wheeler", DEFAULT_BUDGET_RANGE)
+
 FEATURE_PATTERNS = [
-    (r"\b(panoramic|skyroof|sunroof|moonroof)\b", "Panoramic Skyroof / Sunroof"),
-    (r"\b(adas|autonomous|lane\s*keep|adaptive\s*cruise|smart\s*pilot|collision)\b", "Level 2 ADAS Suite"),
-    (r"\b(4x4|4wd|off[\s-]*road|m_ld|crawl\s*smart|intelliturn|terrain|4xplor)\b", "4x4 Off-Road & Terrain Modes"),
-    (r"\b(harman|kardon|dolby|atmos|speaker|music\s*system|sound|audio)\b", "Harman Kardon / Premium 3D Audio"),
-    (r"\b(360|camera|blind\s*view|parking\s*sensor|surround\s*view)\b", "360° Surround View Camera"),
-    (r"\b(ventilated|cooled\s*seat|leatherette|ergonomic|power\s*seat|rear\s*seat|legroom|comfort|space|boot)\b", "Ventilated Seats & Cabin Comfort"),
-    (r"\b(safety|ncap|5[\s-]*star|airbag|esp|disc\s*brake)\b", "5-Star Safety & 6 Airbags"),
-    (r"\b(diesel|petrol|mstallion|mhawk|torque|bhp|power|automatic|manual|gearbox|transmission)\b", "Engine Performance & AT/MT Powertrain"),
-    (r"\b(mileage|fuel|average|kmpl|range|battery|charging|ev)\b", "Mileage / Driving Range"),
-    (r"\b(screen|display|adrenox|cockpit|carplay|android\s*auto|infotainment|digital\s*cluster)\b", "Twin HD Digital Cockpit & AdrenoX"),
-    (r"\b(suspension|fsd|ride\s*quality|watts\s*link|handling|damping)\b", "Frequency Selective Damping (FSD) Suspension"),
-    (r"\b(emi|loan|finance|down\s*payment|interest\s*rate|on[\s-]*road|price|cost|discount)\b", "On-Road Pricing & EMI Finance"),
+    (r"\b(abs|dual[\s-]*channel|single[\s-]*channel|disc\s*brake|braking|brakes?|rlp|panic\s*brake)\b", "ABS & Braking Confidence"),
+    (r"\b(pickup|pick[\s-]*up|acceleration|0[\s-]*60|torque|bhp|ps\b|power|cc\b|engine|refinement|vibration)\b", "Engine Pickup & Acceleration"),
+    (r"\b(handling|cornering|corners?|lean|chassis|agile|traffic|filtering|flickable)\b", "Handling & Cornering"),
+    (r"\b(suspension|usd|upside[\s-]*down|mono[\s-]*shock|telescopic|potholes?|ride\s*quality|bumps?)\b", "Suspension & Ride Quality"),
+    (r"\b(seat\s*height|height|reach|flat[\s-]*foot|short\s*rider|tall|ergonomic|riding\s*posture|posture|kerb\s*weight|weight|heavy|light)\b", "Seat Height & Rider Fit"),
+    (r"\b(pillion|wife|husband|family|back\s*seat|grab\s*rail|two[\s-]*up)\b", "Pillion Comfort"),
+    (r"\b(mileage|kmpl|km/l|average|fuel|tank|range|battery|charging|charger|ev|electric)\b", "Mileage / Range & Charging"),
+    (r"\b(riding\s*modes?|sport\s*mode|rain\s*mode|urban\s*mode|eco\s*mode|power\s*mode|traction|slipper\s*clutch|quickshifter|cruise)\b", "Riding Modes & Rider Aids"),
+    (r"\b(tft|smartxonnect|bluetooth|connected|navigation|turn[\s-]*by[\s-]*turn|map|app|console|cluster|display|call\s*alert)\b", "TFT Display & Bluetooth Connectivity"),
+    (r"\b(helmet|safety|visibility|led|headlamp|projector|drl|side[\s-]*stand)\b", "Safety, Helmet & LED Lighting"),
+    (r"\b(under[\s-]*seat|storage|boot|usb|charging\s*port|type[\s-]*c|floorboard|practical)\b", "Storage & Practicality"),
+    (r"\b(emi|loan|finance|down\s*payment|interest\s*rate|on[\s-]*road|price|cost|discount|exchange|insurance)\b", "On-Road Pricing & Two-Wheeler EMI"),
 ]
+
+# (vehicle_id, display name, regex) for two-wheeler models commonly discussed in the showroom.
+BIKE_PATTERNS = [
+    ("tvs_apache_rtr_160_4v", "TVS Apache RTR 160 4V", r"\b(apache\s*rtr\s*160|rtr\s*160|apache\s*160)\b"),
+    ("tvs_apache_rtr_200_4v", "TVS Apache RTR 200 4V", r"\b(apache\s*rtr\s*200|rtr\s*200|apache\s*200)\b"),
+    ("tvs_apache_rtr_310", "TVS Apache RTR 310", r"\b(apache\s*rtr\s*310|rtr\s*310|rtr310)\b"),
+    ("tvs_apache_rr_310", "TVS Apache RR 310", r"\b(apache\s*rr\s*310|rr\s*310|rr310)\b"),
+    ("tvs_ronin_225", "TVS Ronin", r"\b(ronin)\b"),
+    ("tvs_raider_125_igo", "TVS Raider 125 iGO", r"\b(raider)\b"),
+    ("tvs_radeon", "TVS Radeon", r"\b(radeon)\b"),
+    ("tvs_star_city_plus", "TVS Star City+", r"\b(star\s*city)\b"),
+    ("tvs_jupiter_125_smartxonnect", "TVS Jupiter 125 SmartXonnect", r"\b(jupiter\s*125)\b"),
+    ("tvs_jupiter_disc_smartxonnect", "TVS Jupiter Disc SmartXonnect", r"\b(jupiter(?!\s*125))\b"),
+    ("tvs_ntorq", "TVS Ntorq", r"\b(ntorq|n\s*torq)\b"),
+    ("tvs_orbiter", "TVS Orbiter", r"\b(orbiter)\b"),
+    ("tvs_zest_110", "TVS Zest 110", r"\b(zest|scooty)\b"),
+    ("tvs_iqube", "TVS iQube", r"\b(iqube|i\s*qube)\b"),
+    ("tvs_x", "TVS X", r"\b(tvs\s*x)\b"),
+    ("hero_motocorp_super_splendor_xtec", "Hero Super Splendor XTEC", r"\b(super\s*splendor)\b"),
+    ("hero_motocorp_splendor", "Hero Splendor+", r"\b(splendor(?!\s*xtec)|splendor\s*plus)\b"),
+    ("hero_motocorp_hf_deluxe", "Hero HF Deluxe", r"\b(hf\s*deluxe|hf\s*100)\b"),
+    ("hero_motocorp_passion_plus", "Hero Passion Plus", r"\b(passion)\b"),
+    ("hero_motocorp_glamour_x", "Hero Glamour X", r"\b(glamour)\b"),
+    ("hero_motocorp_xtreme_125r", "Hero Xtreme 125R", r"\b(xtreme\s*125)\b"),
+    ("hero_motocorp_xtreme_160r_4v", "Hero Xtreme 160R 4V", r"\b(xtreme\s*160)\b"),
+    ("hero_motocorp_xpulse_210", "Hero Xpulse 210", r"\b(x\s*pulse\s*210)\b"),
+    ("hero_motocorp_xpulse_200_4v", "Hero Xpulse 200 4V", r"\b(x\s*pulse(?!\s*210))\b"),
+    ("hero_motocorp_karizma_xmr", "Hero Karizma XMR", r"\b(karizma|xmr)\b"),
+    ("hero_motocorp_destini_125", "Hero Destini 125", r"\b(destini)\b"),
+    ("hero_motocorp_pleasure_plus_xtec", "Hero Pleasure Plus XTEC", r"\b(pleasure)\b"),
+    ("hero_motocorp_xoom_160", "Hero Xoom 160", r"\b(xoom\s*160)\b"),
+    ("hero_motocorp_xoom_125", "Hero Xoom 125", r"\b(xoom\s*125)\b"),
+    ("hero_motocorp_xoom", "Hero Xoom", r"\b(xoom(?!\s*1[26]\d))\b"),
+]
+
+def _catalog_vehicle_patterns() -> List[Tuple[str, str, str]]:
+    """Builds name-matching patterns from the live brand catalogs so crawled ids resolve exactly."""
+    patterns: List[Tuple[str, str, str]] = []
+    try:
+        for summary in BrandService.list_brands():
+            brand = BrandService.get_brand(summary.id)
+            for v in (brand.vehicles if brand else []):
+                short = re.sub(r"^(tvs|hero|hero motocorp)\s+", "", v.name.strip(), flags=re.IGNORECASE)
+                short = re.sub(r"\s*\(.*?\)", "", short).strip()
+                if len(short) >= 3:
+                    patterns.append((v.id, v.name, r"\b" + re.escape(short.lower()).replace("\\ ", r"\s*") + r"\b"))
+    except Exception:
+        pass
+    # Longer names first so "Apache RTR 200 4V" wins over "Apache".
+    patterns.sort(key=lambda x: -len(x[2]))
+    return patterns
+
+def _parse_rupee_amount(num: str, unit: str) -> Optional[int]:
+    """Converts '1.2' + 'lakh' / '85' + 'k' / '85000' + '' into rupees."""
+    try:
+        val = float(num.replace(",", ""))
+    except ValueError:
+        return None
+    unit = (unit or "").lower()
+    if unit.startswith("l"):
+        return int(val * 100000)
+    if unit in ("k", "thousand", "hazaar", "hazar"):
+        return int(val * 1000)
+    return int(val) if val >= 1000 else None
+
+def _fmt_inr(amount: int) -> str:
+    """Formats rupees in Indian digit grouping, e.g. 125000 -> ₹1,25,000."""
+    s = str(int(amount))
+    if len(s) <= 3:
+        return f"₹{s}"
+    last3, rest = s[-3:], s[:-3]
+    groups = []
+    while len(rest) > 2:
+        groups.insert(0, rest[-2:])
+        rest = rest[:-2]
+    if rest:
+        groups.insert(0, rest)
+    return "₹" + ",".join(groups + [last3])
+
+_AMOUNT = r"(\d+(?:,\d{2,3})*(?:\.\d+)?)\s*(lakhs?|lacs?|l\b|k\b|thousand|hazaa?r)?"
+
+def extract_budget(text: str) -> Optional[str]:
+    """Extracts a two-wheeler budget (typically ₹60k – ₹3L) from free text."""
+    t = (text or "").lower()
+    m = re.search(r"(?:₹|rs\.?\s*)?" + _AMOUNT + r"\s*(?:to|\-|–|and)\s*(?:₹|rs\.?\s*)?" + _AMOUNT, t)
+    if m:
+        unit_hi = m.group(4) or m.group(2) or ""
+        lo = _parse_rupee_amount(m.group(1), m.group(2) or unit_hi)
+        hi = _parse_rupee_amount(m.group(3), unit_hi)
+        if lo and hi and 30000 <= lo <= hi <= 1500000:
+            return f"{_fmt_inr(lo)} – {_fmt_inr(hi)}"
+    m = re.search(r"(?:budget|under|around|upto|up\s*to|within|below|approx|max|₹|rs\.?)\s*(?:is\s*|of\s*|hai\s*)?(?:₹|rs\.?\s*)?" + _AMOUNT, t)
+    if m:
+        val = _parse_rupee_amount(m.group(1), m.group(2) or "")
+        if val and 30000 <= val <= 1500000:
+            low = int(val * 0.85 / 1000) * 1000
+            high = int(val * 1.1 / 1000) * 1000
+            return f"~{_fmt_inr(val)} ({_fmt_inr(low)} – {_fmt_inr(high)} range)"
+    return None
 
 def extract_conversation_intelligence(
     messages: List[Dict[str, Any]],
-    default_vehicle_id: str = "thar_roxx",
+    default_vehicle_id: str = DEFAULT_VEHICLE_ID,
     existing_budget: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     Analyzes conversation messages (both Customer and AI) to extract:
-    - interested_cars: list of vehicle names discussed
+    - interested_cars: list of two-wheeler model names discussed (field name kept for API compatibility)
     - primary_vehicle_id: resolved vehicle_id
     - interested_features: list of specific features customer showed interest in
     - budget: extracted budget or price range discussed
@@ -103,35 +263,20 @@ def extract_conversation_intelligence(
     combined_lower = full_text.lower()
     cust_lower = customer_text.lower()
 
-    # 1. Detect interested car(s)
-    car_patterns = [
-        ("thar_roxx", "Mahindra Thar ROXX", r"\b(thar\s*roxx|roxx|thar\s*5[\s-]*door|thar)\b"),
-        ("xuv700", "Mahindra XUV700", r"\b(xuv\s*700|xuv700|700)\b"),
-        ("scorpio_n", "Mahindra Scorpio-N", r"\b(scorpio[\s-]*n|scorpio)\b"),
-        ("xuv_3xo", "Mahindra XUV 3XO", r"\b(xuv\s*3xo|3xo)\b"),
-        ("be_6", "Mahindra BE 6", r"\b(be\s*6e?|be6)\b"),
-        ("xev_9e", "Mahindra XEV 9e", r"\b(xev\s*9e|xev9e|9e)\b"),
-        ("bolero_neo", "Mahindra Bolero Neo", r"\b(bolero\s*neo|bolero)\b"),
-        ("xuv400", "Mahindra XUV400 EV", r"\b(xuv\s*400|xuv400)\b"),
-        ("bmw_x5", "BMW X5", r"\b(bmw\s*x5|x5)\b"),
-        ("creta", "Hyundai Creta", r"\b(creta)\b"),
-        ("grand_vitara", "Maruti Suzuki Grand Vitara", r"\b(grand\s*vitara|vitara)\b"),
-    ]
-    detected_cars: List[Tuple[str, str]] = []
-    for vid, vname, pat in car_patterns:
-        if re.search(pat, cust_lower, re.IGNORECASE):
-            detected_cars.append((vid, vname))
-    for vid, vname, pat in car_patterns:
-        if re.search(pat, combined_lower, re.IGNORECASE) and all(x[0] != vid for x in detected_cars):
-            detected_cars.append((vid, vname))
+    # 1. Detect interested two-wheeler(s): live catalog names first, then static patterns
+    bike_patterns = _catalog_vehicle_patterns() + BIKE_PATTERNS
+    detected: List[Tuple[str, str]] = []
+    for text_blob in (cust_lower, combined_lower):
+        for vid, vname, pat in bike_patterns:
+            if re.search(pat, text_blob, re.IGNORECASE) and all(x[0] != vid and x[1] != vname for x in detected):
+                detected.append((vid, vname))
 
-    if not detected_cars:
-        fallback_vid = default_vehicle_id or "thar_roxx"
-        fallback_name = VEHICLE_PRICE_MAP.get(fallback_vid, (fallback_vid.replace("_", " ").title(), "₹15 Lakh – ₹25 Lakh"))[0]
-        detected_cars.append((fallback_vid, fallback_name))
+    if not detected:
+        fallback_vid = default_vehicle_id or DEFAULT_VEHICLE_ID
+        detected.append((fallback_vid, lookup_vehicle_price(fallback_vid)[0]))
 
-    primary_vid, primary_vname = detected_cars[0]
-    interested_cars = [c[1] for c in detected_cars]
+    primary_vid, primary_vname = detected[0]
+    interested_cars = [c[1] for c in detected]
 
     # 2. Detect interested features
     features: List[str] = []
@@ -144,30 +289,15 @@ def extract_conversation_intelligence(
             if label not in features and len(features) < 5:
                 features.append(label)
     if not features:
-        features = ["SUV Styling & Road Presence", "Cabin Comfort & Infotainment"]
+        features = ["Styling & Road Presence", "Mileage / Range & Charging"]
 
-    # 3. Extract budget from dialogue
-    budget_str = None
-    m_range = re.search(r"(?:₹|rs\.?\s*)?(\d{1,2}(?:\.\d+)?)\s*(?:to|\-|and)\s*(\d{1,2}(?:\.\d+)?)\s*(?:lakh|lakhs|lac|l\b)", cust_lower, re.IGNORECASE)
-    if not m_range:
-        m_range = re.search(r"(?:₹|rs\.?\s*)?(\d{1,2}(?:\.\d+)?)\s*(?:to|\-|and)\s*(\d{1,2}(?:\.\d+)?)\s*(?:lakh|lakhs|lac|l\b)", combined_lower, re.IGNORECASE)
-    if m_range:
-        budget_str = f"₹{m_range.group(1)} Lakh – ₹{m_range.group(2)} Lakh"
-    else:
-        m_single = re.search(r"(?:budget|under|around|upto|up\s*to|within|below|approx|₹|rs\.?)\s*(?:is\s*|of\s*)?(?:₹|rs\.?\s*)?(\d{1,2}(?:\.\d+)?)\s*(?:lakh|lakhs|lac|l\b)", cust_lower, re.IGNORECASE)
-        if not m_single:
-            m_single = re.search(r"\b(\d{1,2}(?:\.\d+)?)\s*(?:lakh|lakhs|lac)\b", cust_lower, re.IGNORECASE)
-        if m_single:
-            val = float(m_single.group(1))
-            low = max(8, int(val - 2))
-            high = int(val + 2)
-            budget_str = f"~₹{m_single.group(1)} Lakh (₹{low}L – ₹{high}L range)"
-
+    # 3. Extract budget from dialogue (customer turns first)
+    budget_str = extract_budget(cust_lower) or extract_budget(combined_lower)
     if not budget_str:
         if existing_budget and existing_budget not in ("Standard Range", ""):
             budget_str = existing_budget
         else:
-            budget_str = VEHICLE_PRICE_MAP.get(primary_vid, ("", "₹15.00 Lakh – ₹24.50 Lakh"))[1]
+            budget_str = lookup_vehicle_price(primary_vid)[1]
 
     feat_short = ", ".join(features[:3])
     cars_short = ", ".join(interested_cars[:2])
@@ -188,7 +318,7 @@ class CustomerService:
         db: AsyncSession,
         phone: str,
         name: Optional[str] = None,
-        vehicle_id: str = "thar_roxx",
+        vehicle_id: Optional[str] = None,
         brand_id: Optional[str] = None
     ) -> Customer:
         """
@@ -262,20 +392,19 @@ class CustomerService:
         if customer:
             return customer
 
-        v_id = vehicle_id or ("bmw_x5" if b_id == "bmw" else "creta" if b_id == "hyundai" else "grand_vitara" if b_id == "maruti_suzuki" else "thar_roxx")
-        default_budget = VEHICLE_PRICE_MAP.get(v_id, ("", "₹15.00 Lakh – ₹22.50 Lakh"))[1]
+        v_id = vehicle_id or default_vehicle_for_brand(b_id)
+        default_budget = lookup_vehicle_price(v_id)[1]
 
         customer = Customer(
             customer_id=cust_slug,
             brand_id=b_id,
             name=norm_name if norm_name else "Valued Customer",
             phone=normalized_phone,
-            email=f"{cust_slug.lower()}@customer.{b_id}.com",
             city="Mumbai",
-            preferred_language="Hinglish" if b_id != "bmw" else "English",
+            preferred_language="Hinglish",
             current_phase="PRE_SALES",
             interested_vehicle_id=v_id,
-            interested_variant="AX7L Diesel AT 4x4" if v_id == "thar_roxx" else "Official Edition",
+            interested_variant=None,
             budget_range=default_budget,
             kyc_status="PENDING"
         )
@@ -290,17 +419,20 @@ class CustomerService:
         phone: Optional[str] = None,
         name: Optional[str] = None,
         brand_id: Optional[str] = None
-    ) -> Customer:
-        """Retrieves default customer for the specified brand or entered phone."""
+    ) -> Optional[Customer]:
+        """Returns the customer for an entered phone, else the most recent REAL customer of the brand.
+
+        Never fabricates identities / PII: when no phone is supplied and the brand has no
+        customers yet, returns None and callers must respond with 404 / empty payloads.
+        """
         b_id = resolve_brand(brand_id)
         if phone:
             return await CustomerService.get_or_create_customer_by_phone(db, phone=phone, name=name, brand_id=b_id)
 
-        # Lookup brand-specific default customer
         stmt = (
             select(Customer)
             .where(Customer.brand_id == b_id)
-            .order_by(Customer.id.asc())
+            .order_by(Customer.updated_at.desc(), Customer.id.desc())
             .options(
                 selectinload(Customer.sessions).selectinload(ConversationSession.transcripts),
                 selectinload(Customer.interactions),
@@ -309,171 +441,7 @@ class CustomerService:
             )
         )
         result = await db.execute(stmt)
-        customer = result.scalars().first()
-        
-        if not customer:
-            # Fallback creation for that brand
-            if b_id == "bmw":
-                customer = Customer(
-                    customer_id="CUST-BMW-98201",
-                    brand_id="bmw",
-                    name="Vikram Malhotra",
-                    phone="+919820199001",
-                    email="vikram.malhotra@luxurycorp.com",
-                    city="Mumbai",
-                    preferred_language="English",
-                    current_phase="PRE_SALES",
-                    interested_vehicle_id="bmw_x5",
-                    interested_variant="xDrive40i M Sport",
-                    budget_range="₹95 Lakh - ₹1.10 Crore",
-                    loan_preapproval_amount=7500000,
-                    loan_interest_rate="7.90%",
-                    loan_status="PRE_APPROVED",
-                    owned_vin="WBA31AY0098201BMW",
-                    owned_vehicle_name="BMW 3 Series 330Li M Sport",
-                    registration_number="MH 01 DX 3300",
-                    odometer_km=14200,
-                    insurance_policy_number="POL-BAJAJ-BMW-2026-9901",
-                    insurance_type="BMW Secure Advanced Comprehensive",
-                    pan_number="BAPVM9901L",
-                    aadhaar_masked="XXXX-XXXX-9901",
-                    kyc_status="VERIFIED"
-                )
-            elif b_id == "hyundai":
-                customer = Customer(
-                    customer_id="CUST-HYU-98201",
-                    brand_id="hyundai",
-                    name="Arjun Reddy",
-                    phone="+919820199002",
-                    email="arjun.reddy@techsol.in",
-                    city="Mumbai",
-                    preferred_language="Hinglish",
-                    current_phase="PRE_SALES",
-                    interested_vehicle_id="creta",
-                    interested_variant="SX (O) 1.5 Turbo Petrol DCT",
-                    budget_range="₹18 Lakh - ₹22 Lakh",
-                    loan_preapproval_amount=1650000,
-                    loan_interest_rate="8.25%",
-                    loan_status="PRE_APPROVED",
-                    owned_vin="MAL1HYU2026CRETA01",
-                    owned_vehicle_name="Hyundai Venue SX 1.0 Turbo",
-                    registration_number="MH 02 ER 8820",
-                    odometer_km=21000,
-                    insurance_policy_number="POL-HDFC-HYU-2026-5501",
-                    insurance_type="Zero Depreciation Return-to-Invoice",
-                    pan_number="ARJPR4401P",
-                    aadhaar_masked="XXXX-XXXX-4401",
-                    kyc_status="VERIFIED"
-                )
-            elif b_id == "maruti_suzuki":
-                customer = Customer(
-                    customer_id="CUST-MAR-98201",
-                    brand_id="maruti_suzuki",
-                    name="Manish Patel",
-                    phone="+919820199003",
-                    email="manish.patel@patelauto.com",
-                    city="Mumbai",
-                    preferred_language="Hinglish",
-                    current_phase="PRE_SALES",
-                    interested_vehicle_id="grand_vitara",
-                    interested_variant="Alpha+ Intelligent Electric Hybrid e-CVT",
-                    budget_range="₹16 Lakh - ₹21 Lakh",
-                    loan_preapproval_amount=1700000,
-                    loan_interest_rate="8.10%",
-                    loan_status="PRE_APPROVED",
-                    owned_vin="MAR1MSIL2026GV001",
-                    owned_vehicle_name="Maruti Suzuki Baleno Alpha",
-                    registration_number="MH 03 BT 5511",
-                    odometer_km=34000,
-                    insurance_policy_number="POL-MARUTI-INS-2026-3301",
-                    insurance_type="Maruti Suzuki Genuine Insurance Zero-Dep",
-                    pan_number="MPTMP1101M",
-                    aadhaar_masked="XXXX-XXXX-1101",
-                    kyc_status="VERIFIED"
-                )
-            else:
-                customer = Customer(
-                    customer_id="CUST-9820155432",
-                    brand_id="mahindra",
-                    name="Aarav Sharma",
-                    phone="+919820155432",
-                    email="aarav.sharma@example.com",
-                    city="Mumbai",
-                    preferred_language="Hinglish",
-                    current_phase="PRE_SALES",
-                    interested_vehicle_id="thar_roxx",
-                    interested_variant="AX7L Diesel AT 4x4",
-                    budget_range="₹18 Lakh - ₹25 Lakh",
-                    pan_number="ABCPS1234K",
-                    aadhaar_masked="XXXX-XXXX-8921",
-                    kyc_status="VERIFIED",
-                    loan_preapproval_amount=1850000,
-                    loan_interest_rate="8.15%",
-                    loan_status="PROVISIONALLY_APPROVED",
-                    owned_vin="MAH1THARROXX2026MUM01",
-                    owned_vehicle_name="Mahindra Thar ROXX AX7L Diesel AT 4x4",
-                    registration_number="MH 02 FJ 9090",
-                    odometer_km=9820,
-                    insurance_policy_number="POL-ICICI-MH-2026-99201",
-                    insurance_type="Zero-Depreciation Comprehensive"
-                )
-            db.add(customer)
-            await db.commit()
-            await db.refresh(customer)
-        
-        if not customer:
-            customer = Customer(
-                customer_id="CUST-9820155432",
-                name="Aarav Sharma",
-                phone="+919820155432",
-                email="aarav.sharma@example.com",
-                city="Mumbai",
-                preferred_language="Hinglish",
-                current_phase="PRE_SALES",
-                interested_vehicle_id="thar_roxx",
-                interested_variant="AX7L Diesel AT 4x4",
-                budget_range="₹18 Lakh - ₹25 Lakh",
-                pan_number="ABCPS1234K",
-                aadhaar_masked="XXXX-XXXX-8921",
-                kyc_status="VERIFIED",
-                kyc_extracted_data={
-                    "full_name": "Aarav Sharma",
-                    "dob": "1990-05-14",
-                    "pan": "ABCPS1234K",
-                    "aadhaar_last4": "8921",
-                    "city": "Mumbai",
-                    "verified_at": "2026-08-24T18:30:00Z"
-                },
-                loan_preapproval_amount=1850000,
-                loan_interest_rate="8.15%",
-                voice_consent_hash="VBC-SHA256-AARAV-98201-LOAN1850K",
-                loan_status="PROVISIONALLY_APPROVED",
-                owned_vin="MAH1THARROXX2026MUM01",
-                owned_vehicle_name="Mahindra Thar ROXX AX7L Diesel AT 4x4",
-                registration_number="MH 02 FJ 9090",
-                odometer_km=9820,
-                insurance_policy_number="POL-ICICI-MH-2026-99201",
-                insurance_type="Zero-Depreciation Comprehensive"
-            )
-            db.add(customer)
-            await db.commit()
-            await db.refresh(customer)
-            
-# Clean default customer without synthetic dummy sessions
-            
-            # Refresh with all eager loads
-            stmt_reload = (
-                select(Customer)
-                .where(Customer.id == customer.id)
-                .options(
-                    selectinload(Customer.sessions).selectinload(ConversationSession.transcripts),
-                    selectinload(Customer.interactions)
-                )
-            )
-            res = await db.execute(stmt_reload)
-            customer = res.scalars().first()
-            
-        return customer
+        return result.scalars().first()
 
     @staticmethod
     async def identify_or_register_customer(
@@ -481,7 +449,7 @@ class CustomerService:
         name: str,
         phone: str,
         session_type: str = "LIVE_CALL",
-        vehicle_id: str = "thar_roxx",
+        vehicle_id: Optional[str] = None,
         brand_id: Optional[str] = None
     ) -> Tuple[Customer, ConversationSession, bool, int]:
         """
@@ -518,18 +486,18 @@ class CustomerService:
             customer.updated_at = datetime.now(timezone.utc)
             await db.commit()
         else:
-            v_id = vehicle_id or ("bmw_x5" if b_id == "bmw" else "creta" if b_id == "hyundai" else "grand_vitara" if b_id == "maruti_suzuki" else "thar_roxx")
-            default_budget = VEHICLE_PRICE_MAP.get(v_id, ("", "₹15.00 Lakh – ₹22.50 Lakh"))[1]
+            v_id = vehicle_id or default_vehicle_for_brand(b_id)
+            default_budget = lookup_vehicle_price(v_id)[1]
             customer = Customer(
                 customer_id=cust_id_slug,
                 brand_id=b_id,
                 name=norm_name,
                 phone=normalized_phone,
                 city="Mumbai",
-                preferred_language="Hinglish" if b_id != "bmw" else "English",
+                preferred_language="Hinglish",
                 current_phase="PRE_SALES",
                 interested_vehicle_id=v_id,
-                interested_variant="AX7L Diesel AT 4x4" if v_id == "thar_roxx" else "Official Variant",
+                interested_variant=None,
                 budget_range=default_budget
             )
             db.add(customer)
@@ -540,7 +508,7 @@ class CustomerService:
         session_code = f"SESS-{datetime.now(timezone.utc).strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}"
         init_intel = extract_conversation_intelligence(
             [],
-            default_vehicle_id=vehicle_id or customer.interested_vehicle_id or "thar_roxx",
+            default_vehicle_id=vehicle_id or customer.interested_vehicle_id or default_vehicle_for_brand(b_id),
             existing_budget=customer.budget_range
         )
         new_session = ConversationSession(
@@ -548,7 +516,7 @@ class CustomerService:
             brand_id=b_id,
             customer_id=customer.id,
             session_type=session_type,
-            vehicle_id=vehicle_id or customer.interested_vehicle_id or "thar_roxx",
+            vehicle_id=vehicle_id or customer.interested_vehicle_id or default_vehicle_for_brand(b_id),
             summary=json.dumps(init_intel)
         )
         db.add(new_session)
@@ -698,7 +666,7 @@ class CustomerService:
                     brand_id=b_id,
                     customer_id=customer.id,
                     session_type="LIVE_CALL" if channel == "VOICE_LIVE" else "CHAT_BOT",
-                    vehicle_id=customer.interested_vehicle_id or "thar_roxx",
+                    vehicle_id=customer.interested_vehicle_id or default_vehicle_for_brand(b_id),
                     summary=f"Virtual Showroom Consultation for {customer.name}"
                 )
                 db.add(sess)
@@ -719,7 +687,7 @@ class CustomerService:
         db.add(log)
         await db.flush()
 
-        # Continuously update conversation intelligence (car, features, budget) on each turn
+        # Continuously update conversation intelligence (two-wheeler, features, budget) on each turn
         if sess:
             logs_res = await db.execute(
                 select(InteractionLog)
@@ -730,7 +698,7 @@ class CustomerService:
             msg_list = [{"speaker": l.speaker, "message": l.message} for l in sess_logs]
             intel = extract_conversation_intelligence(
                 msg_list,
-                default_vehicle_id=sess.vehicle_id or customer.interested_vehicle_id or "thar_roxx",
+                default_vehicle_id=sess.vehicle_id or customer.interested_vehicle_id or default_vehicle_for_brand(b_id),
                 existing_budget=customer.budget_range
             )
             sess.vehicle_id = intel["primary_vehicle_id"]
@@ -770,14 +738,14 @@ class CustomerService:
         customer_id_str: Optional[str] = None,
         customer_name: Optional[str] = None,
         customer_phone: Optional[str] = None,
-        vehicle_id: Optional[str] = "thar_roxx",
+        vehicle_id: Optional[str] = None,
         channel: str = "VOICE_LIVE",
         messages: List[dict] = [],
         brand_id: Optional[str] = None
     ) -> ConversationSession:
         """
         Guarantees full persistence of conversation session and all its transcript turns upon End Call,
-        and extracts Interested Car, Features, and Budget for the Sales Consultant.
+        and extracts Interested Two-Wheeler, Features, and Budget for the Sales Consultant.
         """
         b_id = resolve_brand(brand_id)
         customer = None
@@ -786,7 +754,7 @@ class CustomerService:
                 db,
                 phone=customer_phone,
                 name=customer_name or "Valued Customer",
-                vehicle_id=vehicle_id or "thar_roxx",
+                vehicle_id=vehicle_id or default_vehicle_for_brand(b_id),
                 brand_id=b_id
             )
         elif customer_id_str and customer_id_str != "GUEST-TRANSIENT":
@@ -803,7 +771,7 @@ class CustomerService:
                     brand_id=b_id,
                     customer_id=0,
                     session_type="LIVE_CALL" if channel == "VOICE_LIVE" else "CHAT_BOT",
-                    vehicle_id=vehicle_id or "thar_roxx"
+                    vehicle_id=vehicle_id or default_vehicle_for_brand(b_id)
                 )
 
         stmt = select(ConversationSession).where(ConversationSession.session_id == session_id_str)
@@ -815,7 +783,7 @@ class CustomerService:
                 brand_id=b_id,
                 customer_id=customer.id,
                 session_type="LIVE_CALL" if channel == "VOICE_LIVE" else "CHAT_BOT",
-                vehicle_id=vehicle_id or customer.interested_vehicle_id or "thar_roxx",
+                vehicle_id=vehicle_id or customer.interested_vehicle_id or default_vehicle_for_brand(b_id),
                 summary=f"Virtual Showroom Consultation for {customer.name}"
             )
             db.add(sess)
@@ -854,18 +822,18 @@ class CustomerService:
 
         sess.ended_at = datetime.now(timezone.utc)
         
-        # Extract Car, Features, and Budget intelligence from the complete session dialogue
+        # Extract Two-Wheeler, Features, and Budget intelligence from the complete session dialogue
         all_turn_dicts = [{"speaker": l.speaker, "message": l.message} for l in existing_logs]
         intel = extract_conversation_intelligence(
             all_turn_dicts,
-            default_vehicle_id=vehicle_id or sess.vehicle_id or customer.interested_vehicle_id or "thar_roxx",
+            default_vehicle_id=vehicle_id or sess.vehicle_id or customer.interested_vehicle_id or default_vehicle_for_brand(b_id),
             existing_budget=customer.budget_range
         )
         sess.vehicle_id = intel["primary_vehicle_id"]
         sess.summary = json.dumps(intel)
         db.add(sess)
 
-        # Update Customer profile with latest interested car, budget, and checklist
+        # Update Customer profile with latest interested two-wheeler, budget, and checklist
         from app.services.checklist_service import ChecklistService
         from app.models.booking import TestDriveBooking
         from sqlalchemy.orm.attributes import flag_modified
@@ -889,7 +857,7 @@ class CustomerService:
         flag_modified(customer, "advisor_checklist")
         db.add(customer)
 
-        # Update any active test drive bookings for this customer
+        # Update any active test-ride bookings for this customer
         booking_stmt = select(TestDriveBooking).where(TestDriveBooking.customer_id == customer.id)
         b_res = await db.execute(booking_stmt)
         for b in b_res.scalars().all():

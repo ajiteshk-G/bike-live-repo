@@ -2,7 +2,7 @@ import os
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "Mahindra Intelligent Assistant (MIA) with Kabir AI"
+    PROJECT_NAME: str = os.getenv("PROJECT_NAME", "Two-Wheeler Intelligent Assistant with Kavya AI")
     API_V1_STR: str = "/api"
     VERTEX_PROJECT_ID: str = os.getenv("VERTEX_PROJECT_ID", os.getenv("PROJECT_ID", "mb-poc-352009"))
     VERTEX_LOCATION: str = os.getenv("VERTEX_LOCATION", os.getenv("LOCATION", "us-central1"))
@@ -17,12 +17,12 @@ class Settings(BaseSettings):
     AVATAR_VOICE: str = os.getenv("AVATAR_VOICE", "Aoede") # Voice for Kavya (Female Indian AI Specialist)
     AVATAR_NAME: str = os.getenv("AVATAR_NAME", "Kavya")
     AVATAR_MODALITY: str = os.getenv("AVATAR_MODALITY", "AUDIO") # Real-time native live audio stream
-    DEFAULT_LOCALE: str = os.getenv("DEFAULT_LOCALE", "hi-IN") # Multilingual
+    DEFAULT_LOCALE: str = os.getenv("DEFAULT_LOCALE", "en-IN") # Multilingual (English-India default, Hinglish supported)
     
     DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///data/auto.db")
     GCS_RECORDINGS_BUCKET: str = os.getenv("GCS_RECORDINGS_BUCKET", os.getenv("GCS_BUCKET", "mb-poc-352009-sales-recordings"))
     WS_LIVE_AUDIO_PATH: str = "/ws/live-audio"
-    DEFAULT_DEALERSHIP: str = "Bayview Mahindra, Bandra West, Mumbai"    
+    DEFAULT_DEALERSHIP: str = os.getenv("DEFAULT_DEALERSHIP", "Authorised Two-Wheeler Dealership, Mumbai")
     
     # SMS Dispatch Configuration (Configurable via Cloud Run environment variable)
     ENABLE_SMS_DISPATCH: bool = os.getenv("ENABLE_SMS_DISPATCH", "true").lower() in ("true", "1", "yes")

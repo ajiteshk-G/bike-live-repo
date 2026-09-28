@@ -41,7 +41,7 @@ class ClaimSubmissionRequest(BaseModel):
     incident_description: str
     detected_damages: List[str]
     oem_part_number: str
-    workshop_name: str = "Bayview Mahindra Workshop"
+    workshop_name: str = "Authorised Two-Wheeler Service Workshop"
 
 class ClaimSubmissionResponse(BaseModel):
     id: int

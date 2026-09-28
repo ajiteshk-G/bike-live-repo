@@ -26,21 +26,21 @@ async def identify_or_register_customer(req: CustomerIdentifyRequest, db: AsyncS
     with distinct ConversationSession and InteractionLog rows, partitioned by brand_id.
     """
     active_b = BrandService.get_brand(req.brand_id) if req.brand_id else BrandService.get_active_brand()
-    brand_display_name = active_b.name.replace("(Official Catalog)", "").replace("(Web Scraped)", "").strip() if active_b else "Automotive"
+    brand_display_name = active_b.name.replace("(Official Catalog)", "").replace("(Web Scraped)", "").strip() if active_b else "Two-Wheeler"
 
     customer, session, is_returning, total_sessions = await CustomerService.identify_or_register_customer(
         db,
         name=req.name,
         phone=req.phone,
         session_type=req.session_type,
-        vehicle_id=req.vehicle_id or (active_b.vehicles[0].id if active_b and active_b.vehicles else "thar_roxx"),
+        vehicle_id=req.vehicle_id or (active_b.vehicles[0].id if active_b and active_b.vehicles else None),
         brand_id=req.brand_id
     )
     
     greeting = (
         f"Namaste {customer.name}! Welcome back to {brand_display_name}. Continuing your exploration of {session.vehicle_id.replace('_', ' ').title()}?"
         if is_returning
-        else f"Namaste {customer.name}! Welcome to {brand_display_name}. Which vehicle can I help you explore today?"
+        else f"Namaste {customer.name}! Welcome to {brand_display_name}. Which motorcycle or scooter can I help you explore today?"
     )
 
     return CustomerIdentifyResponse(
@@ -84,27 +84,27 @@ async def list_customer_sessions(
 async def get_customer_profile(
     customer_id: Optional[str] = None,
     phone: Optional[str] = None,
-    brand_id: Optional[str] = Query(None, description="Active brand ID, e.g. bmw, hyundai, maruti_suzuki, mahindra"),
+    brand_id: Optional[str] = Query(None, description="Active brand ID, e.g. tvs, hero_motocorp"),
     db: AsyncSession = Depends(get_db)
 ):
     customer = None
     if phone:
         customer = await CustomerService.get_customer_by_phone(db, phone, brand_id=brand_id)
-    elif customer_id and customer_id != "CUST-9820155432":
-        customer = await CustomerService.get_customer_by_id(db, customer_id, brand_id=brand_id)
+    elif customer_id:
+        customer = await CustomerService.get_customer_by_id(db, customer_id, brand_id=brand_id) if customer_id else None
     return customer
 
 @router.patch("/profile", response_model=CustomerProfileResponse)
 async def update_customer(
     req: CustomerProfileUpdate,
-    customer_id: str = "CUST-9820155432",
+    customer_id: Optional[str] = Query(None, description="Customer ID returned by /customer/identify"),
     brand_id: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db)
 ):
-    customer = await CustomerService.get_customer_by_id(db, customer_id, brand_id=brand_id)
+    customer = await CustomerService.get_customer_by_id(db, customer_id, brand_id=brand_id) if customer_id else None
     if not customer:
-        customer = await CustomerService.get_or_create_default_customer(db, brand_id=brand_id)
-    
+        raise HTTPException(status_code=404, detail="Customer not found. Identify the customer (name + phone) first.")
+
     update_data = req.model_dump(exclude_unset=True)
     for k, v in update_data.items():
         setattr(customer, k, v)
@@ -116,13 +116,13 @@ async def update_customer(
 @router.post("/update-phase")
 async def update_customer_phase_endpoint(
     phase: str,
-    customer_id: str = "CUST-9820155432",
+    customer_id: Optional[str] = Query(None, description="Customer ID returned by /customer/identify"),
     brand_id: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db)
 ):
-    customer = await CustomerService.get_customer_by_id(db, customer_id, brand_id=brand_id)
+    customer = await CustomerService.get_customer_by_id(db, customer_id, brand_id=brand_id) if customer_id else None
     if not customer:
-        customer = await CustomerService.get_or_create_default_customer(db, brand_id=brand_id)
+        raise HTTPException(status_code=404, detail="Customer not found. Identify the customer (name + phone) first.")
     customer.current_phase = phase
     await db.commit()
     await db.refresh(customer)

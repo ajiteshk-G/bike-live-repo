@@ -8,7 +8,7 @@ PHONE_REGEX = re.compile(r"^(\+91[\-\s]?)?[6-9]\d{9}$")
 
 class InteractionLogSchema(BaseModel):
     id: Optional[int] = None
-    brand_id: Optional[str] = "mahindra"
+    brand_id: Optional[str] = "tvs"
     session_id: Optional[int] = None
     channel: str = "VOICE_LIVE"
     speaker: str # "customer", "mia", "system"
@@ -22,7 +22,7 @@ class InteractionLogSchema(BaseModel):
 class ConversationSessionSchema(BaseModel):
     id: int
     session_id: str
-    brand_id: Optional[str] = "mahindra"
+    brand_id: Optional[str] = "tvs"
     customer_id: int
     session_type: str
     vehicle_id: str
@@ -37,7 +37,7 @@ class CustomerIdentifyRequest(BaseModel):
     name: str = Field(..., min_length=2, max_length=50)
     phone: str = Field(..., min_length=10, max_length=16)
     session_type: str = "LIVE_CALL" # "LIVE_CALL" | "CHAT_BOT"
-    vehicle_id: Optional[str] = "thar_roxx"
+    vehicle_id: Optional[str] = "tvs_apache_rtr_160_4v"
     brand_id: Optional[str] = None
 
     @field_validator("name")
@@ -58,33 +58,33 @@ class CustomerIdentifyRequest(BaseModel):
 
 class CustomerProfileBase(BaseModel):
     customer_id: str
-    brand_id: Optional[str] = "mahindra"
+    brand_id: Optional[str] = "tvs"
     name: str
     phone: str
     email: Optional[str] = None
     city: str = "Mumbai"
     preferred_language: str = "Hinglish"
     current_phase: str = "PRE_SALES"
-    interested_vehicle_id: Optional[str] = "thar_roxx"
-    interested_variant: Optional[str] = "AX7L Diesel AT 4x4"
-    budget_range: Optional[str] = "₹18 Lakh - ₹25 Lakh"
+    interested_vehicle_id: Optional[str] = "tvs_apache_rtr_160_4v"
+    interested_variant: Optional[str] = "Dual Channel ABS"
+    budget_range: Optional[str] = None
     
     pan_number: Optional[str] = None
     aadhaar_masked: Optional[str] = None
     kyc_status: str = "PENDING"
     kyc_extracted_data: Optional[Dict[str, Any]] = None
     
-    loan_preapproval_amount: int = 1850000
-    loan_interest_rate: str = "8.15%"
+    loan_preapproval_amount: int = 150000
+    loan_interest_rate: str = "10.49%"
     voice_consent_hash: Optional[str] = None
     loan_status: str = "NOT_APPLIED"
     
-    owned_vin: Optional[str] = "MAH1THARROXX2026MUM01"
-    owned_vehicle_name: Optional[str] = "Mahindra Thar ROXX AX7L Diesel AT"
-    registration_number: Optional[str] = "MH 02 FJ 9090"
-    odometer_km: int = 9820
-    insurance_policy_number: Optional[str] = "POL-ICICI-MH-2026-99201"
-    insurance_type: Optional[str] = "Zero-Depreciation Comprehensive"
+    owned_vin: Optional[str] = None
+    owned_vehicle_name: Optional[str] = None
+    registration_number: Optional[str] = None
+    odometer_km: Optional[int] = 0
+    insurance_policy_number: Optional[str] = None
+    insurance_type: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -157,6 +157,6 @@ class SaveFullSessionTranscriptRequest(BaseModel):
     customer_id: Optional[str] = None
     customer_name: Optional[str] = None
     customer_phone: Optional[str] = None
-    vehicle_id: Optional[str] = "thar_roxx"
+    vehicle_id: Optional[str] = "tvs_apache_rtr_160_4v"
     channel: Optional[str] = "VOICE_LIVE"
     messages: List[FullTranscriptMessageItem] = []

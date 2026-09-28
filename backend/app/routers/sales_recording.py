@@ -26,7 +26,10 @@ async def upload_test_ride_recording(
     db: AsyncSession = Depends(get_db)
 ):
     """Uploads/dumps mobile test ride audio recording to GCS and executes multi-dimensional AI insights."""
-    recording = await SalesRecordingService.process_and_store_recording(db, req)
+    try:
+        recording = await SalesRecordingService.process_and_store_recording(db, req)
+    except LookupError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     return recording
 
 @router.get("/test-ride/latest", response_model=Optional[TestRideInsightResponse])

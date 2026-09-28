@@ -1,415 +1,311 @@
-import os
-import re
+"""Two-wheeler brand crawler.
+
+Crawls official manufacturer websites (TVS Motor, Hero MotoCorp, or any other
+two-wheeler brand URL entered in Brand Studio), discovers individual model pages,
+extracts spec-dense text / JSON-LD / imagery from each page, and asks Gemini to
+convert every model page into a structured ``VehicleItem``.
+
+Design notes (learned by probing the live sites):
+* Both TVS and Hero are server-rendered, so plain ``httpx`` works. Vida (Hero's EV
+  sub-brand) is a JS app and returns no text — pages like that fall back to
+  Gemini's own knowledge and are flagged in ``usp``.
+* The first few KB of every page are mega-menus, so we strip navigation and keep
+  the spec-dense sentences instead of the first N characters.
+* TVS renders prices client-side (``₹ 000000`` placeholders). Prices absent from
+  the page are filled from model knowledge and suffixed with ``(approx.)``.
+* ``og:image`` is the brand logo on most TVS pages, but JSON-LD carries real
+  product images. Hero has no JSON-LD but its ``og:image`` is the model banner.
+* Images are downloaded into ``static/uploads/<brand>/vehicles`` so the catalog
+  does not depend on OEM hot-linking policies.
+"""
+import asyncio
+import hashlib
 import json
 import logging
-import asyncio
-from typing import List, Dict, Any, Optional
-from urllib.parse import urljoin
+import os
+import re
+from typing import Any, Dict, List, Optional, Tuple
+from urllib.parse import urljoin, urlparse
+
 import httpx
 from bs4 import BeautifulSoup
-from google import genai
 from google.genai import types
 
 from app.config import settings
 from app.schemas.brand import BrandCatalog
-from app.schemas.catalog import VehicleItem, VehicleVariant, DealershipItem
+from app.schemas.catalog import DealershipItem, VehicleItem, VehicleVariant
 
 logger = logging.getLogger("brand_crawler_service")
 
 STATIC_UPLOAD_DIR = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-    "static",
-    "uploads"
+    os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "static", "uploads"
 )
 os.makedirs(STATIC_UPLOAD_DIR, exist_ok=True)
 
-# Curated, verified high-resolution automotive CDN images (all returning HTTP 200)
-UNSPLASH_CATEGORY_POOLS: Dict[str, List[str]] = {
-    "hypercar": [
-        "https://images.unsplash.com/photo-1617788138017-80ad40651399?w=1200&auto=format&fit=crop&q=80",
-        "https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?w=1200&auto=format&fit=crop&q=80",
-        "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=1200&auto=format&fit=crop&q=80",
-        "https://images.unsplash.com/photo-1525609004556-c46c7d6cf023?w=1200&auto=format&fit=crop&q=80",
-        "https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=1200&auto=format&fit=crop&q=80",
-    ],
-    "coupe": [
-        "https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=1200&auto=format&fit=crop&q=80",
-        "https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=1200&auto=format&fit=crop&q=80",
-        "https://images.unsplash.com/photo-1603584173870-7f23fdae1b7a?w=1200&auto=format&fit=crop&q=80",
-        "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=1200&auto=format&fit=crop&q=80",
-    ],
-    "suv": [
-        "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=1200&auto=format&fit=crop&q=80",
-        "https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=1200&auto=format&fit=crop&q=80",
-        "https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=1200&auto=format&fit=crop&q=80",
-        "https://images.unsplash.com/photo-1508974239320-0a029497e820?w=1200&auto=format&fit=crop&q=80",
-        "https://images.unsplash.com/photo-1606016159991-dfe4f2746ad5?w=1200&auto=format&fit=crop&q=80",
-    ],
-    "electric": [
-        "https://images.unsplash.com/photo-1563720223185-11003d516935?w=1200&auto=format&fit=crop&q=80",
-        "https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=1200&auto=format&fit=crop&q=80",
-        "https://images.unsplash.com/photo-1536700503339-1e4b06520771?w=1200&auto=format&fit=crop&q=80",
-        "https://images.unsplash.com/photo-1593941707882-a5bba14938c7?w=1200&auto=format&fit=crop&q=80",
-    ],
-    "sedan": [
-        "https://images.unsplash.com/photo-1555353540-64580b51c258?w=1200&auto=format&fit=crop&q=80",
-        "https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?w=1200&auto=format&fit=crop&q=80",
-        "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=1200&auto=format&fit=crop&q=80",
-        "https://images.unsplash.com/photo-1617469767053-d3b523a0b982?w=1200&auto=format&fit=crop&q=80",
-    ]
+PLACEHOLDER_IMAGE = "/assets/placeholder-bike.svg"
+MAX_MODELS = int(os.getenv("CRAWLER_MAX_MODELS", "16"))
+FETCH_CONCURRENCY = int(os.getenv("CRAWLER_FETCH_CONCURRENCY", "6"))
+GEMINI_CONCURRENCY = int(os.getenv("CRAWLER_GEMINI_CONCURRENCY", "6"))
+PAGE_TIMEOUT_S = float(os.getenv("CRAWLER_PAGE_TIMEOUT_S", "15"))
+MIN_IMAGE_BYTES = 12_000  # smaller files are icons / swatches
+
+BROWSER_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+    "Accept-Language": "en-IN,en;q=0.9",
+    "Sec-Ch-Ua": '"Not/A)Brand";v="8", "Chromium";v="126", "Google Chrome";v="126"',
+    "Sec-Ch-Ua-Mobile": "?0",
+    "Sec-Ch-Ua-Platform": '"Windows"',
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "none",
+    "Sec-Fetch-User": "?1",
+    "Upgrade-Insecure-Requests": "1",
 }
 
-# Curated authentic lineups for common automotive brands as resilient fallback
-KNOWN_BRAND_PROFILES: Dict[str, Dict[str, Any]] = {
-    "bmw": {
-        "name": "BMW",
-        "tagline": "Sheer Driving Pleasure",
-        "primary_color": "#0066b1",
+TWO_WHEELER_CATEGORIES = [
+    "Commuter Motorcycle", "Premium Commuter", "Sports Motorcycle", "Naked Streetfighter",
+    "Supersport", "Adventure Tourer", "Cruiser / Retro", "Scooter", "Performance Scooter",
+    "Electric Scooter", "Electric Motorcycle", "Moped",
+]
+
+# Official model landing pages for the two launch brands. These are the *real*
+# manufacturer URLs that get crawled; auto-discovery from the seed pages adds any
+# models not listed here (up to MAX_MODELS).
+KNOWN_TWO_WHEELER_BRANDS: Dict[str, Dict[str, Any]] = {
+    "tvs": {
+        "match": ["tvs"],
+        "id": "tvs",
+        "name": "TVS Motor",
+        "tagline": "Making Mobility Exciting",
+        "primary_color": "#1d3f8f",
         "secondary_color": "#0f172a",
-        "accent_color": "#38bdf8",
-        "logo_url": "https://imgd.aeplcdn.com/0x0/n/cw/ec/10/brands/logos/bmw.jpg",
-        "avatar_name": "Klaus",
-        "avatar_voice": "Puck",
-        "vehicles": [
-            {
-                "id": "bmw_3_series_gl",
-                "name": "BMW 3 Series Gran Limousine",
-                "tagline": "The Ultimate Luxury Sports Sedan",
-                "category": "Sedan",
-                "price_range": "₹60.60 Lakh - ₹72.90 Lakh",
-                "hero_image": "https://imgd.aeplcdn.com/1056x594/n/cw/ec/140591/3-series-gran-limousine-exterior-right-front-three-quarter-3.jpeg",
-                "engine_specs": "2.0L TwinPower Turbo Petrol (258 hp, 400 Nm) / 2.0L Diesel (190 hp)",
-                "seating_capacity": "5-Seater",
-                "fuel_or_battery": "Petrol / Diesel",
-                "range_or_mileage": "15.39 km/l",
-                "key_highlights": [
-                    "BMW Curved Display with OS 8.5",
-                    "Panoramic Glass Sunroof",
-                    "Harman Kardon 16-Speaker Surround Sound",
-                    "Long-Wheelbase Extra Rear Legroom"
-                ],
-                "usp": "Long-wheelbase executive comfort fused with BMW's iconic 50:50 weight distribution and dynamic handling.",
-                "variants": [
-                    {
-                        "name": "330Li M Sport",
-                        "price_ex_showroom": "₹60,60,000",
-                        "engine_or_battery": "2.0L TwinPower Turbo Petrol (258 hp)",
-                        "transmission": "8-Speed Steptronic Sport",
-                        "key_features": ["M Aerodynamics Package", "Live Cockpit Professional", "Ambient Lighting"]
-                    },
-                    {
-                        "name": "320Ld M Sport",
-                        "price_ex_showroom": "₹62,00,000",
-                        "engine_or_battery": "2.0L TwinPower Turbo Diesel (190 hp)",
-                        "transmission": "8-Speed Steptronic Sport",
-                        "key_features": ["Parking Assistant Plus", "Sport Seats", "Wireless Apple CarPlay"]
-                    },
-                    {
-                        "name": "M340i xDrive",
-                        "price_ex_showroom": "₹72,90,000",
-                        "engine_or_battery": "3.0L Inline-6 Turbo Petrol (374 hp)",
-                        "transmission": "8-Speed Steptronic Sport",
-                        "key_features": ["xDrive Intelligent AWD", "M Sport Differential", "0-100 km/h in 4.4s"]
-                    }
-                ]
-            },
-            {
-                "id": "bmw_x5",
-                "name": "BMW X5",
-                "tagline": "The Boss. Benchmark Luxury SUV",
-                "category": "Authentic SUV",
-                "price_range": "₹97.00 Lakh - ₹1.11 Crore",
-                "hero_image": "https://imgd.aeplcdn.com/1056x594/n/cw/ec/152681/x5-facelift-exterior-right-front-three-quarter-3.jpeg",
-                "engine_specs": "3.0L TwinPower Turbo 6-Cylinder 48V Mild-Hybrid (381 hp, 520 Nm)",
-                "seating_capacity": "5-Seater",
-                "fuel_or_battery": "Petrol / Diesel (Mild-Hybrid)",
-                "range_or_mileage": "12.0 km/l",
-                "key_highlights": [
-                    "Adaptive 2-Axle Air Suspension",
-                    "BMW Curved Display (14.9-inch)",
-                    "Panoramic Sky Lounge LED Roof",
-                    "Active Driving Assistant Professional"
-                ],
-                "usp": "Supreme commanding road presence, active air suspension ride mastery, and opulent luxury.",
-                "variants": [
-                    {
-                        "name": "xDrive40i xLine",
-                        "price_ex_showroom": "₹97,00,000",
-                        "engine_or_battery": "3.0L Inline-6 Turbo Petrol Mild-Hybrid",
-                        "transmission": "8-Speed Steptronic Sport",
-                        "key_features": ["Adaptive Air Suspension", "Comfort Seats", "Harman Kardon Audio"]
-                    },
-                    {
-                        "name": "xDrive40i M Sport",
-                        "price_ex_showroom": "₹1,09,00,000",
-                        "engine_or_battery": "3.0L Inline-6 Turbo Petrol Mild-Hybrid",
-                        "transmission": "8-Speed Steptronic Sport",
-                        "key_features": ["M Sport Brakes", "M Aerodynamic Package", "21-inch M Light Alloys"]
-                    },
-                    {
-                        "name": "xDrive30d M Sport",
-                        "price_ex_showroom": "₹1,11,00,000",
-                        "engine_or_battery": "3.0L Inline-6 Turbo Diesel Mild-Hybrid (286 hp)",
-                        "transmission": "8-Speed Steptronic Sport",
-                        "key_features": ["650 Nm Torque", "Integral Active Steering", "Parking Assistant Pro"]
-                    }
-                ]
-            },
-            {
-                "id": "bmw_ix",
-                "name": "BMW iX Electric SAV",
-                "tagline": "Born Electric. The Pioneer of a New Era",
-                "category": "Born Electric SUV",
-                "price_range": "₹1.21 Crore - ₹1.40 Crore",
-                "hero_image": "https://imgd.aeplcdn.com/1056x594/n/cw/ec/106821/ix-exterior-right-front-three-quarter.jpeg",
-                "engine_specs": "Dual Electrically Excited Synchronous Motors (326 - 523 hp)",
-                "seating_capacity": "5-Seater",
-                "fuel_or_battery": "Electric (111.5 kWh Battery)",
-                "range_or_mileage": "630 km WLTP Range",
-                "key_highlights": [
-                    "630 km WLTP Electric Driving Range",
-                    "Electrochromatic Sky Lounge Panoramic Glass Roof",
-                    "Carbon Core Architecture",
-                    "Bowers & Wilkins 30-Speaker 4D Diamond Audio"
-                ],
-                "usp": "Ultra-luxury electric flagship crafted with sustainable materials and 195 kW DC fast-charging capability.",
-                "variants": [
-                    {
-                        "name": "xDrive40",
-                        "price_ex_showroom": "₹1,21,00,000",
-                        "engine_or_battery": "76.6 kWh Dual Motor AWD (326 hp)",
-                        "transmission": "Single-Speed",
-                        "key_features": ["425 km Range", "Curved Display", "BMW Driving Assistant"]
-                    },
-                    {
-                        "name": "xDrive50",
-                        "price_ex_showroom": "₹1,39,50,000",
-                        "engine_or_battery": "111.5 kWh Dual Motor AWD (523 hp)",
-                        "transmission": "Single-Speed",
-                        "key_features": ["630 km Range", "2-Axle Air Suspension", "Integral Active 4-Wheel Steering"]
-                    }
-                ]
-            },
-            {
-                "id": "bmw_5_series_lwb",
-                "name": "BMW 5 Series Long Wheelbase",
-                "tagline": "The Business Athlete with Supreme Rear Comfort",
-                "category": "Sedan",
-                "price_range": "₹72.90 Lakh - ₹82.00 Lakh",
-                "hero_image": "https://imgd.aeplcdn.com/1056x594/n/cw/ec/174975/5-series-exterior-right-front-three-quarter.jpeg",
-                "engine_specs": "2.0L TwinPower Turbo Petrol with 48V Mild-Hybrid (258 hp, 400 Nm)",
-                "seating_capacity": "5-Seater",
-                "fuel_or_battery": "Petrol (Mild-Hybrid)",
-                "range_or_mileage": "15.7 km/l",
-                "key_highlights": [
-                    "Extended Long-Wheelbase Rear Executive Cabin",
-                    "BMW Interaction Bar with Backlit Ambient Glass",
-                    "18-Speaker Bowers & Wilkins Surround Sound",
-                    "Level 2+ Driving Assistant"
-                ],
-                "usp": "India's first right-hand drive Long-Wheelbase 5 Series offering segment-first rear lounge comfort.",
-                "variants": [
-                    {
-                        "name": "530Li M Sport",
-                        "price_ex_showroom": "₹72,90,000",
-                        "engine_or_battery": "2.0L Turbo Mild-Hybrid",
-                        "transmission": "8-Speed Steptronic Sport",
-                        "key_features": ["BMW Interaction Bar", "Bowers & Wilkins Audio", "Panoramic Glass Roof"]
-                    }
-                ]
-            }
-        ]
+        "accent_color": "#e31e24",
+        "home_url": "https://www.tvsmotor.com/",
+        "seed_urls": ["https://www.tvsmotor.com/"],
+        "discover_pattern": r"^https://www\.tvsmotor\.com/(tvs-apache/(apache-rtr-[a-z0-9-]+|rr-310)|electric-scooters/tvs-[a-z0-9-]+|commuter/tvs-[a-z0-9-]+|tvs-(raider|ronin|radeon|star-city-plus|zest|ntorq))$",
+        "discover_exclude": r"price-in|dealer|compare|enquiry|testride",
+        "model_urls": [
+            "https://www.tvsmotor.com/tvs-apache/apache-rtr-160-4v",
+            "https://www.tvsmotor.com/tvs-apache/apache-rtr-200-4v",
+            "https://www.tvsmotor.com/tvs-apache/apache-rtr-310",
+            "https://www.tvsmotor.com/tvs-apache/rr-310",
+            "https://www.tvsmotor.com/tvs-raider",
+            "https://www.tvsmotor.com/tvs-ronin",
+            "https://www.tvsmotor.com/tvs-radeon",
+            "https://www.tvsmotor.com/tvs-star-city-plus",
+            "https://www.tvsmotor.com/commuter/tvs-sport",
+            "https://www.tvsmotor.com/commuter/tvs-ntorq",
+            "https://www.tvsmotor.com/tvs-jupiter",
+            "https://www.tvsmotor.com/tvs-jupiter-125/smartxonnect",
+            "https://www.tvsmotor.com/tvs-zest",
+            "https://www.tvsmotor.com/electric-scooters/tvs-iqube",
+            "https://www.tvsmotor.com/electric-scooters/tvs-orbiter",
+            "https://www.tvsmotor.com/electric-scooters/tvs-x",
+            "https://www.tvsmotor.com/commuter/tvs-xl100",
+            "https://www.tvsmotor.com/tvs-apache/apache-rtr-160-2v",
+        ],
+        # Extra spec pages that exist for some families (merged into the model's text)
+        "spec_pages": {
+            "https://www.tvsmotor.com/tvs-raider": "https://www.tvsmotor.com/tvs-raider/specifications",
+            "https://www.tvsmotor.com/commuter/tvs-ntorq": "https://www.tvsmotor.com/tvs-ntorq/technical-specification",
+        },
     },
-    "mercedes": {
-        "name": "Mercedes-Benz",
-        "tagline": "The Best or Nothing",
-        "primary_color": "#000000",
-        "secondary_color": "#1e293b",
-        "accent_color": "#00a3e0",
-        "logo_url": "https://imgd.aeplcdn.com/0x0/n/cw/ec/18/brands/logos/mercedes-benz.jpg",
-        "avatar_name": "Mercedes Expert",
-        "avatar_voice": "Aoede",
-        "vehicles": [
-            {
-                "id": "mercedes_c_class",
-                "name": "Mercedes-Benz C-Class",
-                "tagline": "The Baby S-Class with Supreme Tech",
-                "category": "Sedan",
-                "price_range": "₹61.85 Lakh - ₹69.00 Lakh",
-                "hero_image": "https://imgd.aeplcdn.com/1056x594/n/cw/ec/115871/c-class-exterior-right-front-three-quarter-3.jpeg",
-                "engine_specs": "2.0L Turbo Mild-Hybrid (204 - 265 hp)",
-                "seating_capacity": "5-Seater",
-                "fuel_or_battery": "Petrol / Diesel",
-                "range_or_mileage": "17.5 km/l",
-                "key_highlights": ["11.9-inch Portrait MBUX Display", "Burmester 3D Surround Sound", "Panoramic Sliding Roof"],
-                "usp": "S-Class inspired luxury cockpit with biometric fingerprint authentication and EQ Boost mild hybrid.",
-                "variants": [
-                    {
-                        "name": "C 200",
-                        "price_ex_showroom": "₹61,85,000",
-                        "engine_or_battery": "1.5L Turbo Petrol Mild-Hybrid",
-                        "transmission": "9G-TRONIC Automatic",
-                        "key_features": ["MBUX Navigation", "Wireless Smartphone Integration", "Active Brake Assist"]
-                    },
-                    {
-                        "name": "C 220d",
-                        "price_ex_showroom": "₹63,85,000",
-                        "engine_or_battery": "2.0L Turbo Diesel Mild-Hybrid",
-                        "transmission": "9G-TRONIC Automatic",
-                        "key_features": ["440 Nm Torque", "Ambient Lighting 64 Colors", "LED High Performance Headlamps"]
-                    }
-                ]
-            },
-            {
-                "id": "mercedes_glc",
-                "name": "Mercedes-Benz GLC",
-                "tagline": "Ready for Whatever Comes",
-                "category": "Authentic SUV",
-                "price_range": "₹75.90 Lakh - ₹76.90 Lakh",
-                "hero_image": "https://imgd.aeplcdn.com/1056x594/n/cw/ec/144681/glc-exterior-right-front-three-quarter-4.jpeg",
-                "engine_specs": "2.0L Turbo with 4MATIC AWD (204 - 258 hp)",
-                "seating_capacity": "5-Seater",
-                "fuel_or_battery": "Petrol / Diesel",
-                "range_or_mileage": "14.7 km/l",
-                "key_highlights": ["Transparent Bonnet Off-Road View", "4MATIC All-Wheel Drive", "Digital Light Headlamps"],
-                "usp": "Dynamic SUV design with permanent 4MATIC AWD and transparent bonnet camera technology.",
-                "variants": [
-                    {
-                        "name": "GLC 300 4MATIC",
-                        "price_ex_showroom": "₹75,90,000",
-                        "engine_or_battery": "2.0L Turbo Petrol (258 hp)",
-                        "transmission": "9G-TRONIC Automatic",
-                        "key_features": ["Panoramic Sunroof", "Burmester Surround Sound", "4MATIC AWD"]
-                    },
-                    {
-                        "name": "GLC 220d 4MATIC",
-                        "price_ex_showroom": "₹76,90,000",
-                        "engine_or_battery": "2.0L Turbo Diesel (197 hp)",
-                        "transmission": "9G-TRONIC Automatic",
-                        "key_features": ["440 Nm Torque", "Off-Road Cockpit", "360 Surround View Camera"]
-                    }
-                ]
-            }
-        ]
-    }
+    "hero": {
+        "match": ["hero"],
+        "id": "hero_motocorp",
+        "name": "Hero MotoCorp",
+        "tagline": "The Future of Mobility",
+        "primary_color": "#e4002b",
+        "secondary_color": "#111827",
+        "accent_color": "#f59e0b",
+        "home_url": "https://www.heromotocorp.com/en-in.html",
+        "seed_urls": [
+            "https://www.heromotocorp.com/en-in/motorcycles.html",
+            "https://www.heromotocorp.com/en-in/scooters.html",
+        ],
+        "discover_pattern": r"^https://www\.heromotocorp\.com/en-in/(motorcycles|scooters)/[a-z0-9-]+\.html$",
+        "discover_exclude": r"flexible-fuel|compare",
+        "model_urls": [
+            "https://www.heromotocorp.com/en-in/motorcycles/splendor-plus.html",
+            "https://www.heromotocorp.com/en-in/motorcycles/splendor-plus-xtec-2-0.html",
+            "https://www.heromotocorp.com/en-in/motorcycles/super-splendor-xtec.html",
+            "https://www.heromotocorp.com/en-in/motorcycles/hf-deluxe.html",
+            "https://www.heromotocorp.com/en-in/motorcycles/passion-plus.html",
+            "https://www.heromotocorp.com/en-in/motorcycles/glamour-x.html",
+            "https://www.heromotocorp.com/en-in/motorcycles/xtreme-125r.html",
+            "https://www.heromotocorp.com/en-in/motorcycles/xtreme-160r-4v.html",
+            "https://www.heromotocorp.com/en-in/motorcycles/xpulse-210.html",
+            "https://www.heromotocorp.com/en-in/motorcycles/xpulse-200-4v.html",
+            "https://www.heromotocorp.com/en-in/motorcycles/karizma-xmr.html",
+            "https://www.heromotocorp.com/en-in/scooters/destini-125-xtec.html",
+            "https://www.heromotocorp.com/en-in/scooters/pleasure-plus-xtec.html",
+            "https://www.heromotocorp.com/en-in/scooters/xoom.html",
+            "https://www.heromotocorp.com/en-in/scooters/xoom-125.html",
+            "https://www.heromotocorp.com/en-in/scooters/xoom-160.html",
+        ],
+        "spec_pages": {},
+    },
 }
+
+# Generic heuristics for unknown two-wheeler brand sites entered in Brand Studio.
+GENERIC_MODEL_PATH_HINT = re.compile(
+    r"/(motorcycles?|scooters?|bikes?|two-wheelers?|electric(-scooters?|-motorcycles?)?|ev|models?|products?)/[a-z0-9-]+(\.html?)?/?$",
+    re.I,
+)
+SPEC_TOKEN = re.compile(
+    r"\d[\d.,]*\s?(cc|kmpl|km/l|ps|bhp|hp|nm|kg|mm|km/h|kmph|kwh|kw|litres?|ltr|rpm|km\b|hrs?|h\b|min)",
+    re.I,
+)
+FEATURE_TOKEN = re.compile(
+    r"\b(abs|cbs|disc|drum|tft|lcd|bluetooth|smartxonnect|connect|navigation|riding mode|mode|traction|"
+    r"usd|mono-?shock|suspension|led|projector|slipper|assist|quickshifter|cruise|tubeless|alloy|"
+    r"under-?seat|storage|usb|charging|range|mileage|top speed|seat height|kerb|ground clearance|"
+    r"fuel tank|battery|warranty|colou?rs?|variant|price|ex-showroom)\b",
+    re.I,
+)
+NOISE_TOKEN_PREFIXES = ("menu", "navbar", "nav-", "mega", "footer", "breadcrumb", "cookie", "modal", "popup", "drawer", "login", "search")
+
 
 class BrandCrawlerService:
-    @classmethod
-    def _generate_brand_vector_logo(cls, brand_id: str, brand_name: str, primary_color: str) -> str:
-        """
-        Creates an ultra-modern geometric automotive crest SVG for fictional or URL-less brands
-        and saves it to the static uploads directory.
-        """
-        dest_dir = os.path.join(STATIC_UPLOAD_DIR, brand_id.lower(), "logos")
-        os.makedirs(dest_dir, exist_ok=True)
-        dest_path = os.path.join(dest_dir, "logo.svg")
-
-        clean_words = [w for w in brand_name.split() if w]
-        initials = "".join(w[0].upper() for w in clean_words[:2]) if clean_words else "AI"
-        color = primary_color if (primary_color and primary_color.startswith("#")) else "#0ea5e9"
-        display_name = brand_name.upper()[:16]
-
-        svg_content = f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 54" width="220" height="54">
-  <defs>
-    <linearGradient id="crestGrad_{brand_id}" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="{color}" />
-      <stop offset="100%" stop-color="#0f172a" />
-    </linearGradient>
-  </defs>
-  <!-- Modern Geometric Automotive Crest -->
-  <polygon points="8,14 32,8 44,24 28,38 6,24" fill="url(#crestGrad_{brand_id})" stroke="{color}" stroke-width="1.5" />
-  <polygon points="24,22 38,18 46,28 34,40 20,32" fill="{color}" opacity="0.35" />
-  <polyline points="4,28 18,44 48,16" fill="none" stroke="{color}" stroke-width="2.5" stroke-linecap="round" />
-  <!-- Monogram -->
-  <text x="26" y="27" fill="#ffffff" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="13" text-anchor="middle" letter-spacing="1">{initials}</text>
-  <!-- Brand Display Name -->
-  <text x="56" y="28" fill="#0f172a" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="15" letter-spacing="1.5">{display_name}</text>
-  <text x="56" y="41" fill="{color}" font-family="system-ui, -apple-system, sans-serif" font-weight="700" font-size="7.5" letter-spacing="2.5">INTELLIGENT PERFORMANCE</text>
-</svg>'''
-        try:
-            with open(dest_path, "w", encoding="utf-8") as f:
-                f.write(svg_content)
-            return f"/uploads/{brand_id.lower()}/logos/logo.svg"
-        except Exception as e:
-            logger.warning(f"Notice: Failed to write SVG logo: {e}")
-            return ""
-
+    # ------------------------------------------------------------------ entry
     @classmethod
     async def crawl_and_extract_catalog(cls, brand_name: str, urls: List[str]) -> BrandCatalog:
+        profile = cls._match_known_brand(brand_name, urls)
         clean_urls = [u.strip() for u in (urls or []) if u and u.strip()]
-        if not clean_urls:
-            logger.info(f"No URLs provided for brand '{brand_name}'. Synthesizing catalog directly using automotive intelligence.")
-            return await cls._extract_with_gemini(
-                brand_name=brand_name,
-                urls=[],
-                page_summaries=[],
-                candidate_images=[],
-                detected_logo=""
-            )
 
-        logger.info(f"Crawling {len(clean_urls)} URLs for brand '{brand_name}'")
-        
-        extracted_pages = []
-        async with httpx.AsyncClient(
-            timeout=5.0,
-            follow_redirects=True,
-            headers={
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
-                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-                "Accept-Language": "en-US,en;q=0.9",
-                'Sec-Ch-Ua': '"Not/A)Brand";v="8", "Chromium";v="126", "Google Chrome";v="126"',
-                'Sec-Ch-Ua-Mobile': '?0',
-                'Sec-Ch-Ua-Platform': '"Windows"',
-                "Sec-Fetch-Dest": "document",
-                "Sec-Fetch-Mode": "navigate",
-                "Sec-Fetch-Site": "none",
-                "Sec-Fetch-User": "?1",
-                "Upgrade-Insecure-Requests": "1"
-            }
-        ) as client:
-            tasks = [cls._fetch_and_parse_page(client, url) for url in clean_urls]
-            extracted_pages = await asyncio.gather(*tasks, return_exceptions=True)
+        if not clean_urls and not profile:
+            logger.info(f"No URLs for '{brand_name}' and not a known brand — synthesising a two-wheeler catalog.")
+            return await cls._synthesise_catalog(brand_name, source_urls=[])
 
-        valid_pages = [p for p in extracted_pages if isinstance(p, dict) and "error" not in p]
-        logger.info(f"Successfully scraped {len(valid_pages)} / {len(clean_urls)} pages for brand '{brand_name}'")
+        brand_id = profile["id"] if profile else cls._slug(brand_name)
+        display_name = profile["name"] if profile else brand_name
 
-        page_summaries = []
-        all_candidate_images = []
-        brand_logos = []
+        async with httpx.AsyncClient(timeout=PAGE_TIMEOUT_S, follow_redirects=True, headers=BROWSER_HEADERS) as client:
+            model_urls, logo_candidates = await cls._discover_model_urls(client, profile, clean_urls)
+            logger.info(f"[{brand_id}] crawling {len(model_urls)} model pages")
 
-        for p in valid_pages:
-            page_summaries.append({
-                "url": p["url"],
-                "title": p.get("title", ""),
-                "meta_description": p.get("meta_description", ""),
-                "headings": p.get("headings", [])[:15],
-                "text_snippet": p.get("text_snippet", "")[:2000]
-            })
-            all_candidate_images.extend(p.get("images", []))
-            if p.get("og_image"):
-                all_candidate_images.append(p["og_image"])
-            if p.get("logo_candidates"):
-                brand_logos.extend(p["logo_candidates"])
+            sem = asyncio.Semaphore(FETCH_CONCURRENCY)
 
-        candidate_images = list(dict.fromkeys(all_candidate_images))[:40]
-        detected_logo = brand_logos[0] if brand_logos else (candidate_images[0] if candidate_images else "")
+            async def fetch(u: str):
+                async with sem:
+                    page = await cls._fetch_model_page(client, u)
+                    spec_url = (profile or {}).get("spec_pages", {}).get(u)
+                    if spec_url and "error" not in page:
+                        spec = await cls._fetch_model_page(client, spec_url)
+                        if "error" not in spec:
+                            page["spec_text"] = (page["spec_text"] + " || SPEC PAGE: " + spec["spec_text"])[:14000]
+                    return page
 
-        catalog = await cls._extract_with_gemini(
-            brand_name=brand_name,
-            urls=urls,
-            page_summaries=page_summaries,
-            candidate_images=candidate_images,
-            detected_logo=detected_logo
+            pages = await asyncio.gather(*[fetch(u) for u in model_urls])
+            good = [p for p in pages if "error" not in p and len(p.get("spec_text", "")) > 200]
+            logger.info(f"[{brand_id}] {len(good)}/{len(pages)} model pages had usable content")
+
+            for p in pages:
+                logo_candidates.extend(p.get("logo_candidates", []))
+
+            if not good:
+                logger.warning(f"[{brand_id}] no crawlable model pages — falling back to knowledge synthesis")
+                return await cls._synthesise_catalog(display_name, source_urls=clean_urls or [profile["home_url"]])
+
+            gsem = asyncio.Semaphore(GEMINI_CONCURRENCY)
+
+            async def extract(p):
+                async with gsem:
+                    return await cls._extract_vehicle_from_page(display_name, p)
+
+            extracted = await asyncio.gather(*[extract(p) for p in good])
+
+            vehicles: List[VehicleItem] = []
+            seen_names = set()
+            for page, data in zip(good, extracted):
+                if not data:
+                    continue
+                vehicle = cls._to_vehicle_item(brand_id, display_name, data, page)
+                key = re.sub(r"[^a-z0-9]", "", vehicle.name.lower())
+                if key in seen_names or vehicle.id in {v.id for v in vehicles}:
+                    logger.info(f"[{brand_id}] duplicate model '{vehicle.name}' from {page['url']} skipped")
+                    continue
+                seen_names.add(key)
+                vehicle.hero_image = await cls._download_best_image(client, brand_id, vehicle.id, page, vehicle.name)
+                vehicles.append(vehicle)
+
+            await asyncio.gather(cls._fill_missing_efficiency(display_name, vehicles), cls._fill_missing_specs(display_name, vehicles))
+            logo_url = await cls._download_logo(client, brand_id, logo_candidates)
+
+        if not vehicles:
+            return await cls._synthesise_catalog(display_name, source_urls=clean_urls)
+
+        brand_meta = profile or await cls._infer_brand_meta(display_name, clean_urls)
+        return BrandCatalog(
+            id=brand_id,
+            name=brand_meta.get("name", display_name),
+            tagline=brand_meta.get("tagline", f"Official {display_name} Experience"),
+            logo_url=logo_url or cls._generate_brand_vector_logo(brand_id, display_name, brand_meta.get("primary_color", "#0ea5e9")),
+            primary_color=brand_meta.get("primary_color", "#0ea5e9"),
+            secondary_color=brand_meta.get("secondary_color", "#0f172a"),
+            accent_color=brand_meta.get("accent_color", "#38bdf8"),
+            avatar_name=settings.AVATAR_NAME,
+            avatar_voice=settings.AVATAR_VOICE,
+            source_urls=clean_urls or [brand_meta.get("home_url", "")],
+            is_active=True,
+            vehicles=vehicles,
+            dealerships=cls._default_dealerships(brand_id, brand_meta.get("name", display_name)),
         )
 
-        return catalog
+    # -------------------------------------------------------------- discovery
+    @classmethod
+    def _match_known_brand(cls, brand_name: str, urls: List[str]) -> Optional[Dict[str, Any]]:
+        haystack = (brand_name or "").lower() + " " + " ".join(urls or []).lower()
+        for profile in KNOWN_TWO_WHEELER_BRANDS.values():
+            if any(re.search(rf"\b{m}", haystack) for m in profile["match"]):
+                return profile
+        return None
 
+    @classmethod
+    async def _discover_model_urls(
+        cls, client: httpx.AsyncClient, profile: Optional[Dict[str, Any]], user_urls: List[str]
+    ) -> Tuple[List[str], List[str]]:
+        ordered: List[str] = list(profile["model_urls"]) if profile else []
+        seeds = list(dict.fromkeys((profile["seed_urls"] if profile else []) + user_urls))
+        pattern = re.compile(profile["discover_pattern"]) if profile else None
+        exclude = re.compile(profile["discover_exclude"]) if profile and profile.get("discover_exclude") else None
+        logos: List[str] = []
+
+        for seed in seeds:
+            if not cls._is_safe_public_url(seed):
+                continue
+            try:
+                r = await client.get(seed)
+                if r.status_code >= 400:
+                    continue
+                final = str(r.url)
+                soup = BeautifulSoup(r.text, "html.parser")
+                logos.extend(cls._logo_candidates(soup, final))
+                host = urlparse(final).netloc
+                # A user-supplied URL that is itself a model page counts as a model.
+                if not profile and GENERIC_MODEL_PATH_HINT.search(urlparse(final).path):
+                    ordered.append(final)
+                for a in soup.find_all("a", href=True):
+                    u = urljoin(final, a["href"]).split("#")[0].split("?")[0].rstrip("/")
+                    if urlparse(u).netloc != host or (exclude and exclude.search(u)):
+                        continue
+                    if pattern:
+                        if pattern.match(u):
+                            ordered.append(u)
+                    elif GENERIC_MODEL_PATH_HINT.search(urlparse(u).path):
+                        ordered.append(u)
+            except Exception as e:
+                logger.warning(f"Seed {seed} discovery failed: {type(e).__name__}")
+
+        deduped = [u for u in dict.fromkeys(u.rstrip("/") for u in ordered) if cls._is_safe_public_url(u)]
+        return deduped[:MAX_MODELS], logos
+
+    # --------------------------------------------------------------- scraping
     @staticmethod
     def _is_safe_public_url(url: str) -> bool:
         import ipaddress
         import socket
-        from urllib.parse import urlparse
 
         try:
             parsed = urlparse(url)
@@ -427,594 +323,732 @@ class BrandCrawlerService:
             return False
 
     @classmethod
-    async def _fetch_and_parse_page(cls, client: httpx.AsyncClient, url: str) -> Dict[str, Any]:
+    def _logo_candidates(cls, soup: BeautifulSoup, base: str) -> List[str]:
+        out = []
+        og = soup.find("meta", attrs={"property": "og:image"})
+        if og and og.get("content") and "logo" in og["content"].lower():
+            out.append(urljoin(base, og["content"].strip()))
+        for img in soup.find_all("img"):
+            src = img.get("src") or img.get("data-src")
+            if not src:
+                continue
+            meta = f"{src} {img.get('alt', '')} {' '.join(img.get('class') or [])}".lower()
+            if "logo" in meta and not any(x in meta for x in ("partner", "footer", "app-store", "play-store", "social")):
+                out.append(urljoin(base, src.strip()))
+        return out
+
+    @classmethod
+    async def _fetch_model_page(cls, client: httpx.AsyncClient, url: str) -> Dict[str, Any]:
         try:
             if not cls._is_safe_public_url(url):
-                logger.warning(f"Blocked unsafe or private URL in brand crawler: {url}")
-                return {"url": url, "error": "Unsafe or private URL blocked"}
-            resp = await client.get(url)
-            if resp.status_code >= 400:
-                logger.warning(f"HTTP {resp.status_code} fetching {url}")
-                return {"url": url, "error": f"HTTP {resp.status_code}"}
-
-            html = resp.text
-            soup = BeautifulSoup(html, "html.parser")
+                return {"url": url, "error": "unsafe url"}
+            r = await client.get(url)
+            if r.status_code >= 400:
+                return {"url": url, "error": f"HTTP {r.status_code}"}
+            final = str(r.url)
+            soup = BeautifulSoup(r.text, "html.parser")
 
             title = soup.title.string.strip() if soup.title and soup.title.string else ""
-            meta_desc = ""
             desc_tag = soup.find("meta", attrs={"name": "description"}) or soup.find("meta", attrs={"property": "og:description"})
-            if desc_tag and desc_tag.get("content"):
-                meta_desc = desc_tag["content"].strip()
+            meta_desc = desc_tag["content"].strip() if desc_tag and desc_tag.get("content") else ""
 
-            og_image = ""
+            # Structured data (TVS ships schema.org Motorcycle / Product blocks)
+            ld_items, ld_images = [], []
+            for s in soup.find_all("script", type="application/ld+json"):
+                try:
+                    data = json.loads(s.string or "")
+                except Exception:
+                    continue
+                for item in data if isinstance(data, list) else [data]:
+                    if not isinstance(item, dict) or item.get("@type") in ("BreadcrumbList", "Organization", "WebSite", "FAQPage"):
+                        continue
+                    ld_items.append({k: item.get(k) for k in ("@type", "name", "description", "offers", "brand") if item.get(k)})
+                    imgs = item.get("image") or []
+                    for im in imgs if isinstance(imgs, list) else [imgs]:
+                        u = im.get("url") if isinstance(im, dict) else im
+                        if isinstance(u, str) and u.strip():
+                            ld_images.append(urljoin(final, u.strip()))
+
             og_tag = soup.find("meta", attrs={"property": "og:image"})
-            if og_tag and og_tag.get("content"):
-                og_image = urljoin(url, og_tag["content"].strip())
+            og_image = urljoin(final, og_tag["content"].strip()) if og_tag and og_tag.get("content") else ""
 
-            headings = []
-            for tag in soup.find_all(["h1", "h2", "h3"]):
-                h_text = tag.get_text(strip=True)
-                if h_text and len(h_text) < 120 and h_text not in headings:
-                    headings.append(h_text)
+            images = cls._collect_page_images(soup, final)
+            studio_images = cls._collect_studio_frames(r.text, final)
+            logos = cls._logo_candidates(soup, final)
 
-            images = []
-            logo_candidates = []
-            for img in soup.find_all("img"):
-                src = img.get("src") or img.get("data-src") or img.get("data-lazy-src")
-                if not src:
-                    continue
-                full_src = urljoin(url, src.strip())
-                alt = (img.get("alt") or "").lower()
-                classes = " ".join(img.get("class") or []).lower()
+            # React/Sitecore-JSS/Next.js pages ship their content as JSON state.
+            state_text, state_images = cls._harvest_json_state(soup, final)
 
-                if any(x in full_src.lower() for x in ["icon", "pixel", "analytics", "badge", "tracking", ".svg"]):
-                    if "logo" in alt or "logo" in classes or "brand" in classes:
-                        logo_candidates.append(full_src)
-                    continue
-
-                if "logo" in alt or "logo" in classes:
-                    logo_candidates.append(full_src)
-                elif any(ext in full_src.lower() for ext in [".jpg", ".jpeg", ".png", ".webp"]):
-                    images.append(full_src)
-
-            for s in soup(["script", "style", "nav", "footer", "noscript"]):
+            for s in soup(["script", "style", "noscript", "svg", "form", "iframe", "nav", "footer"]):
                 s.decompose()
-            body_text = soup.get_text(separator=" ", strip=True)
-            body_text = re.sub(r'\s+', ' ', body_text)
+            cls._strip_noise(soup)
+
+            text = re.sub(r"\s+", " ", soup.get_text(" ", strip=True))
+            if len(text) < 1500 and state_text:
+                text = (text + " || " + state_text).strip()
+                images = list(dict.fromkeys(images + state_images))
+            text = re.sub(r"(Book (Now|a Test Ride)\s*){2,}", "Book Now ", text, flags=re.I)
 
             return {
-                "url": url,
+                "url": final,
                 "title": title,
                 "meta_description": meta_desc,
+                "json_ld": ld_items[:3],
+                "ld_images": ld_images,
                 "og_image": og_image,
-                "headings": headings,
-                "images": images[:25],
-                "logo_candidates": logo_candidates,
-                "text_snippet": body_text[:3000]
+                "images": images,
+                "studio_images": studio_images,
+                "logo_candidates": logos,
+                "spec_text": cls._spec_dense_text(text),
             }
         except Exception as e:
-            logger.warning(f"Notice: Page {url} could not be scraped ({type(e).__name__}). Proceeding with automotive domain extraction.")
+            logger.warning(f"Model page {url} could not be scraped: {type(e).__name__}: {e}")
             return {"url": url, "error": str(e)}
 
+    @staticmethod
+    def _collect_page_images(soup: BeautifulSoup, base: str) -> List[str]:
+        out = []
+        for tag in soup.find_all(["img", "source"]):
+            for attr in ("data-src", "src", "data-srcset", "srcset", "data-lazy-src"):
+                v = tag.get(attr)
+                if not v:
+                    continue
+                u = urljoin(base, v.split(",")[0].strip().split(" ")[0])
+                if re.search(r"\.(png|jpe?g|webp)(\?|$)", u, re.I):
+                    out.append(u)
+        return list(dict.fromkeys(out))
+
+    @staticmethod
+    def _collect_studio_frames(raw_html: str, base: str, max_dirs: int = 6) -> List[str]:
+        """360°-spin / colour-configurator frames (e.g. ``.../360/1.png``, ``.../Colour/black-red/3.png``,
+        ``.../Variant360/Midnight-Black/10.webp``). They are clean studio shots but live in JS/JSON, not <img>."""
+        raw = raw_html.replace("\\u002F", "/").replace("\\/", "/")
+        pat = re.compile(
+            r"""[^"'\s,()\\<>]*/(?:[^"'\s/<>]*360[^"'\s/<>]*|colou?rs?)/(?:[^"'\s<>]+/)?(\d{1,2})(?:_[a-z0-9]+)?\.(?:png|webp|jpe?g)""",
+            re.I,
+        )
+        by_dir: Dict[str, List[Tuple[int, str]]] = {}
+        for m in pat.finditer(raw):
+            u = m.group(0)
+            if re.search(r"bg|background|mobile|-m\.|thumb|icon", u, re.I):
+                continue
+            d = u.rsplit("/", 1)[0]
+            by_dir.setdefault(d, []).append((int(m.group(1)), urljoin(base, u)))
+        out: List[str] = []
+        for d, frames in list(by_dir.items())[:max_dirs]:
+            frames = sorted(set(frames))
+            picks = [frames[0]] + ([frames[len(frames) // 4]] if len(frames) > 3 else [])
+            out += [u for _, u in picks]
+        return list(dict.fromkeys(out))
+
+    @staticmethod
+    def _strip_noise(soup: BeautifulSoup) -> None:
+        """Remove menus/footers/modals by class/id token, but never a node that holds most of the page text
+        (TVS wraps real hero content in classes like ``u368-header-slide``)."""
+        body = soup.body or soup
+        total = max(len(body.get_text(" ", strip=True)), 1)
+        doomed = []
+        for el in body.find_all(True):
+            if el.name == "header":
+                doomed.append(el)
+                continue
+            tokens = [t.lower() for t in (el.get("class") or [])] + ([el.get("id").lower()] if el.get("id") else [])
+            if any(t.startswith(NOISE_TOKEN_PREFIXES) for t in tokens):
+                doomed.append(el)
+        for el in doomed:
+            if getattr(el, "decomposed", False):
+                continue
+            try:
+                if len(el.get_text(" ", strip=True)) > 0.6 * total and el.name not in ("nav", "footer"):
+                    continue
+                el.decompose()
+            except Exception:
+                pass
+
+    @staticmethod
+    def _harvest_json_state(soup: BeautifulSoup, base: str) -> Tuple[str, List[str]]:
+        """Collect human-readable strings and image URLs from embedded JSON page state."""
+        texts: List[str] = []
+        images: List[str] = []
+        seen = set()
+
+        def walk(node, depth=0):
+            if depth > 40 or len(texts) > 4000:
+                return
+            if isinstance(node, dict):
+                for v in node.values():
+                    walk(v, depth + 1)
+            elif isinstance(node, list):
+                for v in node:
+                    walk(v, depth + 1)
+            elif isinstance(node, str):
+                s = node.strip()
+                if not s or s in seen:
+                    return
+                seen.add(s)
+                if re.search(r"\.(png|jpe?g|webp)(\?|$)", s, re.I) and ("/" in s):
+                    images.append(urljoin(base, s))
+                    return
+                if s.startswith(("http", "/", "{", "#")) or re.fullmatch(r"[0-9a-fA-F-]{16,}", s):
+                    return
+                clean = re.sub(r"<[^>]+>", " ", s)
+                clean = re.sub(r"\s+", " ", clean).strip()
+                if 2 < len(clean) <= 400 and re.search(r"[A-Za-z]", clean):
+                    texts.append(clean)
+
+        for sc in soup.find_all("script"):
+            raw = sc.string or ""
+            if len(raw) < 2000:
+                continue
+            if sc.get("type") == "application/json" or sc.get("id") in ("__NEXT_DATA__", "__JSS_STATE__", "__NUXT_DATA__"):
+                try:
+                    walk(json.loads(raw))
+                except Exception:
+                    continue
+        return " | ".join(texts), list(dict.fromkeys(images))
+
+    @staticmethod
+    def _spec_dense_text(text: str, budget: int = 9000) -> str:
+        """Keep the intro plus the chunks that actually carry specs / features / prices."""
+        intro = text[:1200]
+        chunks = re.split(r"(?<=[.!?|])\s+|\s{2,}", text)
+        if len(chunks) < 8:  # sites without punctuation: fixed windows
+            chunks = [text[i:i + 220] for i in range(0, len(text), 220)]
+        keep, seen, total = [], set(), 0
+        for c in chunks:
+            c = c.strip()
+            if len(c) < 12 or c in seen:
+                continue
+            if SPEC_TOKEN.search(c) or FEATURE_TOKEN.search(c) or "₹" in c:
+                seen.add(c)
+                keep.append(c[:400])
+                total += len(c)
+                if total > budget:
+                    break
+        return (intro + " || " + " | ".join(keep))[: budget + 1500]
+
+    # ---------------------------------------------------------------- gemini
     @classmethod
-    async def _extract_with_gemini(
-        cls,
-        brand_name: str,
-        urls: List[str],
-        page_summaries: List[Dict[str, Any]],
-        candidate_images: List[str],
-        detected_logo: str
-    ) -> BrandCatalog:
-        prompt = f"""You are an elite automotive intelligence and catalog extraction engine.
-Target Brand: "{brand_name}"
-Source URLs: {json.dumps(urls)}
-
-Crawled Web Page Summaries:
-{json.dumps(page_summaries, indent=2)}
-
-Candidate Image URLs found on the website:
-{json.dumps(candidate_images[:30], indent=2)}
-
-Detected Logo Candidate:
-{detected_logo}
-
-Instructions:
-1. Synthesize a comprehensive, production-ready brand catalog JSON for {brand_name}.
-2. REAL-WORLD BRANDS: If this is an existing automotive brand (e.g. BMW, Audi, Mercedes, Tesla, Porsche, Toyota, Kia, Tata, etc.), generate its authentic production vehicle lineup with genuine models, real specifications, ex-showroom pricing, trims, key highlights, and USPs.
-3. FICTIONAL / NEW BRANDS / NO URLS: If this is a new, fictional, or custom brand (e.g. "Apex Motors", "Vertex Auto", "Nova Mobility", "Atlas Auto") or no URLs were provided, create a realistic, contemporary automotive brand catalog with NORMAL, production-ready road cars as driven on roads today (e.g. Compact SUV, Mid-size Authentic SUV, Family 7-Seater, Executive Sedan, Premium Hatchback, Electric Crossover).
-   - CRITICAL: Keep them as NORMAL, standard production cars — strictly NOT futuristic, NOT a sci-fi vehicle, NOT a spaceship, and NOT a far-future concept prototype.
-   - Use realistic contemporary ex-showroom pricing in INR Lakhs (e.g. ₹11.00 Lakh - ₹24.00 Lakh or ₹35.00 Lakh - ₹55.00 Lakh), realistic engine/battery specs, practical seating capacities (5-Seater / 7-Seater), and everyday consumer features (Touchscreen Infotainment, Sunroof, ADAS Level 2, Wireless Android Auto / Apple CarPlay, 360 Camera).
-4. Set an appropriate primary_color hex code (e.g. #0066b1, #e11d48, #0ea5e9, #f59e0b, #10b981), secondary_color ("#0f172a"), accent_color, avatar_name ("Kavya"), and avatar_voice ("Aoede").
-5. Extract between 4 to 6 vehicles. Each vehicle must include realistic variants (trims) with pricing and powertrain details.
-6. Output STRICTLY a valid JSON object matching this exact schema:
-{{
-  "id": "slug_id (e.g. apex_motors, vertex_auto, bmw)",
-  "name": "Brand Display Name",
-  "tagline": "Inspiring brand motto or tagline",
-  "logo_url": "URL to brand logo, or empty string",
-  "primary_color": "#0ea5e9",
-  "secondary_color": "#0f172a",
-  "accent_color": "#38bdf8",
-  "avatar_name": "Kavya",
-  "avatar_voice": "Aoede",
-  "vehicles": [
-    {{
-      "id": "normalized_vehicle_slug",
-      "name": "Full Vehicle Model Name",
-      "tagline": "Vehicle tagline or catchphrase",
-      "category": "Compact SUV / Authentic SUV / Family 7-Seater / Sedan / Premium Hatchback / Electric Crossover",
-      "price_range": "Price range (e.g. ₹12.00 Lakh - ₹18.50 Lakh or ₹35.00 Lakh - ₹48.00 Lakh)",
-      "hero_image": "Hero image URL or empty string",
-      "engine_specs": "Engine/motor specs (e.g. Tri-Motor AWD 1020 hp or 3.0L Twin-Turbo 380 hp)",
-      "seating_capacity": "2-Seater / 4-Seater / 5-Seater / 7-Seater",
-      "fuel_or_battery": "Electric / Petrol / Hybrid",
-      "range_or_mileage": "Range or fuel efficiency (e.g. 620 km WLTP or 14.5 km/l)",
-      "key_highlights": [
-        "Highlight 1",
-        "Highlight 2",
-        "Highlight 3",
-        "Highlight 4"
-      ],
-      "usp": "Unique selling proposition of this vehicle",
-      "variants": [
-        {{
-          "name": "Trim Name (e.g. Dynamic Edition, Track Performance)",
-          "price_ex_showroom": "Ex-showroom price",
-          "engine_or_battery": "Powertrain description",
-          "transmission": "Automatic / Direct Drive / Dual-Clutch",
-          "key_features": ["Feature 1", "Feature 2", "Feature 3"]
-        }}
-      ]
-    }}
-  ],
-  "dealerships": [
-    {{
-      "id": "flagship_center_1",
-      "name": "{brand_name} Experience Center",
-      "address": "Flagship Showroom Avenue, Worli",
-      "city": "Mumbai",
-      "phone": "+91 22 4000 8800",
-      "rating": 4.9,
-      "available_advisors": ["Senior Brand Specialist", "Product Genius"],
-      "has_test_drive_home_pickup": true
-    }}
-  ]
-}}
-
-Output ONLY raw valid JSON without wrapping in markdown codeblocks if possible."""
-
-        raw_json_str = ""
+    async def _gemini_json(cls, prompt: str, max_tokens: int = 4096, _attempt: int = 1) -> Optional[Dict[str, Any]]:
         try:
-            client = genai.Client(
-                vertexai=True,
-                project=settings.VERTEX_PROJECT_ID,
-                location=settings.VERTEX_LOCATION
-            )
-            config = types.GenerateContentConfig(
-                temperature=0.2,
-                max_output_tokens=8192,
-                response_mime_type="application/json"
-            )
-            model_to_use = getattr(settings, "REST_CHAT_MODEL", "gemini-2.5-flash")
+            from app.services.genai_client import get_genai_client
+
+            client = get_genai_client()
             resp = await asyncio.to_thread(
                 client.models.generate_content,
-                model=model_to_use,
+                model=settings.REST_CHAT_MODEL,
                 contents=prompt,
-                config=config
+                config=types.GenerateContentConfig(
+                    temperature=0.1,
+                    max_output_tokens=max_tokens,
+                    response_mime_type="application/json",
+                    # gemini-2.5-flash thinking tokens count against max_output_tokens; on long spec pages
+                    # they consumed ~3.9k of 4k tokens and truncated the JSON. Extraction needs no reasoning.
+                    thinking_config=types.ThinkingConfig(thinking_budget=0),
+                ),
             )
-            if resp and resp.text:
-                raw_json_str = resp.text.strip()
+            raw = (resp.text or "").strip() if resp else ""
+            if not raw:
+                raise ValueError("empty Gemini response")
+            raw = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw)
+            start, end = raw.find("{"), raw.rfind("}")
+            if start == -1 or end == -1:
+                return None
+            return json.loads(re.sub(r",\s*([\]}])", r"\1", raw[start:end + 1]))
         except Exception as e:
-            logger.warning(f"Vertex AI Gemini extraction notice (falling back to domain catalog): {e}")
+            if _attempt < 2:
+                logger.info(f"Gemini JSON extraction retry after {type(e).__name__}")
+                return await cls._gemini_json(prompt, max_tokens=max_tokens + 2048, _attempt=_attempt + 1)
+            logger.warning(f"Gemini JSON extraction failed: {type(e).__name__}: {e}")
+            return None
 
-        # Parse & Sanitize Gemini JSON output
-        if raw_json_str:
-            try:
-                clean_json = raw_json_str.strip()
-                if clean_json.startswith("```"):
-                    clean_json = re.sub(r"^```(?:json)?\s*", "", clean_json)
-                    clean_json = re.sub(r"\s*```$", "", clean_json)
-                
-                start_idx = clean_json.find('{')
-                end_idx = clean_json.rfind('}')
-                if start_idx != -1 and end_idx != -1:
-                    clean_json = clean_json[start_idx:end_idx+1]
-
-                clean_json = re.sub(r',\s*([\]}])', r'\1', clean_json)
-
-                data = json.loads(clean_json)
-
-                slug = data.get("id") or re.sub(r'[^a-z0-9]+', '_', brand_name.lower()).strip('_')
-                data["id"] = slug
-                data["name"] = data.get("name") or brand_name
-                data["tagline"] = data.get("tagline") or f"Official {brand_name} Experience Center"
-                primary_color = data.get("primary_color") or "#0ea5e9"
-                data["primary_color"] = primary_color
-
-                # Generate or assign logo
-                logo_url = data.get("logo_url") or detected_logo or ""
-                if not logo_url or not logo_url.strip() or "placeholder" in logo_url:
-                    logo_url = cls._generate_brand_vector_logo(slug, data["name"], primary_color)
-                data["logo_url"] = logo_url
-
-                data["source_urls"] = urls
-                data["is_active"] = True
-
-                # For fictional brands (no URLs provided), schedule non-proprietary concept car image
-                # generation with Gemini Nano Banana in the background so HTTP onboarding responds immediately (<3s)
-                # without tripping frontend or proxy gateway timeouts.
-                if not urls:
-                    try:
-                        raw_vehicles_payload = [
-                            {"id": v.get("id") or f"{slug}_v{i+1}", "name": v.get("name") or f"{brand_name} Model {i+1}", "category": v.get("category", "Authentic SUV")}
-                            for i, v in enumerate(data.get("vehicles", [])) if isinstance(v, dict)
-                        ]
-                        asyncio.create_task(
-                            cls._generate_concept_images_background(slug, raw_vehicles_payload)
-                        )
-                    except Exception as bg_err:
-                        logger.warning(f"Background concept generation task schedule notice: {bg_err}")
-
-                sanitized_vehicles = []
-                for idx, v in enumerate(data.get("vehicles", [])):
-                    if not isinstance(v, dict):
-                        continue
-                    v_id = v.get("id") or f"{slug}_v{idx+1}"
-                    v_name = v.get("name") or f"{brand_name} Model {idx+1}"
-                    
-                    hero_img = cls._resolve_vehicle_hero_image(
-                        brand_name=brand_name,
-                        vehicle_name=v_name,
-                        category=v.get("category", ""),
-                        proposed_image=v.get("hero_image", ""),
-                        candidate_images=candidate_images,
-                        idx=idx
-                    )
-                    is_custom = False
-                    
-                    sanitized_variants = []
-                    for var in v.get("variants", []):
-                        if isinstance(var, dict):
-                            sanitized_variants.append(VehicleVariant(
-                                name=var.get("name") or "Standard Edition",
-                                price_ex_showroom=var.get("price_ex_showroom") or v.get("price_range", "Official Quote"),
-                                engine_or_battery=var.get("engine_or_battery") or v.get("engine_specs", "Standard Powertrain"),
-                                transmission=var.get("transmission") or "Automatic",
-                                key_features=var.get("key_features") if isinstance(var.get("key_features"), list) else ["Digital Cockpit", "Smart Keyless Entry"]
-                            ))
-                    if not sanitized_variants:
-                        sanitized_variants.append(VehicleVariant(
-                            name="Standard Edition",
-                            price_ex_showroom=v.get("price_range", "Official Quote"),
-                            engine_or_battery=v.get("engine_specs", "Standard Powertrain"),
-                            transmission="Automatic",
-                            key_features=["Digital Cockpit", "Smart Keyless Entry", "Safety Package"]
-                        ))
-
-                    sanitized_vehicles.append(VehicleItem(
-                        id=v_id,
-                        name=v_name,
-                        tagline=v.get("tagline") or f"Experience the excellence of {v_name}",
-                        category=v.get("category") or "Authentic SUV",
-                        price_range=v.get("price_range") or "Contact Showroom",
-                        hero_image=hero_img,
-                        engine_specs=v.get("engine_specs") or "High Performance Powertrain",
-                        seating_capacity=v.get("seating_capacity") or "5-Seater",
-                        fuel_or_battery=v.get("fuel_or_battery") or "Petrol / Hybrid",
-                        range_or_mileage=v.get("range_or_mileage") or "Standard Efficiency",
-                        key_highlights=v.get("key_highlights") if isinstance(v.get("key_highlights"), list) else ["Digital Cockpit", "ADAS Safety", "Connected Car Tech"],
-                        usp=v.get("usp") or f"Signature engineering and comfort from {brand_name}",
-                        variants=sanitized_variants,
-                        is_custom_source_of_truth=is_custom,
-                        uploaded_image_url=hero_img if is_custom else None
-                    ))
-
-                if sanitized_vehicles:
-                    data["vehicles"] = sanitized_vehicles
-                else:
-                    data["vehicles"] = cls._build_domain_fallback_vehicles(brand_name, candidate_images)
-
-                sanitized_dealerships = []
-                for d in data.get("dealerships", []):
-                    if isinstance(d, dict):
-                        sanitized_dealerships.append(DealershipItem(
-                            id=d.get("id") or f"{slug}_dealer",
-                            name=d.get("name") or f"{brand_name} Experience Center",
-                            address=d.get("address") or "Flagship Auto Boulevard",
-                            city=d.get("city") or "Mumbai",
-                            phone=d.get("phone") or "+91 22 4000 8800",
-                            rating=float(d.get("rating", 4.9)),
-                            available_advisors=d.get("available_advisors") if isinstance(d.get("available_advisors"), list) else ["Senior Brand Consultant", "Product Genius"],
-                            has_test_drive_home_pickup=bool(d.get("has_test_drive_home_pickup", True))
-                        ))
-                if not sanitized_dealerships:
-                    sanitized_dealerships = [DealershipItem(
-                        id=f"{slug}_flagship",
-                        name=f"{brand_name} Flagship Center",
-                        address="Auto Boulevard, Flagship District",
-                        city="Mumbai",
-                        phone="+91 22 4000 8800",
-                        rating=4.9,
-                        available_advisors=["Senior Brand Consultant", "Product Genius"],
-                        has_test_drive_home_pickup=True
-                    )]
-                data["dealerships"] = sanitized_dealerships
-
-                return BrandCatalog(**data)
-            except Exception as pe:
-                logger.error(f"Failed to parse Gemini JSON output: {pe}")
-
-        return cls._build_domain_fallback_catalog(brand_name, urls, candidate_images, detected_logo)
+    @staticmethod
+    def _expected_model(page: Dict[str, Any]) -> str:
+        """Model name implied by the page title (before ':' / '|' / '-') or, failing that, the URL slug."""
+        title = re.split(r"\s[:|\-–]\s|:\s", page.get("title", "") or "")[0]
+        title = re.sub(r"\b(BS6|BS-VI|Price|Mileage|Bike|Smart Electric Scooter|Electric Scooter|20\d\d)\b.*$", "", title, flags=re.I)
+        title = re.sub(r"^New\s+", "", title, flags=re.I).strip(" -:|")
+        if len(title) >= 3:
+            return title
+        slug = urlparse(page.get("url", "")).path.rstrip("/").split("/")[-1].replace(".html", "")
+        return slug.replace("-", " ").title()
 
     @classmethod
-    async def _generate_concept_images_background(cls, brand_id: str, vehicles: List[Dict[str, Any]]):
-        """
-        Background task to generate non-proprietary concept car images with Gemini Nano Banana
-        without holding up the HTTP onboarding request. Updates BrandService disk cache as each finishes.
-        """
-        try:
-            from app.services.gemini_image_service import GeminiImageService
-            from app.services.brand_service import BrandService
-            logger.info(f"Background AI concept car image generation started for brand '{brand_id}' ({len(vehicles)} vehicles)...")
-            ai_generated_images = await GeminiImageService.generate_images_for_vehicles_batch(
-                brand_id=brand_id,
-                vehicles=vehicles,
-                concurrency=2
+    async def _extract_vehicle_from_page(cls, brand_name: str, page: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        prompt = f"""You are a two-wheeler product data extraction engine for the Indian market.
+Convert ONE official {brand_name} model web page into structured JSON.
+
+PAGE URL: {page['url']}
+PAGE TITLE: {page.get('title', '')}
+THIS PAGE IS ABOUT: {cls._expected_model(page)}  <-- the "name" you output MUST be this model. The page also links to sibling models; ignore their specs.
+META DESCRIPTION: {page.get('meta_description', '')}
+STRUCTURED DATA (schema.org): {json.dumps(page.get('json_ld', []))[:2000]}
+SPEC-DENSE PAGE TEXT:
+{page.get('spec_text', '')}
+
+RULES:
+1. This page describes exactly ONE model (possibly with several variants). Use the model name as marketed (e.g. "TVS Apache RTR 160 4V", "Hero Splendor+").
+2. Take every number (cc, PS, Nm, kmpl, km range, kg, mm, litres, kWh, charging time, ₹ prices) FROM THE PAGE TEXT when present.
+3. Only if a value is genuinely absent from the page, fill it from your own knowledge of this exact Indian-market model. Never invent a value you do not know — use "" instead.
+4. Ignore placeholder prices like "₹ 000000" or EMI amounts ("₹1,899/month"). If no real ex-showroom price is on the page, give your best-known current Indian ex-showroom price and append " (approx.)".
+5. Prices are EX-SHOWROOM rupees, formatted like "₹1,18,000" or a range "₹1,18,000 - ₹1,32,000" (no space after ₹, no city/on-road notes). Never use "Lakh" for prices below ₹1,00,000.
+6. category MUST be one of: {json.dumps(TWO_WHEELER_CATEGORIES)}.
+7. key_highlights: 4-6 real features rider-facing features from the page (e.g. "Dual-channel ABS", "5-inch TFT with SmartXonnect", "Race-tuned USD forks", "i3S idle stop-start").
+8. competitors: 2-4 real Indian-market rival models from OTHER brands in the same segment.
+9. Output ONLY this JSON object:
+{{
+  "name": "", "tagline": "", "category": "", "price_range": "",
+  "engine_specs": "one line summary, e.g. '159.7cc single-cylinder oil-cooled, 17.55 PS, 14.73 Nm' or '4.4 kW hub motor, 3.5 kWh battery'",
+  "fuel_or_battery": "Petrol / Electric (3.5 kWh) / Petrol + CNG",
+  "range_or_mileage": "MUST contain a number: '47 kmpl (claimed)' or '145 km IDC range' (never marketing text like '15% more mileage')",
+  "displacement_cc": "", "max_power": "", "max_torque": "", "kerb_weight": "", "seat_height": "",
+  "fuel_tank_or_battery": "", "top_speed": "", "braking": "",
+  "riding_modes": [], "colors": [], "key_highlights": [], "usp": "", "competitors": [],
+  "variants": [{{"name": "", "price_ex_showroom": "", "engine_or_battery": "", "transmission": "5-speed manual / CVT automatic / Single-speed", "key_features": []}}],
+  "data_completeness": "page | page+knowledge | knowledge"
+}}"""
+        return await cls._gemini_json(prompt)
+
+    @classmethod
+    def _to_vehicle_item(cls, brand_id: str, brand_name: str, d: Dict[str, Any], page: Dict[str, Any]) -> VehicleItem:
+        def s(key: str, default: str = "") -> str:
+            v = d.get(key)
+            return str(v).strip() if v not in (None, [], {}) else default
+
+        def lst(key: str) -> List[str]:
+            v = d.get(key)
+            return [str(x).strip() for x in v if str(x).strip()] if isinstance(v, list) else []
+
+        name = s("name") or page.get("title", "").split(":")[0].split("|")[0].strip() or f"{brand_name} Model"
+        category = s("category")
+        if category not in TWO_WHEELER_CATEGORIES:
+            low = f"{category} {name}".lower()
+            category = (
+                "Electric Scooter" if ("electric" in low or "ev" in low.split()) and "scoot" in low
+                else "Electric Motorcycle" if "electric" in low
+                else "Scooter" if "scoot" in low
+                else "Commuter Motorcycle"
             )
-            for v_id, img_url in ai_generated_images.items():
-                if img_url:
-                    BrandService.update_vehicle_image(brand_id, v_id, img_url)
-            logger.info(f"Background AI concept car image generation completed for brand '{brand_id}'.")
-        except Exception as e:
-            logger.warning(f"Background AI concept image generation notice: {e}")
 
-    @classmethod
-    def _resolve_vehicle_hero_image(
-        cls,
-        brand_name: str,
-        vehicle_name: str,
-        category: str,
-        proposed_image: str,
-        candidate_images: List[str],
-        idx: int
-    ) -> str:
-        # 1. If proposed_image was actually scraped from candidate_images and is valid, use it
-        if proposed_image and proposed_image in candidate_images:
-            return proposed_image
-
-        b_key = brand_name.lower().strip()
-        v_key = vehicle_name.lower().strip()
-
-        # 2. Curated model images for popular brands
-        curated_models = [
-            # BMW
-            ("bmw", "3 series", "https://imgd.aeplcdn.com/1056x594/n/cw/ec/140591/3-series-gran-limousine-exterior-right-front-three-quarter-3.jpeg"),
-            ("bmw", "330", "https://imgd.aeplcdn.com/1056x594/n/cw/ec/140591/3-series-gran-limousine-exterior-right-front-three-quarter-3.jpeg"),
-            ("bmw", "m340", "https://imgd.aeplcdn.com/1056x594/n/cw/ec/140591/3-series-gran-limousine-exterior-right-front-three-quarter-3.jpeg"),
-            ("bmw", "x1", "https://imgd.aeplcdn.com/1056x594/n/cw/ec/140589/x1-exterior-right-front-three-quarter-7.jpeg"),
-            ("bmw", "x5", "https://imgd.aeplcdn.com/1056x594/n/cw/ec/152681/x5-facelift-exterior-right-front-three-quarter-3.jpeg"),
-            ("bmw", "ix", "https://imgd.aeplcdn.com/1056x594/n/cw/ec/106821/ix-exterior-right-front-three-quarter.jpeg"),
-            ("bmw", "5 series", "https://imgd.aeplcdn.com/1056x594/n/cw/ec/174975/5-series-exterior-right-front-three-quarter.jpeg"),
-            ("bmw", "7 series", "https://imgd.aeplcdn.com/1056x594/n/cw/ec/132513/7-series-exterior-right-front-three-quarter-3.jpeg"),
-            ("bmw", "i7", "https://imgd.aeplcdn.com/1056x594/n/cw/ec/132513/7-series-exterior-right-front-three-quarter-3.jpeg"),
-            ("bmw", "x3", "https://imgd.aeplcdn.com/1056x594/n/cw/ec/110233/x3-exterior-right-front-three-quarter.jpeg"),
-            ("bmw", "x7", "https://imgd.aeplcdn.com/1056x594/n/cw/ec/137685/x7-exterior-right-front-three-quarter-2.jpeg"),
-            ("bmw", "m2", "https://imgd.aeplcdn.com/1056x594/n/cw/ec/149863/m2-exterior-right-front-three-quarter-2.jpeg"),
-            ("bmw", "z4", "https://imgd.aeplcdn.com/1056x594/n/cw/ec/147349/z4-exterior-right-front-three-quarter-2.jpeg"),
-            # Mercedes
-            ("mercedes", "c-class", "https://imgd.aeplcdn.com/1056x594/n/cw/ec/115871/c-class-exterior-right-front-three-quarter-3.jpeg"),
-            ("mercedes", "e-class", "https://imgd.aeplcdn.com/1056x594/n/cw/ec/176377/e-class-exterior-right-front-three-quarter-3.jpeg"),
-            ("mercedes", "glc", "https://imgd.aeplcdn.com/1056x594/n/cw/ec/144681/glc-exterior-right-front-three-quarter-4.jpeg"),
-            ("mercedes", "gle", "https://imgd.aeplcdn.com/1056x594/n/cw/ec/161427/gle-facelift-exterior-right-front-three-quarter-2.jpeg"),
-            ("mercedes", "eqs", "https://imgd.aeplcdn.com/1056x594/n/cw/ec/124141/eqs-exterior-right-front-three-quarter-3.jpeg"),
-            # Audi
-            ("audi", "a4", "https://imgd.aeplcdn.com/1056x594/n/cw/ec/51909/a4-exterior-right-front-three-quarter-2.jpeg"),
-            ("audi", "a6", "https://imgd.aeplcdn.com/1056x594/n/cw/ec/39467/a6-exterior-right-front-three-quarter-4.jpeg"),
-            ("audi", "q3", "https://imgd.aeplcdn.com/1056x594/n/cw/ec/125195/q3-exterior-right-front-three-quarter-2.jpeg"),
-            ("audi", "q5", "https://imgd.aeplcdn.com/1056x594/n/cw/ec/53591/q5-exterior-right-front-three-quarter-36.jpeg"),
-            ("audi", "q7", "https://imgd.aeplcdn.com/1056x594/n/cw/ec/106515/q7-exterior-right-front-three-quarter-2.jpeg"),
-            ("audi", "e-tron", "https://imgd.aeplcdn.com/1056x594/n/cw/ec/54609/e-tron-exterior-right-front-three-quarter-3.jpeg"),
-            # Tata
-            ("tata", "nexon", "https://imgd.aeplcdn.com/1056x594/n/cw/ec/141867/nexon-exterior-right-front-three-quarter-71.jpeg"),
-            ("tata", "harrier", "https://imgd.aeplcdn.com/1056x594/n/cw/ec/154573/harrier-facelift-exterior-right-front-three-quarter-2.jpeg"),
-            ("tata", "safari", "https://imgd.aeplcdn.com/1056x594/n/cw/ec/154575/safari-facelift-exterior-right-front-three-quarter-3.jpeg"),
-            ("tata", "curvv", "https://imgd.aeplcdn.com/1056x594/n/cw/ec/139651/curvv-exterior-right-front-three-quarter.jpeg"),
-            ("tata", "punch", "https://imgd.aeplcdn.com/1056x594/n/cw/ec/168435/punch-ev-exterior-right-front-three-quarter-3.jpeg"),
-            # Toyota
-            ("toyota", "fortuner", "https://imgd.aeplcdn.com/1056x594/n/cw/ec/44709/fortuner-exterior-right-front-three-quarter-20.jpeg"),
-            ("toyota", "innova", "https://imgd.aeplcdn.com/1056x594/n/cw/ec/115025/innova-hycross-exterior-right-front-three-quarter-3.jpeg"),
-            ("toyota", "hyryder", "https://imgd.aeplcdn.com/1056x594/n/cw/ec/124021/hyryder-exterior-right-front-three-quarter-72.jpeg"),
-            ("toyota", "camry", "https://imgd.aeplcdn.com/1056x594/n/cw/ec/110233/camry-exterior-right-front-three-quarter-2.jpeg"),
-            # Kia
-            ("kia", "seltos", "https://imgd.aeplcdn.com/1056x594/n/cw/ec/136420/seltos-facelift-exterior-right-front-three-quarter-4.jpeg"),
-            ("kia", "sonet", "https://imgd.aeplcdn.com/1056x594/n/cw/ec/165151/sonet-facelift-exterior-right-front-three-quarter-2.jpeg"),
-            ("kia", "ev6", "https://imgd.aeplcdn.com/1056x594/n/cw/ec/115867/ev6-exterior-right-front-three-quarter-2.jpeg"),
-        ]
-        for b_match, v_match, img_url in curated_models:
-            if b_match in b_key and v_match in v_key:
-                return img_url
-
-        # 3. If candidate images has valid items
-        if candidate_images:
-            return candidate_images[idx % len(candidate_images)]
-
-        # 4. If proposed_image is an external non-hallucinated URL (no content/dam)
-        if proposed_image and proposed_image.startswith("http") and "content/dam" not in proposed_image and "unsplash.com" in proposed_image:
-            return proposed_image
-
-        # 5. Dynamically assign category-matched verified high-resolution Unsplash automotive photo
-        cat_lower = f"{category.lower()} {vehicle_name.lower()}"
-        target_pool_key = "sedan"
-        if any(w in cat_lower for w in ["hyper", "supercar", "track", "gt", "apex"]):
-            target_pool_key = "hypercar"
-        elif any(w in cat_lower for w in ["coupe", "sport", "convertible", "roadster"]):
-            target_pool_key = "coupe"
-        elif any(w in cat_lower for w in ["electric", "ev", "born electric", "battery", "tesla", "cyber"]):
-            target_pool_key = "electric"
-        elif any(w in cat_lower for w in ["suv", "crossover", "4x4", "terrain", "all-terrain"]):
-            target_pool_key = "suv"
-        elif any(w in cat_lower for w in ["sedan", "limousine", "saloon", "executive", "luxury"]):
-            target_pool_key = "sedan"
-        else:
-            pool_keys = ["hypercar", "suv", "electric", "coupe", "sedan"]
-            target_pool_key = pool_keys[idx % len(pool_keys)]
-
-        pool = UNSPLASH_CATEGORY_POOLS.get(target_pool_key, UNSPLASH_CATEGORY_POOLS["hypercar"])
-        return pool[idx % len(pool)]
-
-    @classmethod
-    def _build_domain_fallback_vehicles(cls, brand_name: str, candidate_images: List[str]) -> List[VehicleItem]:
-        clean_key = brand_name.lower().strip()
-        for k, profile in KNOWN_BRAND_PROFILES.items():
-            if k in clean_key:
-                vehicles = []
-                for idx, v in enumerate(profile["vehicles"]):
-                    img = candidate_images[idx] if idx < len(candidate_images) else v.get("hero_image")
-                    variants = [VehicleVariant(**var) for var in v.get("variants", [])]
-                    vehicles.append(VehicleItem(
-                        id=v["id"],
-                        name=v["name"],
-                        tagline=v["tagline"],
-                        category=v["category"],
-                        price_range=v["price_range"],
-                        hero_image=img or "/assets/placeholder-car.svg",
-                        engine_specs=v["engine_specs"],
-                        seating_capacity=v["seating_capacity"],
-                        fuel_or_battery=v["fuel_or_battery"],
-                        range_or_mileage=v["range_or_mileage"],
-                        key_highlights=v["key_highlights"],
-                        usp=v["usp"],
-                        variants=variants,
-                        is_custom_source_of_truth=False
-                    ))
-                return vehicles
-
-        slug = re.sub(r'[^a-z0-9]+', '_', brand_name.lower()).strip('_')
-        archetypes = [
-            ("Apex Hyper-GT", "Hypercar", "Aerodynamic Tri-Motor Mastery", "₹1.20 Crore - ₹1.65 Crore", "Tri-Motor AWD (1,020 hp, 0-100 in 2.1s)", "Electric (105 kWh)", "620 km WLTP"),
-            ("Vanguard Horizon SUV", "Authentic SUV", "Commanding All-Terrain Luxury", "₹75.00 Lakh - ₹92.00 Lakh", "3.5L Twin-Turbo V6 Hybrid (435 hp)", "Petrol / Hybrid", "13.4 km/l"),
-            ("Spectre Cyber Coupe", "Coupe", "Raw Precision Track-Tuned Performance", "₹85.00 Lakh - ₹1.10 Crore", "4.0L Biturbo V8 (580 hp)", "Petrol", "10.5 km/l"),
-            ("Quantum Electra", "Born Electric SUV", "Zero Emissions, Infinite Architecture", "₹68.00 Lakh - ₹88.00 Lakh", "Dual Ultra-Torque Motors (536 hp)", "Electric (90 kWh)", "580 km WLTP"),
-            ("Elysium Limousine", "Sedan", "Ultra-Executive Chauffeur Lounge", "₹95.00 Lakh - ₹1.35 Crore", "Twin-Turbo V6 Plug-in Hybrid (450 hp)", "Plug-in Hybrid", "18.2 km/l")
-        ]
-        vehicles = []
-        for i, (model_suffix, cat, tag, price, engine, fuel, eff) in enumerate(archetypes):
-            img = cls._resolve_vehicle_hero_image(
-                brand_name=brand_name,
-                vehicle_name=f"{brand_name} {model_suffix}",
-                category=cat,
-                proposed_image="",
-                candidate_images=candidate_images,
-                idx=i
-            )
-            vehicles.append(VehicleItem(
-                id=f"{slug}_v{i+1}",
-                name=f"{brand_name} {model_suffix}",
-                tagline=f"Experience {brand_name} {tag}",
-                category=cat,
-                price_range=price,
-                hero_image=img,
-                engine_specs=engine,
-                seating_capacity="5-Seater",
-                fuel_or_battery=fuel,
-                range_or_mileage=eff,
-                key_highlights=[
-                    "Next-Generation Panoramic Cockpit Display",
-                    "Advanced Driver Assistance System (ADAS Level 2+)",
-                    "Active Adaptive Suspension with Dynamic Dampers",
-                    "Acoustic Glass with Immersive Spatial Audio"
-                ],
-                usp=f"Precision engineering, refined luxury, and class-leading dynamics from {brand_name}.",
-                variants=[
-                    VehicleVariant(
-                        name="Dynamic Edition",
-                        price_ex_showroom=price.split(" - ")[0],
-                        engine_or_battery=engine,
-                        transmission="Automatic",
-                        key_features=["Digital Instrument Cluster", "Smart Keyless Entry", "Dynamic Stability Control"]
-                    ),
-                    VehicleVariant(
-                        name="Performance Luxury",
-                        price_ex_showroom=price.split(" - ")[-1],
-                        engine_or_battery=engine,
-                        transmission="Automatic Sport",
-                        key_features=["Panoramic Glass Roof", "Ventilated Leather Seats", "Adaptive Air Suspension"]
-                    )
-                ],
-                is_custom_source_of_truth=False
+        variants = []
+        for v in d.get("variants") or []:
+            if isinstance(v, dict) and v.get("name"):
+                variants.append(VehicleVariant(
+                    name=str(v.get("name")),
+                    price_ex_showroom=str(v.get("price_ex_showroom") or s("price_range", "Contact dealer")),
+                    engine_or_battery=str(v.get("engine_or_battery") or s("engine_specs")),
+                    transmission=str(v.get("transmission") or ("Single-speed" if "electric" in category.lower() else "Manual")),
+                    key_features=[str(x) for x in (v.get("key_features") or []) if x][:6],
+                ))
+        if not variants:
+            variants.append(VehicleVariant(
+                name="Standard", price_ex_showroom=s("price_range", "Contact dealer"),
+                engine_or_battery=s("engine_specs"), transmission="Standard", key_features=lst("key_highlights")[:3],
             ))
-        return vehicles
+
+        usp = s("usp", f"Official {name} from {brand_name}.")
+        if d.get("data_completeness") == "knowledge":
+            usp += " (Details compiled from public model information; official page provided limited data.)"
+
+        return VehicleItem(
+            id=f"{brand_id}_{cls._slug(re.sub(rf'^{re.escape(brand_name.split()[0])}\s+', '', name, flags=re.I))}"[:64],
+            name=name,
+            tagline=s("tagline", page.get("meta_description", "")[:120]),
+            category=category,
+            price_range=s("price_range", "Contact dealer"),
+            hero_image=PLACEHOLDER_IMAGE,
+            engine_specs=s("engine_specs"),
+            seating_capacity="Rider + Pillion",
+            fuel_or_battery=s("fuel_or_battery", "Petrol"),
+            range_or_mileage=s("range_or_mileage"),
+            key_highlights=lst("key_highlights")[:6] or ["Official manufacturer specifications"],
+            usp=usp,
+            variants=variants[:6],
+            source_url=page.get("url"),
+            displacement_cc=s("displacement_cc") or None,
+            max_power=s("max_power") or None,
+            max_torque=s("max_torque") or None,
+            kerb_weight=s("kerb_weight") or None,
+            seat_height=s("seat_height") or None,
+            fuel_tank_or_battery=s("fuel_tank_or_battery") or None,
+            top_speed=s("top_speed") or None,
+            braking=s("braking") or None,
+            riding_modes=lst("riding_modes") or None,
+            colors=lst("colors") or None,
+            competitors=lst("competitors") or None,
+        )
 
     @classmethod
-    def _build_domain_fallback_catalog(
-        cls,
-        brand_name: str,
-        urls: List[str],
-        candidate_images: List[str],
-        detected_logo: str
-    ) -> BrandCatalog:
-        clean_key = brand_name.lower().strip()
-        slug = re.sub(r'[^a-z0-9]+', '_', clean_key).strip('_')
-        
-        for k, profile in KNOWN_BRAND_PROFILES.items():
-            if k in clean_key:
-                vehicles = cls._build_domain_fallback_vehicles(brand_name, candidate_images)
-                return BrandCatalog(
-                    id=slug,
-                    name=profile["name"],
-                    tagline=profile["tagline"],
-                    logo_url=detected_logo or profile.get("logo_url", ""),
-                    primary_color=profile.get("primary_color", "#0066b1"),
-                    secondary_color=profile.get("secondary_color", "#0f172a"),
-                    accent_color=profile.get("accent_color", "#38bdf8"),
-                    avatar_name=profile.get("avatar_name", "Kavya"),
-                    avatar_voice=profile.get("avatar_voice", "Aoede"),
-                    source_urls=urls,
-                    is_active=True,
-                    vehicles=vehicles,
-                    dealerships=[
-                        DealershipItem(
-                            id=f"{slug}_flagship",
-                            name=f"{profile['name']} Flagship Center",
-                            address="Auto Boulevard, Downtown District",
-                            city="Mumbai",
-                            phone="+91 22 4000 8800",
-                            rating=4.9,
-                            available_advisors=["Senior Brand Consultant", "Product Genius"],
-                            has_test_drive_home_pickup=True
-                        )
-                    ]
-                )
+    async def _fill_missing_efficiency(cls, brand_name: str, vehicles: List[VehicleItem]) -> None:
+        """Replace marketing copy ("15% more mileage") with a real claimed kmpl / km range figure."""
+        ok = re.compile(r"\d+(\.\d+)?\s?(kmpl|km/l|km\b|km\s)", re.I)
+        gaps = [v for v in vehicles if not ok.search(v.range_or_mileage or "")]
+        if not gaps:
+            return
+        data = await cls._gemini_json(
+            f"""For these {brand_name} two-wheelers sold in India, give the manufacturer-claimed fuel efficiency
+(petrol, in kmpl) or IDC/claimed range (electric, in km). Use only figures you are confident about; else "".
+Models: {json.dumps([{"id": v.id, "name": v.name, "fuel": v.fuel_or_battery} for v in gaps])}
+Return JSON: {{"items": [{{"id": "", "value": "e.g. '65 kmpl' or '145 km IDC range'"}}]}}""",
+            max_tokens=1024,
+        ) or {}
+        by_id = {i.get("id"): (i.get("value") or "").strip() for i in data.get("items", []) if isinstance(i, dict)}
+        for v in gaps:
+            val = by_id.get(v.id, "")
+            if ok.search(val):
+                v.range_or_mileage = f"{val} (approx.)" if "approx" not in val.lower() else val
+            elif not ok.search(v.range_or_mileage or ""):
+                v.range_or_mileage = ""
+        logger.info(f"[{brand_name}] filled efficiency for {sum(1 for v in gaps if v.range_or_mileage)}/{len(gaps)} models")
 
-        vehicles = cls._build_domain_fallback_vehicles(brand_name, candidate_images)
-        primary_color = "#0ea5e9"
-        logo = detected_logo
-        if not logo or not logo.strip():
-            logo = cls._generate_brand_vector_logo(slug, brand_name, primary_color)
+    SPEC_FILL_FIELDS = ("displacement_cc", "max_power", "max_torque", "kerb_weight", "seat_height",
+                        "fuel_tank_or_battery", "top_speed", "braking")
 
+    @classmethod
+    async def _fill_missing_specs(cls, brand_name: str, vehicles: List[VehicleItem]) -> None:
+        """Official pages often omit seat height / kerb weight / top speed. Fill blanks from model knowledge,
+        marked "(approx.)"; never overwrite a value that was scraped from the page."""
+        gaps = [
+            {"id": v.id, "name": v.name, "fuel": v.fuel_or_battery,
+             "missing": [f for f in cls.SPEC_FILL_FIELDS if not getattr(v, f, None)] + ([] if v.riding_modes else ["riding_modes"])}
+            for v in vehicles
+        ]
+        gaps = [g for g in gaps if g["missing"]]
+        if not gaps:
+            return
+        data = await cls._gemini_json(
+            f"""For these {brand_name} two-wheelers currently sold in India, provide ONLY the listed missing
+manufacturer specifications. Use short spec strings with units: displacement_cc "159.7 cc" (EVs: "" ),
+max_power "16.04 PS @ 9250 rpm" (EVs: motor peak power in kW), max_torque "14.73 Nm @ 7250 rpm",
+kerb_weight "144 kg", seat_height "800 mm", fuel_tank_or_battery "12 L" or "3.4 kWh", top_speed "114 km/h",
+braking "Front disc / rear drum, single-channel ABS", riding_modes as a list (empty list if none).
+If you are not confident about a value, return "" (or [] for riding_modes). Do not guess wildly.
+Models: {json.dumps(gaps)}
+Return JSON: {{"items": [{{"id": "", "<field>": "<value>"}}]}}""",
+            max_tokens=4096,
+        ) or {}
+        filled = 0
+        by_id = {v.id: v for v in vehicles}
+        for item in data.get("items", []) if isinstance(data, dict) else []:
+            v = by_id.get(item.get("id")) if isinstance(item, dict) else None
+            if not v:
+                continue
+            for f in cls.SPEC_FILL_FIELDS:
+                val = item.get(f)
+                if isinstance(val, str) and val.strip() and not getattr(v, f, None):
+                    val = val.strip()
+                    setattr(v, f, val if "approx" in val.lower() else f"{val} (approx.)")
+                    filled += 1
+            modes = item.get("riding_modes")
+            if not v.riding_modes and isinstance(modes, list) and modes:
+                v.riding_modes = [str(m).strip() for m in modes if str(m).strip()][:6]
+                filled += 1
+        logger.info(f"[{brand_name}] knowledge-filled {filled} missing spec values across {len(gaps)} models")
+
+    # ----------------------------------------------------------------- images
+    @classmethod
+    def _rank_image_candidates(cls, page: Dict[str, Any]) -> List[str]:
+        page_path = urlparse(page["url"]).path.rstrip("/")
+        slug = page_path.split("/")[-1].replace(".html", "").lower()
+        tokens = [t for t in re.split(r"[-_]", slug) if len(t) > 2 and t not in ("tvs", "hero", "new", "html")]
+        bad = re.compile(r"logo|icon|badge|sprite|swatch|colou?r-?dot|navbar|new-product-images|plp|thumb|dealer|app-?store|play-?store|whatsapp|offer|discover-fold|corporate-website/product|background|frame_\d|cnbc|news|award", re.I)
+
+        def own_part(u: str) -> str:
+            path = urlparse(u).path
+            return (path[len(page_path):] if page_path and path.startswith(page_path) else path).lower()
+
+        scored = []
+        studio = list(page.get("studio_images", []))
+        ld = list(page.get("ld_images", []))
+        for i, u in enumerate(studio + ld + ([page["og_image"]] if page.get("og_image") else []) + page.get("images", [])):
+            if i >= len(studio) and bad.search(u):
+                continue
+            low = own_part(u)
+            score = 10 if i < len(studio) else (6 if i < len(studio) + len(ld) else 0)
+            score += sum(3 for t in tokens if t in low)
+            score += 3 if re.search(r"360|/colou?rs?/|variant|side|profile|studio|cutout", low) else 0
+            score += 1 if re.search(r"desk|desktop|width=2000|1920|1440|\.png", u.lower()) else 0
+            score -= 3 if re.search(r"banner|ambassador|campaign|lifestyle|tvc|-mob|mobile|width=750", u.lower()) else 0
+            scored.append((score, -i, u))
+
+        out, seen = [], set()
+        for _, _, u in sorted(scored, key=lambda x: (-x[0], -x[1])):
+            key = u.split("?")[0]
+            if key in seen:
+                continue
+            seen.add(key)
+            out.append(u)
+        return out[:40]
+
+    @staticmethod
+    def _sniff_image_ext(data: bytes, content_type: str = "") -> Optional[str]:
+        head = data[:16]
+        if head.startswith(b"\x89PNG"):
+            return "png"
+        if head.startswith(b"\xff\xd8\xff"):
+            return "jpg"
+        if head[:4] == b"RIFF" and head[8:12] == b"WEBP":
+            return "webp"
+        if head[4:12] in (b"ftypavif", b"ftypavis"):
+            return "avif"
+        if head.startswith(b"GIF8"):
+            return "gif"
+        if b"<svg" in data[:512].lower():
+            return "svg"
+        return None
+
+    @classmethod
+    async def _download(cls, client: httpx.AsyncClient, url: str, dest_dir: str, stem: str, min_bytes: int) -> Optional[str]:
+        try:
+            if not cls._is_safe_public_url(url):
+                return None
+            r = await client.get(url, headers={**BROWSER_HEADERS, "Accept": "image/avif,image/webp,image/png,image/*,*/*;q=0.8"})
+            if r.status_code != 200 or len(r.content) < min_bytes:
+                return None
+            # TVS's CDN serves images as application/octet-stream, so trust magic bytes over content-type.
+            ext = cls._sniff_image_ext(r.content, r.headers.get("content-type", ""))
+            if not ext:
+                return None
+            os.makedirs(dest_dir, exist_ok=True)
+            fname = f"{stem}.{ext}"
+            with open(os.path.join(dest_dir, fname), "wb") as f:
+                f.write(r.content)
+            return fname
+        except Exception as e:
+            logger.debug(f"image download failed {url}: {e}")
+            return None
+
+    @staticmethod
+    def _product_shot_score(data: bytes) -> float:
+        """Heuristic: studio product shots have transparent/white edges and bike-like proportions;
+        ad banners are very wide, busy-edged, and often carry people/text."""
+        try:
+            from io import BytesIO
+            from PIL import Image, ImageStat
+
+            im = Image.open(BytesIO(data))
+            im.load()
+            w, h = im.size
+            if min(w, h) < 220:
+                return -10
+            score = 0.0
+            if max(ImageStat.Stat(im.convert("L")).stddev) < 12:
+                return -10  # blank / solid-colour frame (e.g. lazy-load placeholder)
+            ratio = w / h
+            score += 2 if 1.05 <= ratio <= 2.1 else (-4 if ratio > 2.5 or ratio < 0.7 else -1)
+            score += 1 if min(w, h) >= 400 else 0
+            rgba = im.convert("RGBA")
+            # sample a 4% border strip on all sides
+            bw, bh = max(2, w // 25), max(2, h // 25)
+            strips = [rgba.crop((0, 0, w, bh)), rgba.crop((0, h - bh, w, h)), rgba.crop((0, 0, bw, h)), rgba.crop((w - bw, 0, w, h))]
+            alpha = sum(ImageStat.Stat(s.split()[3]).mean[0] for s in strips) / 4
+            if alpha < 40:  # transparent background
+                score += 5
+            else:
+                rgb = [s.convert("RGB") for s in strips]
+                mean = sum(sum(ImageStat.Stat(s).mean) / 3 for s in rgb) / 4
+                std = sum(sum(ImageStat.Stat(s).stddev) / 3 for s in rgb) / 4
+                if mean > 228 and std < 18:
+                    score += 4  # plain white studio background
+                elif std < 12:
+                    score += 1  # plain but coloured backdrop
+                else:
+                    score -= 2  # busy scene / banner
+            return score
+        except Exception:
+            return -10
+
+    @classmethod
+    async def _download_best_image(cls, client: httpx.AsyncClient, brand_id: str, vehicle_id: str, page: Dict[str, Any], vehicle_name: str = "") -> str:
+        """Fetch several candidates and keep the one that most looks like a studio product shot."""
+        candidates = cls._rank_image_candidates(page)[:32]
+
+        async def grab(u: str):
+            try:
+                if not cls._is_safe_public_url(u):
+                    return None
+                r = await client.get(u, headers={**BROWSER_HEADERS, "Accept": "image/avif,image/webp,image/png,image/*,*/*;q=0.8"})
+                if r.status_code != 200 or len(r.content) < MIN_IMAGE_BYTES:
+                    return None
+                ext = cls._sniff_image_ext(r.content)
+                if not ext or ext == "svg":
+                    return None
+                # small rank bonus keeps structured-data / highly relevant images ahead on ties
+                rank_bonus = 1.5 * (1 - candidates.index(u) / max(len(candidates), 1))
+                return (cls._product_shot_score(r.content) + rank_bonus, u, ext, r.content)
+            except Exception:
+                return None
+
+        results = [r for r in await asyncio.gather(*[grab(u) for u in candidates]) if r and r[0] > -5]
+        if not results:
+            logger.info(f"[{brand_id}] no usable image for {vehicle_id}; using placeholder")
+            return PLACEHOLDER_IMAGE
+        results.sort(key=lambda r: -r[0])
+        # Vision-check the shortlist in batches of 8 (Hero pages carry ~100 untitled media_<hash> images).
+        pick_row = None
+        vision_ok = False
+        for start in range(0, min(len(results), 24), 8):
+            batch = results[start:start + 8]
+            pick = await cls._vision_pick(vehicle_name or vehicle_id, [r[3] for r in batch])
+            if pick is None:
+                continue
+            vision_ok = True
+            if pick >= 0:
+                pick_row = batch[pick]
+                break
+        if pick_row is None:
+            if vision_ok:
+                logger.info(f"[{brand_id}] vision found no clean photo of {vehicle_id}; using placeholder")
+                return PLACEHOLDER_IMAGE
+            pick_row = results[0]
+        score, url, ext, content = pick_row
+        dest = os.path.join(STATIC_UPLOAD_DIR, brand_id, "vehicles")
+        os.makedirs(dest, exist_ok=True)
+        for old in os.listdir(dest):
+            if old.rsplit(".", 1)[0] == vehicle_id:
+                os.remove(os.path.join(dest, old))
+        with open(os.path.join(dest, f"{vehicle_id}.{ext}"), "wb") as f:
+            f.write(content)
+        logger.debug(f"[{brand_id}] {vehicle_id}: picked {url} (score {score:.1f} of {len(results)})")
+        return f"/uploads/{brand_id}/vehicles/{vehicle_id}.{ext}"
+
+    @classmethod
+    async def _vision_pick(cls, vehicle_name: str, images: List[bytes]) -> Optional[int]:
+        """Ask Gemini which candidate is a clean product photo of the vehicle. Returns index, -1 for none,
+        or None if the call failed (caller falls back to heuristics)."""
+        if len(images) == 1:
+            return 0
+        try:
+            from io import BytesIO
+            from PIL import Image
+            from app.services.genai_client import get_genai_client
+
+            parts: List[Any] = [
+                f"Below are {len(images)} candidate images (numbered from 0) scraped from the official page of the "
+                f"two-wheeler '{vehicle_name}'. Pick the ONE best image to use as its catalog hero photo: the whole "
+                f"vehicle clearly visible, ideally a studio/side or 3/4 shot on a plain background; avoid ad banners with "
+                f"big text, celebrity/people-dominated shots, close-ups of parts (dashboards, wheels), other models, "
+                f"illustrations, and blank frames. Reply JSON {{\"best\": <index or -1 if none show this vehicle>}}."
+            ]
+            for i, data in enumerate(images):
+                im = Image.open(BytesIO(data)).convert("RGBA")
+                bg = Image.new("RGBA", im.size, "white"); bg.alpha_composite(im)
+                im = bg.convert("RGB"); im.thumbnail((448, 448))
+                buf = BytesIO(); im.save(buf, "JPEG", quality=80)
+                parts += [f"Image {i}:", types.Part.from_bytes(data=buf.getvalue(), mime_type="image/jpeg")]
+            resp = await asyncio.to_thread(
+                get_genai_client().models.generate_content,
+                model=settings.REST_CHAT_MODEL,
+                contents=parts,
+                config=types.GenerateContentConfig(
+                    temperature=0, max_output_tokens=64, response_mime_type="application/json",
+                    thinking_config=types.ThinkingConfig(thinking_budget=0),
+                ),
+            )
+            best = int(json.loads(resp.text).get("best", -1))
+            return best if -1 <= best < len(images) else None
+        except Exception as e:
+            logger.warning(f"vision pick failed for {vehicle_name}: {type(e).__name__}: {e}")
+            return None
+
+    @classmethod
+    async def _download_logo(cls, client: httpx.AsyncClient, brand_id: str, candidates: List[str]) -> str:
+        dest = os.path.join(STATIC_UPLOAD_DIR, brand_id, "logos")
+        for cand in list(dict.fromkeys(candidates))[:8]:
+            fname = await cls._download(client, cand, dest, "logo", 400)
+            if fname:
+                return f"/uploads/{brand_id}/logos/{fname}"
+        return ""
+
+    # ------------------------------------------------------- fallbacks & meta
+    @classmethod
+    async def _infer_brand_meta(cls, brand_name: str, urls: List[str]) -> Dict[str, Any]:
+        data = await cls._gemini_json(
+            f"""Return JSON for the two-wheeler brand "{brand_name}" (sources: {urls}):
+{{"name": "official display name", "tagline": "real brand tagline if known", "primary_color": "#hex brand colour",
+"secondary_color": "#0f172a", "accent_color": "#hex", "home_url": "{urls[0] if urls else ''}"}}""",
+            max_tokens=512,
+        )
+        return data or {"name": brand_name, "tagline": f"Official {brand_name} Experience", "primary_color": "#0ea5e9"}
+
+    @classmethod
+    async def _synthesise_catalog(cls, brand_name: str, source_urls: List[str]) -> BrandCatalog:
+        """Knowledge-only catalog for JS-only sites or fictional brands (no crawlable pages)."""
+        brand_id = cls._slug(brand_name)
+        data = await cls._gemini_json(
+            f"""Build a two-wheeler catalog JSON for "{brand_name}" in the Indian market.
+If it is a real brand, list its REAL current models with real specs and Indian ex-showroom prices (append " (approx.)" to prices).
+If it is fictional, create 5 realistic contemporary Indian two-wheelers (a 110cc commuter, a 125cc commuter, a 160cc sporty motorcycle,
+a 125cc scooter and an electric scooter) — normal production vehicles, priced ₹70,000 - ₹1,80,000.
+Categories must be from {json.dumps(TWO_WHEELER_CATEGORIES)}.
+{{"name": "", "tagline": "", "primary_color": "#hex", "accent_color": "#hex",
+"vehicles": [{{"name": "", "tagline": "", "category": "", "price_range": "", "engine_specs": "", "fuel_or_battery": "",
+"range_or_mileage": "", "displacement_cc": "", "max_power": "", "max_torque": "", "kerb_weight": "", "seat_height": "",
+"fuel_tank_or_battery": "", "top_speed": "", "braking": "", "riding_modes": [], "colors": [], "key_highlights": [],
+"usp": "", "competitors": [], "variants": [{{"name": "", "price_ex_showroom": "", "engine_or_battery": "", "transmission": "", "key_features": []}}],
+"data_completeness": "knowledge"}}]}}""",
+            max_tokens=8192,
+        ) or {}
+        vehicles = [
+            cls._to_vehicle_item(brand_id, brand_name, v, {"url": (source_urls or [""])[0], "title": v.get("name", "")})
+            for v in data.get("vehicles", []) if isinstance(v, dict)
+        ]
+        primary = data.get("primary_color") or "#0ea5e9"
         return BrandCatalog(
-            id=slug,
-            name=brand_name,
-            tagline=f"Official {brand_name} Experience Center",
-            logo_url=logo,
-            primary_color=primary_color,
+            id=brand_id,
+            name=data.get("name") or brand_name,
+            tagline=data.get("tagline") or f"Official {brand_name} Experience",
+            logo_url=cls._generate_brand_vector_logo(brand_id, brand_name, primary),
+            primary_color=primary,
             secondary_color="#0f172a",
-            accent_color="#38bdf8",
-            avatar_name="Kavya",
-            avatar_voice="Aoede",
-            source_urls=urls,
+            accent_color=data.get("accent_color") or "#38bdf8",
+            avatar_name=settings.AVATAR_NAME,
+            avatar_voice=settings.AVATAR_VOICE,
+            source_urls=source_urls,
             is_active=True,
             vehicles=vehicles,
-            dealerships=[
-                DealershipItem(
-                    id=f"{slug}_dealership",
-                    name=f"{brand_name} Flagship Center",
-                    address="Downtown Auto District",
-                    city="Mumbai",
-                    phone="+91 22 4000 8800",
-                    rating=4.9,
-                    available_advisors=["Senior Consultant", "Product Genius"],
-                    has_test_drive_home_pickup=True
-                )
-            ]
+            dealerships=cls._default_dealerships(brand_id, data.get("name") or brand_name),
         )
+
+    @staticmethod
+    def _default_dealerships(brand_id: str, brand_name: str) -> List[DealershipItem]:
+        """Placeholder showroom entries for the brand JSON; bookable dealerships live in the DB."""
+        cities = [("Mumbai", "Andheri West"), ("Bengaluru", "Indiranagar"), ("Delhi", "Karol Bagh"), ("Chennai", "Anna Nagar")]
+        return [
+            DealershipItem(
+                id=f"{brand_id}_{city.lower()}",
+                name=f"{brand_name} Authorised Dealer - {area}",
+                address=f"{area}, {city}",
+                city=city,
+                phone="",
+                rating=4.6,
+                available_advisors=["Sales Consultant", "Product Specialist"],
+                has_test_drive_home_pickup=True,
+            )
+            for city, area in cities
+        ]
+
+    @staticmethod
+    def _slug(text: str) -> str:
+        return re.sub(r"[^a-z0-9]+", "_", (text or "").lower()).strip("_") or hashlib.md5((text or "x").encode()).hexdigest()[:8]
+
+    @classmethod
+    def _generate_brand_vector_logo(cls, brand_id: str, brand_name: str, primary_color: str) -> str:
+        """Simple SVG wordmark for brands whose logo could not be downloaded."""
+        dest_dir = os.path.join(STATIC_UPLOAD_DIR, brand_id.lower(), "logos")
+        os.makedirs(dest_dir, exist_ok=True)
+        color = primary_color if (primary_color or "").startswith("#") else "#0ea5e9"
+        words = [w for w in (brand_name or "").split() if w]
+        initials = "".join(w[0].upper() for w in words[:2]) or "2W"
+        svg = f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 54" width="220" height="54">
+  <circle cx="27" cy="27" r="20" fill="{color}"/>
+  <text x="27" y="32" fill="#fff" font-family="system-ui,sans-serif" font-weight="900" font-size="14" text-anchor="middle">{initials}</text>
+  <text x="56" y="31" fill="#0f172a" font-family="system-ui,sans-serif" font-weight="900" font-size="15" letter-spacing="1.2">{(brand_name or '').upper()[:16]}</text>
+</svg>'''
+        try:
+            with open(os.path.join(dest_dir, "logo.svg"), "w", encoding="utf-8") as f:
+                f.write(svg)
+            return f"/uploads/{brand_id.lower()}/logos/logo.svg"
+        except Exception as e:
+            logger.warning(f"Failed to write SVG logo: {e}")
+            return ""

@@ -9,7 +9,7 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        mahindra: {
+        moto: {
           red: "#D6001C",
           dark: "#0F1115",
           charcoal: "#1A1D24",

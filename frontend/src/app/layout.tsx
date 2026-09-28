@@ -2,12 +2,12 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Automotive AI Platform — Virtual Showroom with Kavya Live AI Specialist",
-  description: "Next-generation Virtual Automotive Experience Center featuring Kavya AI Specialist, Live Audio, and Real-Time Co-Browsing.",
+  title: "Two-Wheeler AI Showroom — Motorcycles & Scooters with Kavya Live AI Specialist",
+  description: "Virtual two-wheeler showroom for motorcycles, scooters and EVs featuring Kavya AI Specialist, live multilingual voice, test ride booking and real-time co-browsing.",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Mahindra Sales Mobile"
+    title: "Two-Wheeler Sales Mobile"
   }
 };
 

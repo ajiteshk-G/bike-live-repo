@@ -3,17 +3,17 @@ from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field, ConfigDict
 
 class OutboundCallTriggerRequest(BaseModel):
-    customer_id: str = Field(..., description="Customer ID, e.g. CUST-AARAV-001")
+    customer_id: str = Field(..., description="Customer ID returned by /customer/identify")
     test_ride_session_id: Optional[str] = Field(None, description="Associated Test Ride Session ID")
-    booking_reference: Optional[str] = Field(None, description="Booking reference BK-MAH-...")
-    phone_number: str = Field(default="+91 98201 23456")
-    customer_name: str = Field(default="Aarav Sharma")
-    vehicle_name: str = Field(default="Mahindra Thar ROXX AX7L Diesel AT")
+    booking_reference: Optional[str] = Field(None, description="Booking reference, e.g. BK-TVS-12345")
+    phone_number: Optional[str] = Field(default=None, description="Customer phone (used to resolve / register the rider if customer_id is unknown)")
+    customer_name: Optional[str] = Field(default=None)
+    vehicle_name: str = Field(default="TVS Apache RTR 160 4V")
     variant: Optional[str] = Field(default=None)
     dealership_name: Optional[str] = Field(default=None)
-    advisor_name: str = Field(default="Rajesh Varma")
+    advisor_name: Optional[str] = Field(default=None)
     call_channel: Optional[str] = Field(default="BROWSER_GEMINI_LIVE")
-    brand_id: Optional[str] = Field(default=None, description="Brand ID, e.g. mahindra, bmw, hyundai, maruti_suzuki")
+    brand_id: Optional[str] = Field(default=None, description="Brand ID, e.g. tvs, hero_motocorp")
 
 class OutboundDialogueTurnRequest(BaseModel):
     call_reference: str = Field(..., description="Call Reference ID")
@@ -25,7 +25,7 @@ class OutboundDialogueTurnRequest(BaseModel):
 
 class OutboundDialogueTurnResponse(BaseModel):
     call_reference: str
-    speaker: str = "MIA"
+    speaker: str = "Kavya (AI Specialist)"
     agent_message: str
     ai_reply: Optional[str] = None
     audio_tts_url: Optional[str] = None

@@ -13,6 +13,7 @@ from app.models.customer import Customer, InteractionLog, ConversationSession
 from app.models.sales_ride import TestRideRecording, OutboundCallLog
 from app.models.dealership import Dealership
 from app.services.catalog_service import CatalogService
+from app.services.customer_service import default_vehicle_for_brand
 from app.services.customer_service import clean_phone
 
 logger = logging.getLogger(__name__)
@@ -28,15 +29,15 @@ async def get_admin_bookings(
     vehicle_id: Optional[str] = Query(None, description="Filter by vehicle model"),
     status: Optional[str] = Query(None, description="Filter by booking status"),
     phone: Optional[str] = Query(None, description="Search by customer phone"),
-    search: Optional[str] = Query(None, description="Search across name, phone, ref, car"),
-    brand_id: Optional[str] = Query(None, description="Filter by brand ID (mahindra, bmw, hyundai, maruti_suzuki, etc.)"),
+    search: Optional[str] = Query(None, description="Search across name, phone, ref, vehicle"),
+    brand_id: Optional[str] = Query(None, description="Filter by brand ID (tvs, hero_motocorp, etc.)"),
     db: AsyncSession = Depends(get_db)
 ):
     """
     Returns comprehensive booking records with dual transcripts:
     Strictly 1 row per unique Customer (identified by Unique Phone Number).
-    1. Pre-Sales Transcript (Chat/Voice with Kabir in Showroom)
-    2. Test Ride Transcript (In-Vehicle Test Drive with Sales Advisor)
+    1. Pre-Sales Transcript (Chat/Voice with Kavya in Showroom)
+    2. Test Ride Transcript (On-Bike Test Ride with Sales Advisor)
     """
     b_id = brand_id.lower() if brand_id else None
 
@@ -127,12 +128,12 @@ async def get_admin_bookings(
         presales_turns = []
         cust_logs = logs_by_cust.get(cust_id, []) if cust_id else []
         for log in cust_logs:
-            speaker_label = "Customer" if log.speaker == "customer" else "Kabir (AI Specialist)"
+            speaker_label = "Customer" if log.speaker == "customer" else "Kavya (AI Specialist)"
             dt = log.created_at
             sess = log.session
             sess_uid = sess.session_id if sess else f"SESS-{dt.strftime('%Y%m%d-%H%M') if dt else 'HISTORIC'}"
             sess_type = sess.session_type if sess else ("LIVE_VOICE" if log.channel == "VOICE_LIVE" else "CHAT_BOT")
-            sess_veh = (sess.vehicle_id if sess and sess.vehicle_id else b.vehicle_id) or "thar_roxx"
+            sess_veh = (sess.vehicle_id if sess and sess.vehicle_id else b.vehicle_id) or default_vehicle_for_brand(getattr(b, "brand_id", None))
             v_obj = CatalogService.get_vehicle_by_id(sess_veh)
             sess_veh_name = v_obj.name if v_obj else sess_veh.replace("_", " ").title()
 
@@ -280,7 +281,7 @@ async def get_admin_bookings(
         record = {
             "booking_id": b.id,
             "booking_reference": b.booking_reference,
-            "brand_id": getattr(b, "brand_id", "mahindra"),
+            "brand_id": getattr(b, "brand_id", "tvs"),
             "customer_id": cust.customer_id if cust else f"CUST-{b.customer_id}",
             "customer_name": cust_name,
             "customer_phone": cust_phone,
@@ -316,7 +317,7 @@ async def get_admin_bookings(
         }
         admin_records.append(record)
 
-    # Process all other registered showroom leads / customers without a finalized test drive slot yet
+    # Process all other registered showroom leads / customers without a finalized test ride slot yet
     cust_stmt = (
         select(Customer)
         .options(selectinload(Customer.interactions).selectinload(InteractionLog.session))
@@ -336,14 +337,14 @@ async def get_admin_bookings(
             continue
         seen_customer_keys.add(composite_key)
 
-        c_brand_id = c.brand_id or b_id or "mahindra"
+        c_brand_id = c.brand_id or b_id or "tvs"
         active_b = BrandService.get_brand(c_brand_id)
         brand_disp = active_b.name if active_b else c_brand_id.title()
         def_dlr_id = active_b.dealerships[0].id if active_b and active_b.dealerships else f"{c_brand_id}_flagship"
         def_dlr_name = active_b.dealerships[0].name if active_b and active_b.dealerships else f"{brand_disp} Showroom"
         def_adv_name = f"{brand_disp} AI Specialist"
 
-        veh_id = c.interested_vehicle_id or ("bmw_x5" if c_brand_id == "bmw" else "creta" if c_brand_id == "hyundai" else "grand_vitara" if c_brand_id == "maruti_suzuki" else "thar_roxx")
+        veh_id = c.interested_vehicle_id or default_vehicle_for_brand(c_brand_id)
         v_info = CatalogService.get_vehicle_by_id(veh_id)
         veh_name = v_info.name if v_info else veh_id.replace("_", " ").title()
 
@@ -352,7 +353,7 @@ async def get_admin_bookings(
         for log in sorted(c.interactions, key=lambda x: x.created_at or datetime.min):
             if log.channel == "TEST_RIDE_IN_VEHICLE":
                 continue
-            speaker_label = "Customer" if log.speaker == "customer" else f"{brand_disp} AI Specialist"
+            speaker_label = "Customer" if log.speaker == "customer" else "Kavya (AI Specialist)"
             dt = log.created_at
             sess = log.session
             sess_uid = sess.session_id if sess else f"SESS-{dt.strftime('%Y%m%d-%H%M') if dt else 'SHOWROOM'}"
@@ -404,7 +405,7 @@ async def get_admin_bookings(
             "purchase_intent": 0.80 if lead_presales else None,
             "loved_features": [],
             "objections_raised": [],
-            "advisor_coaching_feedback": "Active showroom lead. Follow up to confirm test drive date and time.",
+            "advisor_coaching_feedback": "Active showroom lead. Follow up to confirm test ride date and time.",
             "recommended_action": "Call customer to assist with slot reservation.",
             "gcs_recording_uri": None,
             "test_ride_sessions": []
@@ -471,7 +472,7 @@ async def get_admin_bookings(
 async def clear_users_and_transcripts(db: AsyncSession = Depends(get_db)):
     """
     Cleans all Users, Conversation Sessions, Interaction Logs (Transcripts),
-    Test Drive Bookings, Slot Reservations, Test Ride Recordings, and Outbound Call Logs
+    Test Ride Bookings, Slot Reservations, Test Ride Recordings, and Outbound Call Logs
     from the database while preserving Dealerships, Slot Configs, and Holidays.
     """
     from sqlalchemy import delete

@@ -20,28 +20,28 @@ class DiagnosticsService:
         
         if mock_type == "bumper_foglamp":
             parts = [
-                "Scratches and paint abrasion on front lower bumper valence",
-                "Cracked lens and fractured housing on Right Fog Lamp Assembly"
+                "Scratches and paint abrasion on front mudguard and headlamp cowl",
+                "Cracked lens on Right Front LED Turn Indicator"
             ]
-            part_no = "#TH-88301"
-            part_desc = "OEM Thar ROXX Fog Lamp Assembly (RH)"
-            part_cost = 3200.0
-            labor_cost = 850.0
-            summary = "Gemini Vision detected minor surface scrapes on front bumper and impact crack on RH fog lamp. Structural sensors verify zero radiator or chassis misalignment. Safe to drive to workshop."
+            part_no = "#2W-88301"
+            part_desc = "OEM Front LED Turn Indicator Assembly (RH)"
+            part_cost = 1450.0
+            labor_cost = 350.0
+            summary = "Gemini Vision detected minor surface scrapes on the front mudguard / headlamp cowl and an impact crack on the RH indicator. No fork, handlebar or frame misalignment detected. Safe to ride to the workshop."
         elif mock_type == "windshield_chip":
-            parts = ["Acoustic front windshield stone chip (12mm diameter)"]
-            part_no = "#TH-44102"
-            part_desc = "OEM Acoustic Laminated Windshield Glass"
-            part_cost = 7400.0
-            labor_cost = 1200.0
-            summary = "Gemini Vision detected isolated circular rock chip on outer laminate. Resin bonding repair possible or full zero-dep replacement recommended."
+            parts = ["Stone chip and crack on front visor / flyscreen (12mm)"]
+            part_no = "#2W-44102"
+            part_desc = "OEM Front Visor / Flyscreen"
+            part_cost = 1200.0
+            labor_cost = 250.0
+            summary = "Gemini Vision detected an isolated stone chip with a hairline crack on the front visor. Replacement recommended for rider wind protection and visibility."
         else:
-            parts = ["Rear quarter panel scratch and wheel arch cladding scuff"]
-            part_no = "#TH-22904"
-            part_desc = "OEM Rear Wheel Arch Cladding Black Textured"
+            parts = ["Side panel scratch and tank-shroud scuff (low-speed slide)"]
+            part_no = "#2W-22904"
+            part_desc = "OEM Side Panel / Tank Shroud (Painted)"
             part_cost = 1800.0
-            labor_cost = 500.0
-            summary = "Gemini Vision identified cosmetic scuffing on composite cladding. No metal denting detected."
+            labor_cost = 400.0
+            summary = "Gemini Vision identified cosmetic scuffing on the painted side panel and tank shroud. No frame, footpeg or lever damage detected."
 
         return DamageAssessmentResponse(
             damage_detected=True,
@@ -53,8 +53,8 @@ class DiagnosticsService:
             estimated_part_cost=part_cost,
             estimated_labor_cost=labor_cost,
             estimated_out_of_pocket=0.0, # Zero depreciation
-            recommended_workshop="Bayview Mahindra Workshop, Bandra West",
-            parts_dispatch_eta="Tomorrow Morning ahead of Saturday Service",
+            recommended_workshop="Authorised Two-Wheeler Service Workshop",
+            parts_dispatch_eta="Tomorrow Morning ahead of scheduled service",
             gemini_vision_summary=summary
         )
 
@@ -65,31 +65,31 @@ class DiagnosticsService:
             return WarningLightScanResponse(
                 symbol_name="Engine Oil Viscosity / Service Required (Amber)",
                 severity="WARNING",
-                explanation="Engine oil sensor detected degraded viscosity after 9,820 km of highway and city driving.",
-                recommended_action="Schedule routine 10,000 km oil and filter change within next 200 km.",
+                explanation="Service reminder triggered: engine oil is due for change based on odometer and time since last service.",
+                recommended_action="Book a periodic service (engine oil, oil filter, chain lube & adjustment) within the next 200 km.",
                 safe_to_drive=True
             )
         elif "tpms" in symbol or "tyre" in symbol or "tire" in symbol:
             return WarningLightScanResponse(
                 symbol_name="Tyre Pressure Monitoring System (TPMS Low - Amber)",
                 severity="WARNING",
-                explanation="Front Right tyre pressure is 28 PSI (recommended: 32 PSI).",
-                recommended_action="Inflate front right tyre to 32 PSI at nearest fueling station.",
+                explanation="Rear tyre pressure is low (26 PSI vs recommended 33 PSI rider-only / 36 PSI with pillion).",
+                recommended_action="Inflate tyres to the recommended pressure at the nearest fuel station before riding with a pillion.",
                 safe_to_drive=True
             )
         else:
             return WarningLightScanResponse(
-                symbol_name="Intelligent 4XPLOR 4WD Lock Indicator (Green)",
+                symbol_name="ABS Indicator (Amber)",
                 severity="INFO",
-                explanation="4WD Electronic Rear Differential Lock engaged for low-traction surface.",
-                recommended_action="Normal off-road operation. Disengage when returning to dry tarmac.",
+                explanation="The ABS lamp glows at start-up and switches off once the bike crosses ~5 km/h after the wheel-speed sensors self-check.",
+                recommended_action="If the ABS lamp stays ON while riding, ABS may be inactive — ride carefully and get the wheel-speed sensors checked at an authorised workshop.",
                 safe_to_drive=True
             )
 
     @staticmethod
     async def file_insurance_claim(db: AsyncSession, customer_db_id: int, req: ClaimSubmissionRequest, brand_id: Optional[str] = None) -> InsuranceClaim:
         from app.services.brand_service import BrandService
-        b_id = (brand_id or (BrandService.get_active_brand().id if BrandService.get_active_brand() else "mahindra")).lower()
+        b_id = (brand_id or (BrandService.get_active_brand().id if BrandService.get_active_brand() else "tvs")).lower()
         active_b = BrandService.get_brand(b_id)
         claim_id = f"{b_id.upper()[:3]}-INS-{int(time.time()) % 100000}"
         claim = InsuranceClaim(
@@ -103,11 +103,11 @@ class DiagnosticsService:
             detected_damages=req.detected_damages,
             oem_part_number=req.oem_part_number,
             oem_part_description="OEM Replacement Assembly",
-            estimated_part_cost=3200.0,
-            estimated_labor_cost=800.0,
+            estimated_part_cost=1450.0,
+            estimated_labor_cost=350.0,
             customer_out_of_pocket=0.0,
             insurer_name="ICICI Lombard General Insurance",
-            policy_number=f"POL-{b_id.upper()[:3]}-2026-99201",
+            policy_number=f"POL-{b_id.upper()[:3]}-{claim_id[-6:]}",
             claim_status="DIGITALLY_APPROVED",
             workshop_name=req.workshop_name,
             parts_delivery_estimate="Tomorrow Morning 9:00 AM"

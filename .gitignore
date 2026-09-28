@@ -47,3 +47,6 @@ yarn-error.log*
 .env.production.local
 .vscode/
 .idea/
+
+*.db-wal
+*.db-shm

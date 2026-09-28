@@ -53,7 +53,7 @@ async def lifespan(app: FastAPI):
                         city=d.city,
                         phone=d.phone,
                         rating=d.rating or 4.8,
-                        available_advisors=d.available_advisors or ["Rajesh Varma"],
+                        available_advisors=d.available_advisors or ["Rahul Nair (Sales Consultant)"],
                         has_test_drive_home_pickup=True
                     )
                     for d in all_dealers
@@ -68,7 +68,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version="2.1.0",
-    description="Mahindra Omnichannel AI Platform (MIA) with Pre-Sales Live Avatar, Mobile Sales Test-Ride Recording, Outbound Voice Call Insights & Instant Digital Financing",
+    description="Two-Wheeler (Motorcycle & Scooter) Omnichannel AI Platform with Kavya Pre-Sales Live Avatar, Test-Ride Recording, Outbound Voice Call Insights & Instant Two-Wheeler Financing",
     lifespan=lifespan
 )
 
@@ -106,7 +106,7 @@ app.include_router(ws_router)
 async def root():
     active_b = BrandService.get_active_brand()
     return {
-        "app": "Generic Automotive AI Platform (MIA Omnichannel)",
+        "app": "Two-Wheeler Dealership AI Platform (Omnichannel)",
         "active_brand": {
             "id": active_b.id,
             "name": active_b.name,

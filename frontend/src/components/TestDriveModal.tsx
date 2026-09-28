@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { VehicleItem, DealershipItem } from "@/types";
 import { bookTestDrive } from "@/lib/api";
-import { X, Calendar, MapPin, CheckCircle2, Clock, Car } from "lucide-react";
+import { X, Calendar, MapPin, CheckCircle2, Clock, Bike } from "lucide-react";
 
 interface TestDriveModalProps {
   isOpen: boolean;
@@ -23,12 +23,12 @@ export function TestDriveModal({
   onBookingSuccess
 }: TestDriveModalProps) {
   const [selectedVariant, setSelectedVariant] = useState(vehicle?.variants[0]?.name || "");
-  const [selectedColor, setSelectedColor] = useState("Stealth Black");
+  const [selectedColor, setSelectedColor] = useState(vehicle?.colors?.[0] || "Standard");
   const [bookingType, setBookingType] = useState<"HOME_DOORSTEP" | "SHOWROOM_VISIT">("HOME_DOORSTEP");
-  const [selectedDealership, setSelectedDealership] = useState(dealerships[0]?.id || "bayview_bandra");
+  const [selectedDealership, setSelectedDealership] = useState(dealerships[0]?.id || "");
   const [date, setDate] = useState("Tomorrow");
   const [timeSlot, setTimeSlot] = useState("5:00 PM");
-  const [notes, setNotes] = useState("Please focus on suspension comfort along Bandra-Worli Sea Link.");
+  const [notes, setNotes] = useState("Please let me try city traffic handling and pillion comfort.");
   const [loading, setLoading] = useState(false);
   const [bookingResult, setBookingResult] = useState<any>(null);
 
@@ -45,7 +45,7 @@ export function TestDriveModal({
         color: selectedColor,
         dealership_id: selectedDealership,
         booking_type: bookingType,
-        delivery_address: "Linking Road Office, Bandra West, Mumbai",
+        delivery_address: "Customer address (to be confirmed)",
         scheduled_date: date,
         scheduled_time_slot: timeSlot,
         notes: notes
@@ -62,13 +62,13 @@ export function TestDriveModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-mahindra-card border border-mahindra-border rounded-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl">
+      <div className="bg-moto-card border border-moto-border rounded-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl">
         {/* Header */}
-        <div className="p-4 border-b border-mahindra-border flex items-center justify-between sticky top-0 bg-mahindra-card z-10">
+        <div className="p-4 border-b border-moto-border flex items-center justify-between sticky top-0 bg-moto-card z-10">
           <div className="flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-mahindra-red" />
+            <Calendar className="w-5 h-5 text-moto-red" />
             <div>
-              <h2 className="text-sm font-bold text-white uppercase tracking-wider">Book Test Drive</h2>
+              <h2 className="text-sm font-bold text-white uppercase tracking-wider">Book Test Ride</h2>
               <p className="text-xs text-gray-400">{vehicle.name}</p>
             </div>
           </div>
@@ -83,11 +83,11 @@ export function TestDriveModal({
             <div className="w-14 h-14 bg-emerald-500/20 border border-emerald-500 rounded-full flex items-center justify-center mx-auto text-emerald-400">
               <CheckCircle2 className="w-8 h-8" />
             </div>
-            <h3 className="text-lg font-bold text-white">Test Drive Confirmed!</h3>
+            <h3 className="text-lg font-bold text-white">Test Ride Confirmed!</h3>
             <p className="text-xs text-gray-300">
-              Booking Ref: <span className="font-mono text-mahindra-red font-bold">{bookingResult.booking_reference}</span>
+              Booking Ref: <span className="font-mono text-moto-red font-bold">{bookingResult.booking_reference}</span>
             </p>
-            <div className="bg-mahindra-dark p-4 rounded-xl text-left text-xs space-y-2 border border-mahindra-border">
+            <div className="bg-moto-dark p-4 rounded-xl text-left text-xs space-y-2 border border-moto-border">
               <div className="flex justify-between">
                 <span className="text-gray-400">Vehicle:</span>
                 <span className="text-white font-semibold">{bookingResult.variant}</span>
@@ -107,7 +107,7 @@ export function TestDriveModal({
             </div>
             <button
               onClick={onClose}
-              className="w-full bg-mahindra-red hover:bg-red-600 text-white font-bold py-2 rounded-xl text-xs transition-all"
+              className="w-full bg-moto-red hover:bg-red-600 text-white font-bold py-2 rounded-xl text-xs transition-all"
             >
               Done & Return to Showcase
             </button>
@@ -120,7 +120,7 @@ export function TestDriveModal({
               <select
                 value={selectedVariant || vehicle.variants[0]?.name}
                 onChange={(e) => setSelectedVariant(e.target.value)}
-                className="w-full bg-mahindra-dark border border-mahindra-border rounded-xl px-3 py-2 text-white focus:outline-none focus:border-mahindra-red"
+                className="w-full bg-moto-dark border border-moto-border rounded-xl px-3 py-2 text-white focus:outline-none focus:border-moto-red"
               >
                 {vehicle.variants.map((v, i) => (
                   <option key={i} value={v.name}>
@@ -130,23 +130,23 @@ export function TestDriveModal({
               </select>
             </div>
 
-            {/* Step 2: Drive Location Type */}
+            {/* Step 2: Ride Location Type */}
             <div>
-              <label className="block text-gray-300 font-semibold mb-1.5">Test Drive Mode</label>
+              <label className="block text-gray-300 font-semibold mb-1.5">Test Ride Mode</label>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => setBookingType("HOME_DOORSTEP")}
                   className={`p-3 rounded-xl border flex items-center gap-2 ${
                     bookingType === "HOME_DOORSTEP"
-                      ? "border-mahindra-red bg-mahindra-red/10 text-white"
-                      : "border-mahindra-border bg-mahindra-dark text-gray-400"
+                      ? "border-moto-red bg-moto-red/10 text-white"
+                      : "border-moto-border bg-moto-dark text-gray-400"
                   }`}
                 >
-                  <Car className="w-4 h-4 text-mahindra-red" />
+                  <Bike className="w-4 h-4 text-moto-red" />
                   <div className="text-left">
                     <div className="font-semibold">Home / Office Pickup</div>
-                    <div className="text-[10px] text-gray-400">Advisor brings SUV to you</div>
+                    <div className="text-[10px] text-gray-400">Advisor brings the bike to you</div>
                   </div>
                 </button>
 
@@ -155,11 +155,11 @@ export function TestDriveModal({
                   onClick={() => setBookingType("SHOWROOM_VISIT")}
                   className={`p-3 rounded-xl border flex items-center gap-2 ${
                     bookingType === "SHOWROOM_VISIT"
-                      ? "border-mahindra-red bg-mahindra-red/10 text-white"
-                      : "border-mahindra-border bg-mahindra-dark text-gray-400"
+                      ? "border-moto-red bg-moto-red/10 text-white"
+                      : "border-moto-border bg-moto-dark text-gray-400"
                   }`}
                 >
-                  <MapPin className="w-4 h-4 text-mahindra-red" />
+                  <MapPin className="w-4 h-4 text-moto-red" />
                   <div className="text-left">
                     <div className="font-semibold">Showroom Experience</div>
                     <div className="text-[10px] text-gray-400">Visit Dealership</div>
@@ -174,7 +174,7 @@ export function TestDriveModal({
               <select
                 value={selectedDealership}
                 onChange={(e) => setSelectedDealership(e.target.value)}
-                className="w-full bg-mahindra-dark border border-mahindra-border rounded-xl px-3 py-2 text-white focus:outline-none focus:border-mahindra-red"
+                className="w-full bg-moto-dark border border-moto-border rounded-xl px-3 py-2 text-white focus:outline-none focus:border-moto-red"
               >
                 {dealerships.map((d) => (
                   <option key={d.id} value={d.id}>
@@ -192,7 +192,7 @@ export function TestDriveModal({
                   type="text"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className="w-full bg-mahindra-dark border border-mahindra-border rounded-xl px-3 py-2 text-white focus:outline-none focus:border-mahindra-red"
+                  className="w-full bg-moto-dark border border-moto-border rounded-xl px-3 py-2 text-white focus:outline-none focus:border-moto-red"
                 />
               </div>
               <div>
@@ -200,7 +200,7 @@ export function TestDriveModal({
                 <select
                   value={timeSlot}
                   onChange={(e) => setTimeSlot(e.target.value)}
-                  className="w-full bg-mahindra-dark border border-mahindra-border rounded-xl px-3 py-2 text-white focus:outline-none focus:border-mahindra-red"
+                  className="w-full bg-moto-dark border border-moto-border rounded-xl px-3 py-2 text-white focus:outline-none focus:border-moto-red"
                 >
                   <option value="11:00 AM">11:00 AM</option>
                   <option value="2:00 PM">2:00 PM</option>
@@ -212,21 +212,21 @@ export function TestDriveModal({
 
             {/* Step 5: Special Note / Focus */}
             <div>
-              <label className="block text-gray-300 font-semibold mb-1.5">Test Drive Notes for Advisor</label>
+              <label className="block text-gray-300 font-semibold mb-1.5">Test Ride Notes for Advisor</label>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={2}
-                className="w-full bg-mahindra-dark border border-mahindra-border rounded-xl px-3 py-2 text-white focus:outline-none focus:border-mahindra-red resize-none"
+                className="w-full bg-moto-dark border border-moto-border rounded-xl px-3 py-2 text-white focus:outline-none focus:border-moto-red resize-none"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-mahindra-red hover:bg-red-600 disabled:opacity-50 text-white font-bold py-2.5 rounded-xl transition-all shadow-lg"
+              className="w-full bg-moto-red hover:bg-red-600 disabled:opacity-50 text-white font-bold py-2.5 rounded-xl transition-all shadow-lg"
             >
-              {loading ? "Reserving Slot with DMS..." : "Confirm Test Drive Booking"}
+              {loading ? "Reserving Slot with DMS..." : "Confirm Test Ride Booking"}
             </button>
           </form>
         )}

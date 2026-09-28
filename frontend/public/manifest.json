@@ -1,7 +1,7 @@
 {
-  "name": "Mahindra Sales Mobile",
+  "name": "Two-Wheeler Sales Mobile",
   "short_name": "Sales Mobile",
-  "description": "Mahindra Sales Advisor Companion & Test Ride Recording Platform",
+  "description": "Two-Wheeler Sales Advisor Companion & Test Ride Recording Platform",
   "start_url": "/sales-mobile",
   "display": "standalone",
   "orientation": "portrait",
@@ -9,12 +9,12 @@
   "theme_color": "#dc2626",
   "icons": [
     {
-      "src": "/avatars/jay.png",
+      "src": "/avatars/kavya.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/avatars/jay.png",
+      "src": "/avatars/kavya.png",
       "sizes": "512x512",
       "type": "image/png"
     }

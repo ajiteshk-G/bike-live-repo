@@ -24,12 +24,13 @@ import {
   Radio,
   Send,
   RefreshCw,
-  Car,
+  Bike,
   Search,
   CheckCircle,
   Building2,
   ChevronRight
 } from "lucide-react";
+import { DEFAULT_BRAND_ID } from "@/lib/defaultCatalog";
 import { triggerOutboundCall, sendOutboundDialogueTurn, fetchAdminBookings, saveOutboundCallTranscript } from "@/lib/api";
 import { GeminiLiveClient } from "@/lib/geminiLiveClient";
 
@@ -92,12 +93,12 @@ export function OutboundCallSimulator({
 
   const geminiClientRef = useRef<GeminiLiveClient | null>(null);
 
-  // Load authentic completed test drive bookings directly from Cloud SQL database scoped to active brand
+  // Load authentic completed test ride bookings directly from Cloud SQL database scoped to active brand
   const loadData = async () => {
     setIsLoading(true);
     // Clean up any legacy sessionStorage
     if (typeof window !== "undefined") {
-      sessionStorage.removeItem("mahindra_selected_outbound_lead");
+      sessionStorage.removeItem("dealer_selected_outbound_lead");
     }
 
     try {
@@ -121,7 +122,7 @@ export function OutboundCallSimulator({
             vehicle_name: b.vehicle_name,
             variant: b.variant,
             dealership_name: b.dealership_name,
-            sales_advisor_name: b.sales_advisor_name || "Mahindra Sales Consultant",
+            sales_advisor_name: b.sales_advisor_name || "Sales Consultant",
             session_id: b.test_ride_sessions?.[0]?.session_id || b.booking_reference,
             status: "TestRide_Completed",
             loved_features: b.loved_features || [],
@@ -199,7 +200,7 @@ export function OutboundCallSimulator({
     setTurnIndex(0);
     setDialogue([]);
 
-    const advisorFirstName = selectedLead.sales_advisor_name.split(" ")[0].replace("Specialist", "").trim() || "Rajesh";
+    const advisorFirstName = selectedLead.sales_advisor_name.split(" ")[0].replace("Specialist", "").trim() || "your Sales Consultant";
 
     try {
       const resp = await triggerOutboundCall({
@@ -210,7 +211,7 @@ export function OutboundCallSimulator({
         advisor_name: selectedLead.sales_advisor_name,
         booking_reference: selectedLead.booking_reference,
         test_ride_session_id: selectedLead.session_id,
-        brand_id: brand?.id || "mahindra"
+        brand_id: brand?.id || DEFAULT_BRAND_ID
       });
       if (resp?.call_reference) {
         setCallReference(resp.call_reference);
@@ -278,9 +279,9 @@ export function OutboundCallSimulator({
 
     setCallState("in_call");
 
-    const brandAgentName = brand?.agent_name || "AI Specialist";
-    const brandNameStr = brand?.name || "Official Auto";
-    const initialAiTurn = `Namaste ${selectedLead.customer_name} ji! Main ${brandNameStr} se ${brandAgentName} baat kar rahi hoon. Aapka ${selectedLead.vehicle_name} ka test drive kaisa raha?`;
+    const brandAgentName = brand?.agent_name || brand?.avatar_name || "Kavya";
+    const brandNameStr = brand?.name || "Official Dealer";
+    const initialAiTurn = `Namaste ${selectedLead.customer_name} ji! Main ${brandNameStr} se ${brandAgentName} baat kar rahi hoon. Aapka ${selectedLead.vehicle_name} ka test ride kaisa raha?`;
     setDialogue([
       {
         speaker: `${brandAgentName}`,
@@ -312,7 +313,7 @@ export function OutboundCallSimulator({
         customer_name: selectedLead.customer_name,
         vehicle_name: selectedLead.vehicle_name,
         duration_seconds: callDuration || 45,
-        brand_id: brand?.id || "mahindra",
+        brand_id: brand?.id || DEFAULT_BRAND_ID,
         turns: dialogue
       });
     }
@@ -359,7 +360,7 @@ export function OutboundCallSimulator({
         customer_speech: userText,
         turn_number: turnIndex + 1,
         turn_index: turnIndex + 1,
-        brand_id: brand?.id || "mahindra",
+        brand_id: brand?.id || DEFAULT_BRAND_ID,
         conversation_history: newTurns.map((t) => ({ speaker: t.speaker, text: t.text }))
       });
 
@@ -459,7 +460,7 @@ export function OutboundCallSimulator({
           <div className="p-4 border-b border-slate-200 bg-slate-50/80 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Car className="w-4 h-4 text-red-600" />
+                <Bike className="w-4 h-4 text-red-600" />
                 <h3 className="text-sm font-black text-slate-900">Completed Test Rides</h3>
               </div>
               <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-800 text-[10px] font-bold">
@@ -474,7 +475,7 @@ export function OutboundCallSimulator({
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search name, phone, car..."
+                placeholder="Search name, phone, model..."
                 className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl bg-white border border-slate-200 focus:border-blue-600 outline-none text-slate-900 placeholder-slate-400"
               />
             </div>
@@ -545,7 +546,7 @@ export function OutboundCallSimulator({
           {!selectedLead ? (
             <div className="bg-white rounded-3xl border border-dashed border-slate-300 p-12 text-center space-y-4 shadow-xs">
               <div className="w-16 h-16 rounded-full bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center mx-auto shadow-xs">
-                <Car className="w-8 h-8" />
+                <Bike className="w-8 h-8" />
               </div>
               <div className="space-y-1.5 max-w-md mx-auto">
                 <h3 className="text-base font-bold text-slate-800">No Completed Test Rides in Database</h3>
@@ -738,7 +739,7 @@ export function OutboundCallSimulator({
                 {/* Helper Card */}
                 <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200/80 text-xs text-slate-800 space-y-1">
                   <p className="leading-relaxed">
-                    💡 <strong>Post-Test Ride Flow:</strong> When the call starts, Kavya will introduce herself in Hindi and ask for your feedback regarding the test drive and sales consultant support. Speak naturally into your microphone during the voice call!
+                    💡 <strong>Post-Test Ride Flow:</strong> When the call starts, Kavya will introduce herself in Hindi and ask for your feedback regarding the test ride and sales consultant support. Speak naturally into your microphone during the voice call!
                   </p>
                 </div>
 
@@ -834,7 +835,7 @@ export function OutboundCallSimulator({
                       </div>
                       <div className="p-3 rounded-xl bg-white border border-slate-200">
                         <span className="text-slate-500 block text-[10px]">Agent Profile</span>
-                        <strong className="text-slate-900">Kavya AI (Mahindra)</strong>
+                        <strong className="text-slate-900">Kavya AI ({brand?.name || "Dealer"})</strong>
                       </div>
                     </div>
                   </div>

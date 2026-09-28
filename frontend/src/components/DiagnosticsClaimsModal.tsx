@@ -30,8 +30,8 @@ export function DiagnosticsClaimsModal({
     setEvaluating(true);
     try {
       const res = await assessDamage({
-        customer_id: profile?.customer_id || "CUST-AARAV-001",
-        vehicle_vin: profile?.owned_vin || "MAH1THARROXX2026MUM01",
+        customer_id: profile?.customer_id || "CUST-DEMO-001",
+        vehicle_vin: profile?.owned_vin || "MD626DEMO2026VIN01",
         mock_damage_type: damagePreset,
         video_feed_enabled: true
       });
@@ -48,10 +48,10 @@ export function DiagnosticsClaimsModal({
     setFilingClaim(true);
     try {
       const res = await fileInsuranceClaim({
-        customer_id: profile?.customer_id || "CUST-AARAV-001",
-        vin: profile?.owned_vin || "MAH1THARROXX2026MUM01",
-        vehicle_model: profile?.owned_vehicle_name || "Mahindra Thar ROXX AX7L Diesel AT",
-        incident_description: "Loose road debris impacted front bumper and fog lamp on highway.",
+        customer_id: profile?.customer_id || "CUST-DEMO-001",
+        vin: profile?.owned_vin || "MD626DEMO2026VIN01",
+        vehicle_model: profile?.owned_vehicle_name || "TVS Apache RTR 160 4V",
+        incident_description: "Low-speed skid on a wet road scraped the front fairing and cracked the headlamp assembly.",
         detected_damages: assessmentResult.detected_parts,
         oem_part_number: assessmentResult.oem_part_number,
         workshop_name: assessmentResult.recommended_workshop
@@ -67,11 +67,11 @@ export function DiagnosticsClaimsModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-mahindra-card border border-mahindra-border rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+      <div className="bg-moto-card border border-moto-border rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
         {/* Header */}
-        <div className="p-4 border-b border-mahindra-border flex items-center justify-between sticky top-0 bg-mahindra-card z-10">
+        <div className="p-4 border-b border-moto-border flex items-center justify-between sticky top-0 bg-moto-card z-10">
           <div className="flex items-center gap-2">
-            <ShieldAlert className="w-5 h-5 text-mahindra-red" />
+            <ShieldAlert className="w-5 h-5 text-moto-red" />
             <div>
               <h2 className="text-sm font-bold text-white uppercase tracking-wider">AI Computer Vision Damage Assessment</h2>
               <p className="text-xs text-gray-400">Gemini Vision Automated Parts Requisition & Zero-Dep Claim</p>
@@ -94,7 +94,7 @@ export function DiagnosticsClaimsModal({
                 Claim ID: <span className="font-mono text-emerald-400 font-bold">{claimResult.claim_id}</span> with {claimResult.insurer_name}
               </p>
 
-              <div className="bg-mahindra-dark p-4 rounded-xl text-left space-y-2 border border-mahindra-border">
+              <div className="bg-moto-dark p-4 rounded-xl text-left space-y-2 border border-moto-border">
                 <div className="flex justify-between">
                   <span className="text-gray-400">Policy:</span>
                   <span className="text-white">{claimResult.policy_number} (Zero-Dep)</span>
@@ -107,7 +107,7 @@ export function DiagnosticsClaimsModal({
                   <span className="text-gray-400">Workshop & ETA:</span>
                   <span className="text-white">{claimResult.workshop_name} ({claimResult.parts_delivery_estimate})</span>
                 </div>
-                <div className="flex justify-between text-emerald-400 font-bold pt-1 border-t border-mahindra-border">
+                <div className="flex justify-between text-emerald-400 font-bold pt-1 border-t border-moto-border">
                   <span>Customer Out-of-Pocket:</span>
                   <span>₹0.00 (100% Covered)</span>
                 </div>
@@ -115,7 +115,7 @@ export function DiagnosticsClaimsModal({
 
               <button
                 onClick={onClose}
-                className="w-full bg-mahindra-red hover:bg-red-600 text-white font-bold py-2.5 rounded-xl transition-all"
+                className="w-full bg-moto-red hover:bg-red-600 text-white font-bold py-2.5 rounded-xl transition-all"
               >
                 Close & Return
               </button>
@@ -123,23 +123,23 @@ export function DiagnosticsClaimsModal({
           ) : (
             <div className="space-y-4">
               {/* Camera Simulation Viewport */}
-              <div className="relative h-48 bg-black/80 rounded-xl overflow-hidden border border-mahindra-border flex flex-col items-center justify-center">
+              <div className="relative h-48 bg-black/80 rounded-xl overflow-hidden border border-moto-border flex flex-col items-center justify-center">
                 <img
-                  src="/assets/thar-roxx.png"
-                  alt="Vehicle Bumper Live Feed"
+                  src="/assets/placeholder-bike.svg"
+                  alt="Two-wheeler Live Feed"
                   className="absolute inset-0 w-full h-full object-cover opacity-40"
                 />
                 {/* HUD Overlay */}
-                <div className="absolute inset-4 border border-dashed border-mahindra-red/60 rounded-lg flex flex-col justify-between p-2 pointer-events-none">
-                  <div className="flex justify-between text-[10px] text-mahindra-red font-mono">
+                <div className="absolute inset-4 border border-dashed border-moto-red/60 rounded-lg flex flex-col justify-between p-2 pointer-events-none">
+                  <div className="flex justify-between text-[10px] text-moto-red font-mono">
                     <span>[GEMINI_VISION_LIVE]</span>
                     <span>1080P_60FPS</span>
                   </div>
                   <div className="text-center text-xs font-semibold text-white/90">
-                    Live Video Feed: Aiming at Front Bumper & Fog Lamp
+                    Live Video Feed: Aiming at Front Fairing & Headlamp
                   </div>
                   <div className="text-right text-[10px] text-emerald-400 font-mono">
-                    CHASSIS_ALIGNMENT: NORMAL
+                    FRAME_ALIGNMENT: NORMAL
                   </div>
                 </div>
               </div>
@@ -150,29 +150,29 @@ export function DiagnosticsClaimsModal({
                 <select
                   value={damagePreset}
                   onChange={(e) => setDamagePreset(e.target.value)}
-                  className="w-full bg-mahindra-dark border border-mahindra-border rounded-xl px-3 py-2 text-white focus:outline-none focus:border-mahindra-red"
+                  className="w-full bg-moto-dark border border-moto-border rounded-xl px-3 py-2 text-white focus:outline-none focus:border-moto-red"
                 >
-                  <option value="bumper_foglamp">Front Lower Bumper Scratch & Cracked Fog Lamp Assembly (#TH-88301)</option>
-                  <option value="windshield_chip">Front Windshield Rock Chip (#TH-44102)</option>
-                  <option value="door_scratch">Rear Wheel Arch Cladding Scuff (#TH-22904)</option>
+                  <option value="bumper_foglamp">Front Fairing Scratch & Cracked Headlamp Assembly (#TV-88301)</option>
+                  <option value="windshield_chip">Visor / Windscreen Crack (#TV-44102)</option>
+                  <option value="door_scratch">Side Panel & Fuel Tank Scuff (#TV-22904)</option>
                 </select>
               </div>
 
               <button
                 onClick={handleRunAssessment}
                 disabled={evaluating}
-                className="w-full bg-mahindra-charcoal hover:bg-mahindra-border text-white border border-mahindra-border font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all"
+                className="w-full bg-moto-charcoal hover:bg-moto-border text-white border border-moto-border font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all"
               >
-                <Camera className="w-4 h-4 text-mahindra-red" />
+                <Camera className="w-4 h-4 text-moto-red" />
                 {evaluating ? "Analyzing Video Frames with Gemini Vision..." : "Run Multimodal AI Damage Scan"}
               </button>
 
               {/* Assessment Results Card */}
               {assessmentResult && (
-                <div className="bg-mahindra-dark p-4 rounded-xl border border-mahindra-border space-y-3">
+                <div className="bg-moto-dark p-4 rounded-xl border border-moto-border space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-white flex items-center gap-1.5">
-                      <Wrench className="w-4 h-4 text-mahindra-red" />
+                      <Wrench className="w-4 h-4 text-moto-red" />
                       Damage Diagnosis & Parts Requisition
                     </span>
                     <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-bold">
@@ -180,27 +180,27 @@ export function DiagnosticsClaimsModal({
                     </span>
                   </div>
 
-                  <p className="text-gray-300 leading-relaxed bg-black/40 p-2.5 rounded-lg border border-mahindra-border/60">
+                  <p className="text-gray-300 leading-relaxed bg-black/40 p-2.5 rounded-lg border border-moto-border/60">
                     {assessmentResult.gemini_vision_summary}
                   </p>
 
                   <div className="grid grid-cols-2 gap-2 text-[11px]">
-                    <div className="bg-mahindra-card p-2.5 rounded-lg border border-mahindra-border">
+                    <div className="bg-moto-card p-2.5 rounded-lg border border-moto-border">
                       <div className="text-gray-400">Required OEM Part:</div>
                       <div className="font-bold text-white">{assessmentResult.recommended_oem_part}</div>
-                      <div className="font-mono text-mahindra-red text-[10px]">{assessmentResult.oem_part_number}</div>
+                      <div className="font-mono text-moto-red text-[10px]">{assessmentResult.oem_part_number}</div>
                     </div>
-                    <div className="bg-mahindra-card p-2.5 rounded-lg border border-mahindra-border">
+                    <div className="bg-moto-card p-2.5 rounded-lg border border-moto-border">
                       <div className="text-gray-400">Parts Delivery ETA:</div>
                       <div className="font-bold text-emerald-400">{assessmentResult.parts_dispatch_eta}</div>
-                      <div className="text-gray-400 text-[10px]">Bayview Workshop</div>
+                      <div className="text-gray-400 text-[10px]">Authorised Service Centre</div>
                     </div>
                   </div>
 
                   <button
                     onClick={handleFileClaim}
                     disabled={filingClaim}
-                    className="w-full bg-mahindra-red hover:bg-red-600 disabled:opacity-50 text-white font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 shadow-lg transition-all"
+                    className="w-full bg-moto-red hover:bg-red-600 disabled:opacity-50 text-white font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 shadow-lg transition-all"
                   >
                     <CheckCircle2 className="w-4 h-4" />
                     {filingClaim ? "Submitting to ICICI Lombard..." : "Instant File Zero-Dep Insurance Claim (₹0 Cost)"}

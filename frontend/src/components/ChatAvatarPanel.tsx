@@ -23,6 +23,7 @@ import {
   Activity,
   Radio
 } from "lucide-react";
+import { DEFAULT_VEHICLE_ID } from "@/lib/defaultCatalog";
 
 interface ChatAvatarPanelProps {
   isRecording: boolean;
@@ -78,14 +79,14 @@ export function ChatAvatarPanel({
   onClose,
   initialCustomerName = "",
   initialCustomerPhone = "",
-  activeVehicleId = "thar_roxx",
+  activeVehicleId = DEFAULT_VEHICLE_ID,
   brand
 }: ChatAvatarPanelProps) {
   const [name, setName] = useState<string>(initialCustomerName || "");
   const [phone, setPhone] = useState<string>(initialCustomerPhone || "");
   const [demoProfile, setDemoProfile] = useState<{ name: string; phone: string }>({
     name: "Aarav Sharma",
-    phone: "9820418293"
+    phone: "9876543210"
   });
   const [nameError, setNameError] = useState<string>("");
   const [phoneError, setPhoneError] = useState<string>("");
@@ -96,8 +97,8 @@ export function ChatAvatarPanel({
   const chatScrollRef = useRef<HTMLDivElement | null>(null);
 
   // Dynamic brand identities
-  const brandName = brand?.name ? brand.name.replace(/\(.*\)/, "").trim() : "Mahindra";
-  const primaryColor = brand?.primary_color || "#d71920";
+  const brandName = brand?.name ? brand.name.replace(/\(.*\)/, "").trim() : "TVS Motor";
+  const primaryColor = brand?.primary_color || "#1d3f8f";
   const agentName = brand?.agent_name || brand?.avatar_name || "Kavya";
 
   useEffect(() => {
@@ -130,11 +131,11 @@ export function ChatAvatarPanel({
         return;
       }
 
-      // 2. Customer explicitly asks about / requests test drive or test ride
+      // 2. Customer explicitly asks about / requests a test ride
       if (msg.speaker === "customer") {
         const isTestDriveCustomerIntent =
           /(test\s*(drive|ride)|book\s*(a\s*)?(drive|ride|slot)|schedule\s*(a\s*)?(drive|ride|slot)|take\s*(a\s*)?(drive|ride)|drive\s*book|ride\s*book|drive\s*karna|ride\s*karna|drive\s*lena|ride\s*lena|chahiye|kara\s*do)/i.test(lower) ||
-          /(book|schedule|reserve|slot).*(thar|scorpio|xuv|creta|verna|tucson|swift|brezza|grand\s*vitara|car|suv|vehicle)/i.test(lower);
+          /(book|schedule|reserve|slot).*(bike|motorcycle|motorbike|scooter|scooty|two[\s-]*wheeler|apache|ronin|raider|ntorq|jupiter|iqube|splendor|glamour|xtreme|xpulse|destini|vida|vehicle)/i.test(lower);
 
         if (isTestDriveCustomerIntent) {
           setShowCalendar(true);
@@ -197,7 +198,7 @@ export function ChatAvatarPanel({
     const cleaned = val.replace(/[\s-]/g, "");
     if (!cleaned) return "Mobile number is required";
     if (!PHONE_REGEX.test(cleaned)) {
-      return "Please enter a valid 10-digit mobile number (e.g. 9154920275)";
+      return "Please enter a valid 10-digit mobile number (e.g. 9876543210)";
     }
     return "";
   };
@@ -255,9 +256,9 @@ export function ChatAvatarPanel({
       ];
     }
     return [
-      { text: "Tell me about the new Thar ROXX 5-door SUV", label: "Thar ROXX" },
-      { text: "Tell me about Scorpio-N features and price", label: "Scorpio-N" },
-      { text: "Show me XUV700 Level 2 ADAS and features", label: "XUV700" }
+      { text: "Tell me about the TVS Apache RTR 160 4V", label: "Apache RTR 160 4V" },
+      { text: "Compare TVS Jupiter and NTORQ 125 scooters", label: "Jupiter vs NTORQ" },
+      { text: "What is the real-world range of the TVS iQube electric scooter?", label: "iQube EV" }
     ];
   }, [brand]);
 
@@ -524,7 +525,7 @@ export function ChatAvatarPanel({
                     setTouched((prev) => ({ ...prev, phone: true }));
                     setPhoneError(validatePhone(phone));
                   }}
-                  placeholder="91549 20275"
+                  placeholder="98765 43210"
                   className={`w-full bg-[#151D2C] border rounded-xl pl-16 pr-3.5 py-2.5 text-xs text-white placeholder-slate-500 font-mono focus:outline-none transition-all ${
                     touched.phone && phoneError
                       ? "border-red-500 ring-1 ring-red-500/40 bg-red-950/20"
@@ -563,7 +564,7 @@ export function ChatAvatarPanel({
             </div>
             <div className="flex items-center gap-2 text-slate-300">
               <span className="text-emerald-400 font-bold">✓</span>
-              <span>Instant Doorstep Test Drive Scheduling &amp; SMS Dispatch</span>
+              <span>Instant Doorstep Test Ride Scheduling &amp; SMS Dispatch</span>
             </div>
           </div>
         </div>
@@ -614,7 +615,7 @@ export function ChatAvatarPanel({
                   👋 Namaste! Welcome to {brandName} Virtual Showroom.
                 </p>
                 <p className="welcome-desc text-[11px] text-slate-300 leading-relaxed">
-                  {agentName} supports <strong>all Indian languages</strong> with live audio streaming. Ask any question about vehicle specs, pricing, or book a test drive slot.
+                  {agentName} supports <strong>all Indian languages</strong> with live audio streaming. Ask any question about vehicle specs, pricing, or book a test ride slot.
                 </p>
                 <div className="suggested-questions flex flex-wrap gap-1.5 pt-1">
                   <button
@@ -625,11 +626,11 @@ export function ChatAvatarPanel({
                     }}
                     onClick={() => {
                       setShowCalendar(true);
-                      onSendMessage("I would like to check available slots and book a test drive.");
+                      onSendMessage("I would like to check available slots and book a test ride.");
                     }}
                   >
                     <Calendar className="w-3 h-3 text-amber-300" />
-                    <span>Book Test Drive (Live Slots)</span>
+                    <span>Book Test Ride (Live Slots)</span>
                   </button>
                   {suggestedQuestions.map((q, idx) => (
                     <button
@@ -684,7 +685,7 @@ export function ChatAvatarPanel({
                 );
               })}
 
-              {/* Interactive Test Drive Calendar & Live Database Slots Card */}
+              {/* Interactive Test Ride Calendar & Live Database Slots Card */}
               {showCalendar && (
                 <TestDriveChatCalendar
                   vehicleId={activeVehicleId}
@@ -692,7 +693,7 @@ export function ChatAvatarPanel({
                   customerPhone={phone || initialCustomerPhone || ""}
                   onSlotBooked={(booking) => {
                     onSendMessage(
-                      `I have successfully booked the ${booking.vehicle_name} (${booking.variant || ""}) test drive for ${booking.slot_date} at ${booking.slot_time}. Reference: ${booking.booking_reference}.`
+                      `I have successfully booked the ${booking.vehicle_name} (${booking.variant || ""}) test ride for ${booking.slot_date} at ${booking.slot_time}. Reference: ${booking.booking_reference}.`
                     );
                     setTimeout(() => {
                       setShowCalendar(false);
@@ -713,7 +714,7 @@ export function ChatAvatarPanel({
                     ? "bg-red-600 text-white border-red-400 shadow-md"
                     : "bg-white/5 border-white/10 text-slate-300 hover:text-white hover:border-cyan-400/50"
                 }`}
-                title="Open Test Drive Calendar & Available Slots"
+                title="Open Test Ride Calendar & Available Slots"
               >
                 <Calendar className="w-4 h-4 text-cyan-400" />
               </button>

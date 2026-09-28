@@ -13,7 +13,7 @@ import {
   AlertCircle,
   TrendingUp,
   User,
-  Car,
+  Bike,
   Phone,
   PhoneCall,
   Clock,
@@ -30,6 +30,7 @@ import {
   ChevronRight,
   Filter
 } from "lucide-react";
+import { DEFAULT_BRAND_ID, DEFAULT_VEHICLE_ID, BIKE_PLACEHOLDER_IMAGE } from "@/lib/defaultCatalog";
 import { fetchSalesLeads, uploadTestRideRecording, fetchDealerships, fetchLatestTestRideInsights } from "@/lib/api";
 
 interface SalesMobileAppProps {
@@ -44,7 +45,7 @@ interface SalesMobileAppProps {
 export function SalesMobileApp({
   vehicles,
   profile,
-  selectedVehicleId = "thar_roxx",
+  selectedVehicleId = DEFAULT_VEHICLE_ID,
   brand,
   onProceedToOutboundCall,
   isStandalone = false
@@ -58,7 +59,7 @@ export function SalesMobileApp({
   const [leads, setLeads] = useState<TestRideLeadItem[]>([]);
   const [selectedLead, setSelectedLead] = useState<TestRideLeadItem | null>(null);
   const [testVehicleId, setTestVehicleId] = useState<string>(selectedVehicleId);
-  const [selectedVariant, setSelectedVariant] = useState<string>("AX7L Diesel AT 4x4");
+  const [selectedVariant, setSelectedVariant] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"leads" | "record" | "insights">("leads");
 
   // Mobile Microphone Recording States
@@ -172,9 +173,9 @@ export function SalesMobileApp({
     setIsPaused(false);
     setAudioUrl(null);
 
-    const vId = lead.vehicle_id || "thar_roxx";
+    const vId = lead.vehicle_id || selectedVehicleId || DEFAULT_VEHICLE_ID;
     setTestVehicleId(vId);
-    setSelectedVariant(lead.variant || "AX7L Diesel AT 4x4");
+    setSelectedVariant(lead.variant || "");
     setActiveTab("record");
 
     // Immediately check if this specific lead has persisted insights
@@ -284,9 +285,9 @@ export function SalesMobileApp({
         customer_id: selectedLead?.customer_id || profile?.customer_id || "CUST-AARAV-001",
         booking_reference: selectedLead?.booking_reference,
         customer_name: selectedLead?.name || profile?.name,
-        brand_id: brand?.id || "mahindra",
+        brand_id: brand?.id || DEFAULT_BRAND_ID,
         vehicle_id: testVehicleId,
-        variant: selectedVariant,
+        variant: selectedVariant || currentVehicleObj?.variants?.[0]?.name || "Standard",
         sales_advisor_name: selectedLead?.dealership_name ? `Specialist (${selectedLead.dealership_name})` : `Advisor (${brandDisplayName})`,
         duration_seconds: Math.max(recordingSeconds, 1),
         audio_format: detectedMime,
@@ -321,9 +322,9 @@ export function SalesMobileApp({
         customer_id: selectedLead?.customer_id || profile?.customer_id || "CUST-AARAV-001",
         booking_reference: selectedLead?.booking_reference,
         customer_name: selectedLead?.name || profile?.name,
-        brand_id: brand?.id || "mahindra",
+        brand_id: brand?.id || DEFAULT_BRAND_ID,
         vehicle_id: testVehicleId,
-        variant: selectedVariant,
+        variant: selectedVariant || currentVehicleObj?.variants?.[0]?.name || "Standard",
         sales_advisor_name: selectedLead?.dealership_name ? `Specialist (${selectedLead.dealership_name})` : `Advisor (${brandDisplayName})`,
         duration_seconds: 184,
         audio_format: "audio/wav",
@@ -457,8 +458,8 @@ export function SalesMobileApp({
                           const isSelected = selectedLead?.customer_id === lead.customer_id;
                           const convCount = lead.total_conversations || lead.conversations_by_day?.reduce((acc, d) => acc + d.conversation_count, 0) || 1;
                           const carsList = lead.interested_cars && lead.interested_cars.length > 0 ? lead.interested_cars : [lead.preferred_vehicle];
-                          const featsList = lead.interested_features && lead.interested_features.length > 0 ? lead.interested_features : ["SUV Styling & Road Presence", "Cabin Comfort"];
-                          const budgetVal = lead.budget_range || "₹15.00 Lakh – ₹22.50 Lakh";
+                          const featsList = lead.interested_features && lead.interested_features.length > 0 ? lead.interested_features : ["Styling & Road Presence", "Riding Comfort"];
+                          const budgetVal = lead.budget_range || "₹1.00 Lakh – ₹1.50 Lakh";
 
                           return (
                             <div
@@ -489,10 +490,10 @@ export function SalesMobileApp({
                                 </div>
                               </div>
 
-                              {/* Key Pre-Sales Intelligence: Car Interested, Features Interested, Budget */}
+                              {/* Key Pre-Sales Intelligence: Bike Interested, Features Interested, Budget */}
                               <div className="mt-2.5 p-2 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
                                 <div className="flex items-start justify-between gap-2 text-[10px]">
-                                  <span className="text-slate-500 font-bold shrink-0">🚗 Car Interested:</span>
+                                  <span className="text-slate-500 font-bold shrink-0">🏍️ Bike Interested:</span>
                                   <span className="font-black text-slate-900 text-right">{carsList.join(", ")}</span>
                                 </div>
                                 <div className="flex items-start justify-between gap-2 text-[10px]">
@@ -573,7 +574,7 @@ export function SalesMobileApp({
 
                       <div className="grid grid-cols-2 gap-2 pt-0.5">
                         <div className="p-2 rounded-xl bg-red-50/70 border border-red-200">
-                          <span className="text-[9px] uppercase font-bold text-red-800 block">🚗 Interested Car(s)</span>
+                          <span className="text-[9px] uppercase font-bold text-red-800 block">🏍️ Interested Bike(s)</span>
                           <span className="font-black text-slate-900 text-[11px]">
                             {selectedLead?.interested_cars && selectedLead.interested_cars.length > 0
                               ? selectedLead.interested_cars.join(", ")
@@ -583,7 +584,7 @@ export function SalesMobileApp({
                         <div className="p-2 rounded-xl bg-emerald-50/70 border border-emerald-200">
                           <span className="text-[9px] uppercase font-bold text-emerald-800 block">💰 Customer Budget</span>
                           <span className="font-black text-emerald-950 text-[11px]">
-                            {selectedLead?.budget_range || "₹15.00 Lakh – ₹22.50 Lakh"}
+                            {selectedLead?.budget_range || "₹1.00 Lakh – ₹1.50 Lakh"}
                           </span>
                         </div>
                       </div>
@@ -595,7 +596,7 @@ export function SalesMobileApp({
                         <div className="flex flex-wrap gap-1">
                           {(selectedLead?.interested_features && selectedLead.interested_features.length > 0
                             ? selectedLead.interested_features
-                            : ["SUV Styling & Road Presence", "Cabin Comfort & Infotainment"]
+                            : ["Styling & Road Presence", "Riding Comfort & Connected Features"]
                           ).map((feat, i) => (
                             <span
                               key={i}
@@ -647,7 +648,7 @@ export function SalesMobileApp({
                                       </div>
                                       <div className="text-[9.5px] text-slate-700 space-y-0.5">
                                         <div>
-                                          <span className="font-bold text-slate-500">Car: </span>
+                                          <span className="font-bold text-slate-500">Bike: </span>
                                           <span className="font-bold text-slate-900">{sess.interested_car}</span>
                                           <span className="mx-1.5 text-slate-300">|</span>
                                           <span className="font-bold text-slate-500">Budget: </span>
@@ -699,9 +700,9 @@ export function SalesMobileApp({
                         : (currentVehicleObj?.key_highlights && currentVehicleObj.key_highlights.length > 0
                             ? currentVehicleObj.key_highlights.slice(0, 3).map(h => `Demonstrate / Highlight ${h}`)
                             : [
-                                "Demonstrate Frequency Selective Damping (FSD) / Ride Pliability",
-                                "Showcase Engine / EV Throttle Acceleration & Brake Feel",
-                                "Highlight Skyroof, Cockpit Twin Displays & Rear Seat Comfort"
+                                "Demonstrate Riding Posture, Seat Height & Ground Reach",
+                                "Showcase Pickup / EV Throttle Response, Riding Modes & ABS Braking Feel",
+                                "Highlight Digital Cluster, Bluetooth Connectivity & Pillion Comfort"
                               ]);
                       const isCustom = selectedLead?.is_custom_checklist ?? (selectedLead?.advisor_checklist && selectedLead.advisor_checklist.length > 0);
 
@@ -709,7 +710,7 @@ export function SalesMobileApp({
                         <div className="p-3 bg-amber-50/60 rounded-2xl border border-amber-200 text-[10.5px] space-y-2 text-slate-800 shadow-2xs">
                           <div className="flex items-center justify-between gap-1">
                             <span className="text-[10px] font-bold text-amber-900 uppercase flex items-center gap-1 truncate">
-                              <Sparkles className="w-3 h-3 text-amber-600 shrink-0" /> Demo Checklist ({currentVehicleObj?.name || "Mahindra SUV"}):
+                              <Sparkles className="w-3 h-3 text-amber-600 shrink-0" /> Demo Checklist ({currentVehicleObj?.name || "Selected Model"}):
                             </span>
                             {isCustom ? (
                               <span className="text-[8.5px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300 shrink-0 flex items-center gap-1 shadow-2xs">
@@ -806,7 +807,7 @@ export function SalesMobileApp({
                               className="w-full sm:w-auto px-4 py-2.5 bg-purple-700 hover:bg-purple-800 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-xs cursor-pointer transition-all hover:scale-102 disabled:opacity-50"
                             >
                               <Sparkles className="w-4 h-4 text-purple-200 animate-pulse" />
-                              <span>Simulate Test Drive Recording</span>
+                              <span>Simulate Test Ride Recording</span>
                             </button>
                           </div>
                         ) : (
@@ -910,7 +911,7 @@ export function SalesMobileApp({
                               ))}
                             </ul>
                           ) : (
-                            <p className="text-[10px] text-slate-600 pl-1">Overall test drive vehicle performance</p>
+                            <p className="text-[10px] text-slate-600 pl-1">Overall test ride performance</p>
                           )}
                         </div>
 
@@ -926,7 +927,7 @@ export function SalesMobileApp({
                             </ul>
                           ) : (
                             <p className="text-[10px] text-emerald-800 font-medium pl-1">
-                              ✓ No major objections or concerns raised during the test drive.
+                              ✓ No major objections or concerns raised during the test ride.
                             </p>
                           )}
                         </div>
@@ -944,7 +945,7 @@ export function SalesMobileApp({
                     ) : (
                       <div className="py-8 text-center text-slate-400">
                         <AlertCircle className="w-6 h-6 text-slate-400 mx-auto mb-1" />
-                        <p className="text-xs">Complete a test drive recording first to generate AI insights.</p>
+                        <p className="text-xs">Complete a test ride recording first to generate AI insights.</p>
                       </div>
                     )}
                   </div>
@@ -974,7 +975,7 @@ export function SalesMobileApp({
             <span>Advisor Field Companion &amp; GCS Audio Insights Engine</span>
           </h2>
           <p className="text-xs md:text-sm text-slate-600 max-w-2xl leading-relaxed">
-            Select a showroom to load verified customer test drive bookings. The advisor companion automatically pulls the customer&apos;s booked vehicle from the database and captures in-vehicle audio with AI speaker diarization.
+            Select a showroom to load verified customer test ride bookings. The advisor companion automatically pulls the customer&apos;s booked bike from the database and captures on-ride audio with AI speaker diarization.
           </p>
 
           {/* Showroom Selector Dropdown in Banner */}
@@ -1028,7 +1029,7 @@ export function SalesMobileApp({
           </div>
         </div>
 
-        {/* Right 7 Cols: Detailed In-Vehicle Test Ride Audio & Insights Panel (Crisp Light Theme) */}
+        {/* Right 7 Cols: Detailed Test Ride Audio & Insights Panel (Crisp Light Theme) */}
         <div className="lg:col-span-7 space-y-4 text-left">
           {/* Active Vehicle Card (From Booking API) */}
           <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -1043,7 +1044,7 @@ export function SalesMobileApp({
               </div>
               <h3 className="text-xl font-black text-slate-900">{currentVehicleObj.name}</h3>
               <p className="text-xs text-amber-800 font-bold">
-                Variant: {selectedVariant} • Showroom: {selectedLead?.dealership_name || activeShowroomName}
+                Variant: {selectedVariant || currentVehicleObj?.variants?.[0]?.name || "Standard"} • Showroom: {selectedLead?.dealership_name || activeShowroomName}
               </p>
               <p className="text-[11px] text-slate-600">
                 Customer: <strong className="text-slate-900">{selectedLead?.name || "Aarav Sharma"}</strong> ({selectedLead?.phone || "+91 98201 23456"})
@@ -1056,12 +1057,12 @@ export function SalesMobileApp({
                 src={
                   currentVehicleObj.hero_image ||
                   currentVehicleObj.image_url ||
-                  `/assets/${currentVehicleObj.id.replace("_", "-")}.jpg`
+                  BIKE_PLACEHOLDER_IMAGE
                 }
                 alt={currentVehicleObj.name}
                 className="w-full h-full object-cover"
                 onError={(e) => {
-                  e.currentTarget.src = "/assets/thar-roxx.jpg";
+                  if (!e.currentTarget.src.endsWith(BIKE_PLACEHOLDER_IMAGE)) e.currentTarget.src = BIKE_PLACEHOLDER_IMAGE;
                 }}
               />
             </div>
@@ -1098,12 +1099,12 @@ export function SalesMobileApp({
                 </div>
               </div>
 
-              {/* Full In-Vehicle Transcript Box */}
+              {/* Full Test Ride Transcript Box */}
               <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-3">
                 <div className="flex items-center justify-between border-b border-slate-200 pb-2.5">
                   <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                     <Volume2 className="w-4 h-4 text-purple-600" />
-                    <span>In-Vehicle Test Ride Audio STT Transcript (Multi-Turn)</span>
+                    <span>Test Ride Audio STT Transcript (Multi-Turn)</span>
                   </h4>
                   <span className="text-[10px] font-mono text-slate-500 font-bold bg-slate-100 px-2 py-0.5 rounded">
                     Duration: {insights.duration_seconds}s
@@ -1139,7 +1140,7 @@ export function SalesMobileApp({
                       ))}
                     </ul>
                   ) : (
-                    <p className="text-xs text-slate-600 pl-1">Overall test drive vehicle performance</p>
+                    <p className="text-xs text-slate-600 pl-1">Overall test ride performance</p>
                   )}
                 </div>
 
@@ -1155,7 +1156,7 @@ export function SalesMobileApp({
                     </ul>
                   ) : (
                     <p className="text-xs text-emerald-800 font-medium pl-1">
-                      ✓ No major objections or concerns raised during the test drive.
+                      ✓ No major objections or concerns raised during the test ride.
                     </p>
                   )}
                 </div>
@@ -1194,7 +1195,7 @@ export function SalesMobileApp({
               </div>
               <h4 className="text-base font-bold text-slate-900">Ready for Test Ride Audio Capture</h4>
               <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
-                Select a customer lead on the mobile phone interface, tap &quot;Start Ride Recording&quot; to begin in-cabin audio recording, and upload to GCS to generate STT transcript and buyer sentiment analytics.
+                Select a customer lead on the mobile phone interface, tap &quot;Start Ride Recording&quot; to begin test ride audio recording, and upload to GCS to generate STT transcript and buyer sentiment analytics.
               </p>
             </div>
           )}

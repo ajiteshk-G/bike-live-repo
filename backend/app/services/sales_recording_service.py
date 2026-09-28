@@ -1,5 +1,6 @@
 from app.services.cache_service import cache
 import os
+import re
 import uuid
 import json
 import logging
@@ -18,13 +19,13 @@ from app.schemas.sales_recording import (
     TestRideLeadItem
 )
 from app.services.catalog_service import CatalogService
-from app.services.customer_service import clean_phone
+from app.services.customer_service import clean_phone, default_vehicle_for_brand, lookup_vehicle_price
 from app.services.brand_service import BrandService
 from app.config import settings
 
 logger = logging.getLogger("sales_recording_service")
 
-UPLOAD_BASE_DIR = "/tmp/mahindra_test_rides"
+UPLOAD_BASE_DIR = "/tmp/two_wheeler_test_rides"
 os.makedirs(UPLOAD_BASE_DIR, exist_ok=True)
 
 def _create_synthetic_wav_file(filepath: str):
@@ -57,18 +58,167 @@ def _create_synthetic_wav_file(filepath: str):
         f.write(b'\x00' * data_size)
 
 class SalesRecordingService:
+    # ------------------------------------------------------------------
+    # Two-wheeler test ride simulation helpers
+    # ------------------------------------------------------------------
+    SEGMENT_RIVALS = {
+        "commuter motorcycle": ["Honda Shine 100", "Bajaj Platina 110"],
+        "premium commuter": ["Honda SP125", "Bajaj Pulsar 125"],
+        "sports motorcycle": ["Bajaj Pulsar N160", "Yamaha FZ-S Fi"],
+        "naked streetfighter": ["Bajaj Pulsar N160", "Yamaha MT-15"],
+        "supersport": ["Yamaha R15 V4", "KTM RC 200"],
+        "adventure tourer": ["Royal Enfield Himalayan 450", "KTM 250 Adventure"],
+        "cruiser / retro": ["Royal Enfield Classic 350", "Honda CB350"],
+        "scooter": ["Honda Activa 6G", "Suzuki Access 125"],
+        "performance scooter": ["Yamaha Aerox 155", "Honda Dio 125"],
+        "electric scooter": ["Ather Rizta", "Ola S1 Pro"],
+        "electric motorcycle": ["Ola Roadster", "Revolt RV400"],
+        "moped": ["Honda Activa 6G", "Bajaj Platina 100"],
+    }
+
+    @staticmethod
+    def _build_test_ride_profile(v_info: Optional[Any], vehicle_id: str, display_veh_name: str) -> Dict[str, Any]:
+        """Derives ride-relevant talking points for a motorcycle / scooter from its catalog specs."""
+        cat = (getattr(v_info, "category", "") or "").lower()
+        fuel = (getattr(v_info, "fuel_or_battery", "") or "").lower()
+        highlights = list(getattr(v_info, "key_highlights", None) or [])
+        hl_text = " ".join(highlights).lower()
+        vid = (vehicle_id or "").lower()
+
+        is_ev = "electric" in cat or "electric" in fuel or any(k in vid for k in ["iqube", "vida", "_ev", "electric"])
+        is_scooter = any(k in cat for k in ["scooter", "moped"]) or any(k in vid for k in ["jupiter", "ntorq", "zest", "iqube", "destini", "xoom", "pleasure", "maestro"])
+
+        # Engine / motor
+        disp = getattr(v_info, "displacement_cc", None)
+        power = getattr(v_info, "max_power", None)
+        torque = getattr(v_info, "max_torque", None)
+        if is_ev:
+            motor = getattr(v_info, "engine_specs", None) or "electric hub motor"
+            engine_str = f"{motor}{f' ({power})' if power else ''}"
+            pickup_phrase = "twist-and-go instant torque, bilkul zero lag"
+            pickup_label = "instant electric torque"
+            engine_praise = "Koi vibration nahi, koi gear shift nahi — super silent aur smooth hai."
+        else:
+            base = f"{disp} cc" if disp and "cc" not in str(disp).lower() else (disp or (getattr(v_info, "engine_specs", "") or "").split(",")[0].strip() or "refined engine")
+            extras = ", ".join([x for x in [power, torque] if x])
+            engine_str = f"{base}{f' ({extras})' if extras else ''}"
+            pickup_phrase = "low-end aur mid-range pickup" if not is_scooter else "CVT ka smooth pickup"
+            pickup_label = "acceleration"
+            engine_praise = "Refinement achha hai, high rpm par bhi handlebar par zyada vibration nahi aa raha."
+
+        # Braking & ABS
+        braking = getattr(v_info, "braking", None)
+        if not braking:
+            braking = next((h for h in highlights if any(k in h.lower() for k in ["abs", "cbs", "ibs", "disc", "brake"])), None)
+        if not braking:
+            braking = "front disc with combined braking (CBS)" if is_scooter else "front disc with ABS"
+        b_low = braking.lower()
+        braking_short = "Dual-channel ABS" if "dual" in b_low else ("Single-channel ABS" if "abs" in b_low else ("CBS/IBS" if any(k in b_low for k in ["cbs", "ibs", "combi", "sbt", "synchron"]) else "disc brakes"))
+
+        # Ergonomics
+        seat_height = getattr(v_info, "seat_height", None)
+        kerb_weight = getattr(v_info, "kerb_weight", None)
+        seat_height_label = seat_height or ("low, flat-foot friendly seat" if is_scooter else "comfortable seat height")
+
+        # Riding modes & connectivity
+        modes = list(getattr(v_info, "riding_modes", None) or [])
+        has_tft = any(k in hl_text for k in ["tft", "bluetooth", "smartxonnect", "connected", "navigation", "map"])
+        connectivity = next((h for h in highlights if any(k in h.lower() for k in ["tft", "bluetooth", "smartxonnect", "connected", "navigation"])), None) or "digital console with Bluetooth call & SMS alerts"
+
+        mileage = getattr(v_info, "range_or_mileage", None) or ("certified range" if is_ev else "segment-best mileage")
+        tank = getattr(v_info, "fuel_tank_or_battery", None)
+
+        # Competitors (never name the bike's own brand as a rival)
+        brand_word = display_veh_name.split(" ")[0].lower()
+        rivals = [c for c in (getattr(v_info, "competitors", None) or []) if brand_word not in c.lower()]
+        if not rivals:
+            seg_key = next((k for k in SalesRecordingService.SEGMENT_RIVALS if k == cat), None)
+            if not seg_key:
+                seg_key = "electric scooter" if (is_ev and is_scooter) else ("electric motorcycle" if is_ev else ("scooter" if is_scooter else "sports motorcycle"))
+            rivals = [c for c in SalesRecordingService.SEGMENT_RIVALS[seg_key] if brand_word not in c.lower()]
+        competitor_name = " aur ".join(rivals[:2]) if rivals else "dusre brands"
+        competitor_short = rivals[0] if rivals else "competition"
+        if is_ev:
+            advantage_str = "battery warranty, wide service network, home charging support aur proven reliability"
+        elif is_scooter:
+            advantage_str = "under-seat storage, better mileage, low maintenance cost aur family-friendly comfort"
+        else:
+            advantage_str = f"{braking_short}, better features-per-rupee, strong resale value aur nationwide service network"
+
+        return {
+            "display_veh_name": display_veh_name,
+            "is_ev": is_ev,
+            "is_scooter": is_scooter,
+            "engine_str": engine_str,
+            "pickup_phrase": pickup_phrase,
+            "pickup_label": pickup_label,
+            "engine_praise": engine_praise,
+            "braking": braking,
+            "braking_short": braking_short,
+            "seat_height_label": seat_height_label,
+            "kerb_weight": kerb_weight,
+            "modes": modes,
+            "has_tft": has_tft,
+            "connectivity": connectivity,
+            "mileage": mileage,
+            "tank": tank,
+            "competitor_name": competitor_name,
+            "competitor_short": competitor_short,
+            "advantage_str": advantage_str,
+        }
+
+    @staticmethod
+    def _build_simulated_test_ride_transcript(profile: Dict[str, Any], cust_name: str, advisor_short: str) -> str:
+        """Hinglish on-bike test ride conversation (advisor on pillion / riding alongside)."""
+        p = profile
+        veh = p["display_veh_name"]
+        weight_bit = f" Kerb weight sirf {p['kerb_weight']} hai, isliye traffic mein handle karna easy hai." if p.get("kerb_weight") else ""
+        modes_bit = (
+            f"Isme {', '.join(p['modes'])} riding modes hain — highway par {p['modes'][0]} try kariye, baarish mein {p['modes'][-1]}."
+            if p["modes"] else "Throttle response city aur highway dono ke liye well-calibrated hai."
+        )
+        if p["is_ev"]:
+            fuel_q = "Ek full charge mein real-world range kitni milegi? Aur ghar pe charging kitna time lega?"
+            fuel_a = f"{veh} ki {p['mileage']} hai. Normal home socket se overnight full charge ho jata hai, aur app pe charging status live dikhta hai."
+        else:
+            fuel_q = "Mileage kitna dega daily office commute mein? Petrol ka kharcha important hai."
+            tank_bit = f" {p['tank']} tank ke saath" if p.get("tank") else ""
+            fuel_a = f"{veh} ka {p['mileage']} hai{tank_bit}, toh weekly refuel ka tension nahi."
+        pillion_q = "Meri wife pillion baithegi — pillion seat aur grab rail comfortable hai?" if not p["is_scooter"] else "Pillion ke liye floorboard aur seat space kaisa hai? Family ke saath use karna hai."
+        return f"""[00:10] Advisor {advisor_short}: "Namaste {cust_name} ji! Helmet strap tight kar lijiye, side stand check — chaliye shuru karte hain. Yeh {p['engine_str']} hai, {p['pickup_phrase']} feel kariye."
+[00:28] {cust_name} (Customer): "Arre wah, pickup toh kaafi punchy hai! {p['engine_praise']}"
+[00:47] Advisor {advisor_short}: "Ab thoda sudden brake karke dekhiye — isme {p['braking']} hai, toh wheel lock nahi hoga aur bike straight rukti hai."
+[01:05] {cust_name} (Customer): "Haan, braking bahut confident laga. ABS ka pulse feel hua but control poora tha."
+[01:22] Advisor {advisor_short}: "Next corner par thoda lean kariye — chassis aur suspension ka balance dekhiye.{weight_bit}"
+[01:40] {cust_name} (Customer): "Handling kaafi agile hai, cornering mein stable lag rahi hai. Potholes par suspension bhi theek absorb kar raha hai."
+[01:58] {cust_name} (Customer): "Seat height mere liye sahi hai? Main 5 feet 7 hoon, signal pe dono pair zameen pe aa rahe hain."
+[02:12] Advisor {advisor_short}: "Bilkul sir, {p['seat_height_label']} — rider triangle upright hai, toh long rides mein back pain nahi hoga."
+[02:30] {cust_name} (Customer): "{pillion_q}"
+[02:45] Advisor {advisor_short}: "Pillion seat wide aur well-padded hai, grab rail bhi sturdy hai — do log aaram se long ride kar sakte hain."
+[03:00] {cust_name} (Customer): "{fuel_q}"
+[03:15] Advisor {advisor_short}: "{fuel_a}"
+[03:32] Advisor {advisor_short}: "{modes_bit}"
+[03:48] {cust_name} (Customer): "Aur console mein navigation aur call alerts aate hain kya?"
+[04:02] Advisor {advisor_short}: "Haan sir, isme {p['connectivity']} hai — phone pair karke turn-by-turn navigation, call aur SMS alerts dikhte hain."
+[04:20] {cust_name} (Customer): "Sab badhiya hai, but honestly {p['competitor_name']} thoda sasta pad raha hai on-road."
+[04:38] Advisor {advisor_short}: "Valid point {cust_name} ji! {p['competitor_short']} ka price attractive hai, lekin jab aap {p['advantage_str']} compare karenge toh value clear hai."
+[04:58] {cust_name} (Customer): "Theek hai. Two-wheeler loan ka kya option hai? EMI kitni banegi?"
+[05:14] Advisor {advisor_short}: "Sir, hamare partner banks aur NBFCs se 10% se 25% down payment par loan mil jata hai, tenure 12 se 48 months tak, aur instant digital approval bhi hai."
+[05:32] {cust_name} (Customer): "Perfect! Ride experience top class tha. Chaliye showroom chalte hain, booking aur loan process start karte hain."
+[05:45] Advisor {advisor_short}: "Thank you {cust_name} ji! Bike showroom pe park kar dete hain — system aapko on-road price aur EMI options turant bhej dega." """
+
     @staticmethod
     def _build_customer_conversation_intelligence(
         customer: Optional[Customer],
         sessions: List[Any],
         logs: List[InteractionLog],
-        default_vehicle_id: str = "thar_roxx"
+        default_vehicle_id: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Groups all conversations for a unique (Name + Phone Number) customer by calendar day,
-        extracting the interested car, interested features, and budget for each conversation and each day.
+        extracting the interested two-wheeler, interested features, and budget for each conversation and each day.
         """
-        from app.services.customer_service import extract_conversation_intelligence, VEHICLE_PRICE_MAP
+        from app.services.customer_service import extract_conversation_intelligence, lookup_vehicle_price, DEFAULT_VEHICLE_ID
         from app.schemas.sales_recording import (
             ConversationTurnItem,
             ConversationSessionSummary,
@@ -76,7 +226,7 @@ class SalesRecordingService:
         )
 
         cust_budget = customer.budget_range if customer else None
-        fallback_vid = default_vehicle_id or (customer.interested_vehicle_id if customer else "thar_roxx") or "thar_roxx"
+        fallback_vid = default_vehicle_id or (customer.interested_vehicle_id if customer else None) or DEFAULT_VEHICLE_ID
 
         # Map logs by session_id (DB integer ID) and also handle orphan logs
         logs_by_sess_id: Dict[int, List[InteractionLog]] = {}
@@ -117,10 +267,10 @@ class SalesRecordingService:
                     existing_budget=cust_budget
                 )
 
-            car_name = parsed_summary.get("primary_vehicle_name") or VEHICLE_PRICE_MAP.get(sess.vehicle_id or fallback_vid, ("Mahindra Thar ROXX", ""))[0]
+            car_name = parsed_summary.get("primary_vehicle_name") or lookup_vehicle_price(sess.vehicle_id or fallback_vid)[0]
             sess_cars = parsed_summary.get("interested_cars") or [car_name]
-            sess_feats = parsed_summary.get("interested_features") or ["SUV Styling & Road Presence", "Cabin Comfort & Infotainment"]
-            sess_budget = parsed_summary.get("budget") or cust_budget or VEHICLE_PRICE_MAP.get(sess.vehicle_id or fallback_vid, ("", "₹15.00 Lakh – ₹22.50 Lakh"))[1]
+            sess_feats = parsed_summary.get("interested_features") or ["Styling & Road Presence", "Mileage / Range & Charging"]
+            sess_budget = parsed_summary.get("budget") or cust_budget or lookup_vehicle_price(sess.vehicle_id or fallback_vid)[1]
             key_points = parsed_summary.get("key_points_summary") or f"Interested in {car_name} | Focus: {', '.join(sess_feats[:3])} | Budget: {sess_budget}"
 
             for c_item in sess_cars:
@@ -200,12 +350,12 @@ class SalesRecordingService:
             ))
 
         if not all_cars:
-            def_car = VEHICLE_PRICE_MAP.get(fallback_vid, (fallback_vid.replace("_", " ").title(), "₹15.00 Lakh – ₹22.50 Lakh"))[0]
+            def_car = lookup_vehicle_price(fallback_vid)[0]
             all_cars.append(def_car)
         if not all_features:
-            all_features = ["SUV Styling & Road Presence", "Cabin Comfort & Infotainment"]
+            all_features = ["Styling & Road Presence", "Mileage / Range & Charging"]
         if not latest_budget or latest_budget == "Standard Range":
-            latest_budget = VEHICLE_PRICE_MAP.get(fallback_vid, ("", "₹15.00 Lakh – ₹22.50 Lakh"))[1]
+            latest_budget = lookup_vehicle_price(fallback_vid)[1]
 
         # Group sessions by calendar day (date_key descending)
         day_groups_map: Dict[str, List[ConversationSessionSummary]] = {}
@@ -255,12 +405,12 @@ class SalesRecordingService:
         """
         Fetch qualified leads for the Sales Consultant App scoped to brand.
         Strictly 1 lead row per unique customer (identified by Unique Name + Phone Number).
-        Includes per-day conversation breakdown, interested car(s), interested features, and budget.
+        Includes per-day conversation breakdown, interested two-wheeler(s), interested features, and budget.
         """
         from app.models.customer import ConversationSession
         from app.services.customer_service import clean_name
 
-        b_id = (brand_id or (BrandService.get_active_brand().id if BrandService.get_active_brand() else "mahindra")).lower()
+        b_id = (brand_id or (BrandService.get_active_brand().id if BrandService.get_active_brand() else "tvs")).lower()
         cache_key = f"sales_leads_{b_id}_{dealership_id or 'all'}"
         cached = cache.get(cache_key)
         if cached is not None:
@@ -378,11 +528,11 @@ class SalesRecordingService:
                         customer=c,
                         sessions=list(c.sessions),
                         logs=list(c.interactions),
-                        default_vehicle_id=c.interested_vehicle_id or "thar_roxx"
+                        default_vehicle_id=c.interested_vehicle_id or default_vehicle_for_brand(b_id)
                     )
 
-                    v_info = CatalogService.get_vehicle_by_id(c.interested_vehicle_id or ("bmw_x5" if b_id == "bmw" else "creta" if b_id == "hyundai" else "grand_vitara" if b_id == "maruti_suzuki" else "thar_roxx"))
-                    veh_name = v_info.name if v_info else (intel_data["interested_cars"][0] if intel_data["interested_cars"] else "Mahindra Thar ROXX")
+                    v_info = CatalogService.get_vehicle_by_id(c.interested_vehicle_id or default_vehicle_for_brand(b_id))
+                    veh_name = v_info.name if v_info else (intel_data["interested_cars"][0] if intel_data["interested_cars"] else lookup_vehicle_price(default_vehicle_for_brand(b_id))[0])
                     db_checklist = c.advisor_checklist
                     is_custom = bool(db_checklist and len(db_checklist) > 0)
                     final_checklist = db_checklist if is_custom else [f"Demonstrate / Highlight {f}" for f in intel_data["interested_features"][:4]]
@@ -400,10 +550,10 @@ class SalesRecordingService:
                         phone=c.phone,
                         email=c.email,
                         city=c.city or "Mumbai",
-                        preferred_vehicle=f"{veh_name} ({c.interested_variant or 'Official Variant'})",
+                        preferred_vehicle=f"{veh_name} ({c.interested_variant or 'Standard Variant'})",
                         vehicle_name=veh_name,
-                        vehicle_id=c.interested_vehicle_id or ("bmw_x5" if b_id == "bmw" else "thar_roxx"),
-                        variant=c.interested_variant or "Official Variant",
+                        vehicle_id=c.interested_vehicle_id or default_vehicle_for_brand(b_id),
+                        variant=c.interested_variant or "Standard Variant",
                         dealership_name=def_dlr_name,
                         dealership_id=def_dlr_id,
                         booking_status=resolved_status,
@@ -426,7 +576,7 @@ class SalesRecordingService:
         # Determine brand_id
         b_id = (
             getattr(req, "brand_id", None) or
-            (BrandService.get_active_brand().id if BrandService.get_active_brand() else "mahindra")
+            (BrandService.get_active_brand().id if BrandService.get_active_brand() else "tvs")
         ).lower()
 
         # Invalidate leads cache on new recording upload
@@ -434,7 +584,7 @@ class SalesRecordingService:
         cache.invalidate("sales_leads_")
         """
         Saves test ride audio recording at:
-        gs://mahindra-sales-recordings/test_rides/<date>/<booking_reference>.wav
+        gs://<GCS_RECORDINGS_BUCKET>/test_rides/<date>/<booking_reference>.wav
         Executes Gemini transcription with speaker identification and multi-dimensional insights.
         Persists in database against that customer and booking.
         """
@@ -447,21 +597,10 @@ class SalesRecordingService:
         customer = res.scalars().first()
 
         if not customer:
-            stmt_all = select(Customer).where(Customer.brand_id == b_id).limit(1)
-            res_all = await db.execute(stmt_all)
-            customer = res_all.scalars().first()
-            if not customer:
-                customer = Customer(
-                    customer_id=req.customer_id,
-                    brand_id=b_id,
-                    name=req.customer_name or "Aarav Sharma",
-                    phone="+91 98201 23456",
-                    email="aarav.sharma@example.com",
-                    city="Mumbai",
-                    current_phase="SALES_TEST_RIDE"
-                )
-                db.add(customer)
-                await db.flush()
+            # Never attach a recording to an unrelated customer or fabricate an identity.
+            raise LookupError(
+                f"Customer '{req.customer_id}' not found for brand '{b_id}'. Identify the customer before uploading a test ride."
+            )
 
         # 2. Resolve Booking and Booking Reference
         booking: Optional[TestDriveBooking] = None
@@ -478,7 +617,7 @@ class SalesRecordingService:
         booking_ref = (
             req.booking_reference or
             (booking.booking_reference if booking else None) or
-            f"BK-MAH-{uuid.uuid4().hex[:5].upper()}"
+            f"BK-{b_id.upper()[:3]}-{uuid.uuid4().hex[:5].upper()}"
         )
         booking_id = booking.id if booking else None
 
@@ -548,8 +687,8 @@ class SalesRecordingService:
         brand = BrandService.get_brand(brand_id) if brand_id else None
         if not brand:
             brand = BrandService.get_active_brand()
-        brand_name = brand.name.replace(r"\(.*\)", "").strip() if brand else "Automotive"
-        brand_short = brand_name.split(" ")[0].strip()
+        brand_name = re.sub(r"\s*\(.*?\)", "", brand.name).strip() if brand else "Two-Wheeler"
+        brand_short = "Hero" if brand_name.lower().startswith("hero") else brand_name.split(" ")[0].strip()
 
         # Resolve vehicle details from brand or catalog
         v_info = None
@@ -569,130 +708,18 @@ class SalesRecordingService:
             display_veh_name = f"{brand_short} {raw_veh_name}"
 
         veh_name = display_veh_name
-        cust_name = req.customer_name or customer.name or "Ajitesh Kumar"
-        advisor_name = req.sales_advisor_name or f"Rajesh Varma (Senior {brand_short} Specialist)"
-        advisor_short = advisor_name.split(" ")[0].replace("Specialist", "").strip("()") or "Rajesh"
+        cust_name = req.customer_name or customer.name or "Customer"
+        advisor_name = req.sales_advisor_name or "Sales Consultant"
+        advisor_short = advisor_name.split("(")[0].strip().split(" ")[0] or "Advisor"
 
         checklist_items = req.advisor_checklist or (booking.advisor_checklist if booking else None) or (customer.advisor_checklist if customer else None) or CatalogService.get_static_checklist(req.vehicle_id)
         session_id = req.session_id or f"TR-2026-{uuid.uuid4().hex[:6].upper()}"
 
-        # 5. Dynamic Indian In-Vehicle Test Drive Dialogue Script (Works for ALL cars & powertrains)
-        v_cat = (v_info.category if v_info else "").lower()
-        v_fuel = (v_info.fuel_or_battery if v_info else "").lower()
-        v_id = req.vehicle_id.lower()
-
-        is_ev = any(k in v_cat or k in v_fuel or k in v_id for k in ["electric", "ev", "battery", "born electric"])
-        is_hybrid = any(k in v_cat or k in v_fuel or k in v_id for k in ["hybrid", "strong hybrid", "e-hybrid"])
-
-        if is_ev:
-            engine_str = v_info.engine_specs if (v_info and v_info.engine_specs) else "High-Torque Permanent Magnet Electric Motor"
-            pickup_phrase = "zero lag ke saath instant electric acceleration"
-            customer_engine_praise = "Cabin ke andar motor noise ya vibrations bilkul nahi hain—super silent ride hai."
-        elif is_hybrid:
-            engine_str = v_info.engine_specs if (v_info and v_info.engine_specs) else "1.5L Intelligent Strong-Hybrid Powertrain"
-            pickup_phrase = "electric boost ke saath pickup"
-            customer_engine_praise = "EV mode se petrol engine ka transition bilkul seamless hai, aur cabin silent hai."
-        else:
-            if v_info and v_info.engine_specs:
-                engine_str = v_info.engine_specs.split("&")[0].strip()
-            elif "xuv700" in v_id or "xuv" in v_id:
-                engine_str = "2.0L Turbo-Petrol engine (200 bhp)"
-            elif "diesel" in v_fuel:
-                engine_str = "2.2L Diesel engine (175 PS / 370 Nm)"
-            else:
-                engine_str = "refined high-performance powertrain"
-            pickup_phrase = "pickup"
-            customer_engine_praise = "Cabin ke andar engine noise bilkul nahi aa rahi."
-
-        # Suspension
-        suspension_feature = None
-        if v_info and v_info.key_highlights:
-            for h in v_info.key_highlights:
-                if any(k in h.lower() for k in ["suspension", "damping", "damper", "fsd", "penta-link", "multi-link"]):
-                    suspension_feature = h
-                    break
-        if suspension_feature:
-            suspension_str = suspension_feature
-        elif "mahindra" in brand_name.lower():
-            suspension_str = "Frequency Selective Damping (FSD) suspension with Penta-Link"
-        elif "bmw" in brand_name.lower():
-            suspension_str = "Adaptive M precision-tuned suspension"
-        elif is_ev:
-            suspension_str = "Multi-Link Independent suspension with low center-of-gravity battery chassis"
-        else:
-            suspension_str = "advanced tuned comfort suspension"
-
-        # Sunroof & Voice Command
-        if "mahindra" in brand_name.lower():
-            sunroof_name = "segment ka sabse bada panoramic sunroof hai—hum isse 'Skyroof' bolte hain"
-            voice_command = "Hey Mahindra, open the skyroof"
-        elif "hyundai" in brand_name.lower():
-            sunroof_name = "Smart Voice-Enabled Panoramic Sunroof hai"
-            voice_command = "Hey Hyundai, open the sunroof"
-        elif "maruti" in brand_name.lower() or "suzuki" in brand_name.lower():
-            sunroof_name = "Segment-leading Dual-Pane Panoramic Sunroof hai"
-            voice_command = "Hi Suzuki, open the sunroof"
-        elif "bmw" in brand_name.lower():
-            sunroof_name = "Panoramic Glass Roof Sky Lounge hai"
-            voice_command = "Hey BMW, open the panoramic glass roof"
-        else:
-            sunroof_name = "Segment-leading Panoramic Sunroof hai"
-            voice_command = f"Hey {brand_short}, open the sunroof"
-
-        # Airbag / Safety Cage
-        airbag_str = "7 airbags"
-        if v_info and v_info.key_highlights:
-            for h in v_info.key_highlights:
-                if "airbag" in h.lower():
-                    airbag_str = h
-                    break
-        elif "bmw" in brand_name.lower():
-            airbag_str = "8 airbags with dynamic stability control"
-        elif "hyundai" in brand_name.lower() or "maruti" in brand_name.lower():
-            airbag_str = "6 airbags standard"
-
-        # Competitor & Market comparison
-        if "bmw" in brand_name.lower() or "luxury" in v_cat:
-            competitor_name = "Mercedes aur Audi"
-            competitor_short = "Mercedes ya Audi"
-            advantage_str = f"pure driving dynamics, 5-Star safety cage aur {display_veh_name} ki authentic luxury engineering"
-        elif is_ev:
-            competitor_name = "other mass-market EV options"
-            competitor_short = "dusre EV models"
-            advantage_str = f"fast DC charging capability, dedicated EV architecture, 5-Star safety aur reliable battery thermal management"
-        elif "hyundai" in brand_name.lower():
-            competitor_name = "Kia (Seltos / Carens)"
-            competitor_short = "Kia"
-            advantage_str = f"proven reliability, refined suspension, 5-Star safety rating aur superior resale value"
-        elif "maruti" in brand_name.lower() or "suzuki" in brand_name.lower():
-            competitor_name = "Hyundai aur Tata"
-            competitor_short = "Hyundai ya Tata"
-            advantage_str = f"best-in-class fuel efficiency, unmatched reliability, robust build aur nationwide service support"
-        elif "mahindra" in brand_name.lower():
-            competitor_name = "Kia (Seltos / Carens)"
-            competitor_short = "Kia"
-            advantage_str = f"segment, solid road presence, 5-Star crash safety aur heavy-duty build quality"
-        else:
-            competitor_name = "market competitors"
-            competitor_short = "competitors"
-            advantage_str = f"5-Star crash safety, superior engineering aur heavy-duty build quality"
-
-        simulated_transcript = f"""[00:12] Advisor {advisor_short}: "Namaste {cust_name} ji! Throttle thoda press karke dekhiye. Yeh {engine_str} hai—{pickup_phrase} instantly feel hoga."
-[00:32] {cust_name} (Customer): "Haan, response toh kafi punchy aur smooth hai. {customer_engine_praise} Suspension bhi kaafi well-cushioned lag raha hai potholes par."
-[00:54] Advisor {advisor_short}: "Bilkul sir, isme {suspension_str} hai, jo automatic road conditions ke hisaab se adjust hota hai."
-[01:18] {cust_name} (Customer): "Aur yeh sunroof poora piche tak jaata hai kya? Kids love big sunroofs."
-[01:38] Advisor {advisor_short}: "Sir, yeh {sunroof_name}. Aap screen par tap karke ya simple voice command se bhi open kar sakte hain. Just say: '{voice_command}'."
-[01:58] {cust_name} (Customer): "Impressive! Glass area kaafi wide hai, cabin pura airy feel ho raha hai."
-[02:15] {cust_name} (Customer): "Safety package kaisa hai iska? ABS aur brakes ka calibration kaisa rehta hai sudden stop par?"
-[02:36] Advisor {advisor_short}: "Sir, isme Electronic Stability Program (ESP) ke saath ABS with EBD aur All-Wheel Disc Brakes standard aate hain. Agar emergency braking karni pade, toh car skid nahi hoti aur steering control bana rehta hai."
-[02:55] {cust_name} (Customer): "Aur Global NCAP rating kitni mili hai isko?"
-[03:10] Advisor {advisor_short}: "{display_veh_name} ko solid 5-Star Global NCAP safety rating mili hai with {airbag_str} aur ultra-high strength steel cage structure."
-[03:32] {cust_name} (Customer): "Sab theek hai, but honestly {competitor_name} market mein thoda cheaper padta hai. Features bhi kaafi de rahe hain woh log at a lower price point."
-[03:52] Advisor {advisor_short}: "Valid point {cust_name} ji! {competitor_short} pricing aur feature list mein attractive lagti hai, lekin jab aap {advantage_str} compare karenge toh difference clear hai."
-[04:14] {cust_name} (Customer): "Hmm, makes sense. Agar finalize karein, toh EMI options ka kya scene hai? Is flexible financing available?"
-[04:32] Advisor {advisor_short}: "Bilkul sir! Hamare paas major banks (HDFC, SBI, ICICI) ke saath tie-ups hain. Aap minimum 10% se 15% down payment de sakte hain, aur tenure 3 se 7 years tak select kar sakte hain. Digital instant approval bhi ho jayega."
-[04:50] {cust_name} (Customer): "Bahut badhiya! Overall experience aur drive dono top notch hain. Chaliye dealership chalte hain aur booking & financing initiate karte hain."
-[05:05] Advisor {advisor_short}: "Thank you {cust_name} ji! Parking the car back at the showroom. Hamara system turant aapko pre-approved financing details bhej dega." """
+        # 5. Dynamic Indian On-Bike Test Ride Dialogue Script (motorcycles, scooters & EVs)
+        profile = SalesRecordingService._build_test_ride_profile(v_info, req.vehicle_id, display_veh_name)
+        simulated_transcript = SalesRecordingService._build_simulated_test_ride_transcript(
+            profile, cust_name=cust_name, advisor_short=advisor_short
+        )
 
         transcript = simulated_transcript
         customer_sentiment = 0.85
@@ -706,17 +733,17 @@ class SalesRecordingService:
             objections_raised: List[str] = []
         else:
             loved_features = [
-                f"{display_veh_name} Performance & Acceleration",
-                "Ride Comfort & Pliant Suspension",
-                "Panoramic Sunroof & Cabin Spaciousness"
+                f"{display_veh_name} pickup & {profile['pickup_label']}",
+                f"Braking confidence ({profile['braking_short']})",
+                f"Seat height & rider fit ({profile['seat_height_label']})",
             ]
             objections_raised = [
-                f"{competitor_name} segment pricing comparison",
-                "Flexible financing and EMI options"
+                f"Price comparison with {profile['competitor_name']}",
+                "Two-wheeler loan EMI & down payment options",
             ]
 
-        advisor_coaching = f"Advisor {advisor_short} presented {display_veh_name} capabilities and answered customer queries."
-        recommended_action = f"Initiate digital loan application and finalize booking for {cust_name} ({display_veh_name})."
+        advisor_coaching = f"Advisor {advisor_short} demonstrated {display_veh_name} on the test ride and answered the rider's questions."
+        recommended_action = f"Share on-road price & two-wheeler loan EMI options and finalise booking for {cust_name} ({display_veh_name})."
 
         # 6. Dynamic Evaluation and Transcription using Gemini Multimodal Audio Model
         try:
@@ -724,47 +751,44 @@ class SalesRecordingService:
             from google.genai import types
             import asyncio
 
-            vertex_client = genai.Client(
-                vertexai=True,
-                project=settings.VERTEX_PROJECT_ID,
-                location=settings.VERTEX_LOCATION
-            )
+            from app.services.genai_client import get_genai_client
+            vertex_client = get_genai_client()
 
-            is_live_recording = has_real_audio and req.simulated_scenario != "test_drive_simulation"
+            is_live_recording = has_real_audio and req.simulated_scenario not in ("test_drive_simulation", "test_ride_simulation")
 
             if is_live_recording and raw_bytes:
                 # Transcribe directly from recorded audio and extract speech insights
                 audio_part = types.Part.from_bytes(data=raw_bytes, mime_type=audio_mime_type)
-                analysis_prompt = f"""You are an expert Automotive Sales Audio Analyst and Transcriber for {brand_name}.
-You are given an authentic in-vehicle audio recording from a real test drive session between Sales Advisor {advisor_name} and Customer {cust_name} for vehicle {veh_name} ({req.variant}).
+                analysis_prompt = f"""You are an expert Two-Wheeler (motorcycle & scooter) Sales Audio Analyst and Transcriber for {brand_name}.
+You are given an authentic audio recording from a real TEST RIDE session between Sales Advisor {advisor_name} and Customer {cust_name} for the two-wheeler {veh_name} ({req.variant}). Expect wind / traffic / engine noise.
 
 CRITICAL INSTRUCTIONS:
-1. Verbatim Transcription: Transcribe the actual spoken audio word-for-word with speaker labels (e.g. "[00:05] Advisor {advisor_short}: ...", "[00:15] {cust_name} (Customer): ...") and timestamps. If the audio is in Hindi, English, or Hinglish, transcribe exactly what is spoken. If no clear speech is audible, state: "[00:00] In-vehicle test drive audio recorded. Ambient drive sounds captured."
-2. Loved Features Extraction: Extract ONLY the vehicle features that the customer explicitly praised, appreciated, liked, or asked positively about in THIS recording (e.g. engine pickup, suspension smoothness, panoramic sunroof, braking, sound system, ventilated seats, etc.). Do NOT include generic or pre-canned features unless they were actually discussed in the audio.
-3. Objections & Concerns Extraction: Extract ONLY the specific doubts, objections, hesitations, competitor comparisons, price questions, or delivery concerns that the customer explicitly raised in THIS recording. If the customer raised NO objections or concerns in the audio, return []. Do NOT invent competitor comparisons unless explicitly mentioned in the audio.
-4. Sentiment & Purchase Intent: Calculate realistic scores (0.00 to 1.00) based strictly on customer voice tone, dialogue, and buying signals in the recording.
-5. Sales Pitch Score & Coaching: Evaluate the advisor's pitch (1.0 to 10.0) and provide 2-3 sentences of constructive coaching feedback based on how the advisor actually presented features and answered queries in the recording.
-6. Recommended Action: 1-2 actionable next steps for the dealership team based on this specific recording.
+1. Verbatim Transcription: Transcribe the actual spoken audio word-for-word with speaker labels (e.g. "[00:05] Advisor {advisor_short}: ...", "[00:15] {cust_name} (Customer): ...") and timestamps. If the audio is in Hindi, English, or Hinglish, transcribe exactly what is spoken (keep the Hinglish tone). If no clear speech is audible, state: "[00:00] Test ride audio recorded. Ambient riding sounds captured."
+2. Loved Features Extraction: Extract ONLY the two-wheeler aspects the customer explicitly praised or asked positively about in THIS recording — e.g. pickup / acceleration, braking & ABS confidence, handling / cornering, suspension over potholes, seat height & rider fit, pillion comfort, mileage / EV range & charging, riding modes, TFT / Bluetooth connectivity & navigation, under-seat storage, helmet / safety features, styling. Do NOT include features that were not discussed.
+3. Objections & Concerns Extraction: Extract ONLY the specific doubts, objections, price questions, competitor comparisons (e.g. Bajaj, Honda, Yamaha, Royal Enfield, Ather, Ola, Suzuki, KTM) or delivery / service concerns the customer explicitly raised in THIS recording. If none, return []. Do NOT invent competitor comparisons.
+4. Sentiment & Purchase Intent: Realistic scores (0.00 to 1.00) based strictly on the rider's tone, dialogue, and buying signals.
+5. Sales Pitch Score & Coaching: Evaluate the advisor's pitch (1.0 to 10.0) and give 2-3 sentences of constructive coaching (e.g. did they cover ABS demo, seat-height fit check, pillion comfort, mileage/range, riding modes, helmet safety, two-wheeler loan options).
+6. Recommended Action: 1-2 actionable next steps for the dealership team (e.g. share on-road price, two-wheeler loan EMI with 10-25% down payment over 12-48 months, exchange offer, accessory/helmet bundle).
 
 Return strictly valid JSON with keys:
 "transcript", "customer_sentiment_score", "purchase_intent_score", "advisor_pitch_score", "loved_features", "objections_raised", "advisor_coaching_feedback", "recommended_action"."""
                 contents = [audio_part, analysis_prompt]
             else:
                 # Text analysis on simulation transcript
-                analysis_prompt = f"""You are an expert Automotive Sales Audio Analyst for {brand_name}.
-Analyze this in-vehicle test drive conversation between Sales Advisor {advisor_name} and Customer {cust_name} for vehicle {veh_name} ({req.variant}).
+                analysis_prompt = f"""You are an expert Two-Wheeler (motorcycle & scooter) Sales Analyst for {brand_name}.
+Analyze this TEST RIDE conversation (Hinglish) between Sales Advisor {advisor_name} and Customer {cust_name} for the two-wheeler {veh_name} ({req.variant}).
 
 Conversation Transcript:
 {simulated_transcript}
 
-Dynamically evaluate the conversation and extract non-hardcoded realistic metrics:
-1. customer_sentiment_score: Float between 0.00 and 1.00 based on customer satisfaction, tone, and feedback.
-2. purchase_intent_score: Float between 0.00 and 1.00 based on customer buying readiness, financing questions, and decision to book.
-3. advisor_pitch_score: Float between 1.0 and 10.0 based on how effectively the sales advisor explained the features.
-4. loved_features: List of 3-4 specific features explicitly praised by the customer.
-5. objections_raised: List of 1-2 specific concerns/comparisons mentioned by the customer.
+Dynamically evaluate the conversation and extract realistic, non-hardcoded metrics:
+1. customer_sentiment_score: Float between 0.00 and 1.00 based on rider satisfaction, tone, and feedback.
+2. purchase_intent_score: Float between 0.00 and 1.00 based on buying readiness, loan / EMI questions, and decision to book.
+3. advisor_pitch_score: Float between 1.0 and 10.0 based on how well the advisor covered pickup, braking & ABS, handling, seat height & rider fit, pillion comfort, mileage / range, riding modes, TFT connectivity and helmet safety.
+4. loved_features: List of 3-4 specific two-wheeler aspects explicitly praised by the customer.
+5. objections_raised: List of 1-2 specific concerns / competitor comparisons (e.g. Bajaj, Honda, Yamaha, Royal Enfield, Ather, Ola) mentioned by the customer.
 6. advisor_coaching_feedback: Constructive coaching feedback for the advisor in 2-3 sentences.
-7. recommended_action: Immediate recommended next step for the digital follow-up team in 1-2 sentences.
+7. recommended_action: Immediate next step for the follow-up team in 1-2 sentences (e.g. on-road price + two-wheeler loan EMI, 12-48 month tenure).
 
 Return valid JSON with keys: transcript, customer_sentiment_score, purchase_intent_score, advisor_pitch_score, loved_features, objections_raised, advisor_coaching_feedback, recommended_action."""
                 contents = [analysis_prompt]
@@ -802,7 +826,7 @@ Return valid JSON with keys: transcript, customer_sentiment_score, purchase_inte
                     # Parse loved features and objections directly from audio analysis
                     if "loved_features" in parsed and isinstance(parsed["loved_features"], list):
                         audio_loved = [str(f).strip() for f in parsed["loved_features"] if str(f).strip()]
-                        loved_features = audio_loved if audio_loved else [f"Drive dynamics & performance ({veh_name})"]
+                        loved_features = audio_loved if audio_loved else [f"Ride dynamics & performance ({veh_name})"]
                     if "objections_raised" in parsed and isinstance(parsed["objections_raised"], list):
                         objections_raised = [str(o).strip() for o in parsed["objections_raised"] if str(o).strip()]
                 else:
@@ -832,7 +856,7 @@ Return valid JSON with keys: transcript, customer_sentiment_score, purchase_inte
             gcs_bucket=gcs_bucket,
             gcs_object_path=gcs_object_path,
             gcs_uri=gcs_uri,
-            duration_seconds=req.duration_seconds or 184,
+            duration_seconds=req.duration_seconds or 345,
             file_size_bytes=file_size,
             audio_format=req.audio_format,
             transcript=transcript,
@@ -849,6 +873,7 @@ Return valid JSON with keys: transcript, customer_sentiment_score, purchase_inte
 
         # 7. Log Individual Dialogue Turns in InteractionLog for unified customer history
         for line in transcript.strip().split("\n"):
+            line = re.sub(r"^\s*\[\d{1,2}:\d{2}(?::\d{2})?\]\s*", "", line)
             if ":" in line:
                 parts = line.split(":", 1)
                 speaker_tag = parts[0].strip()

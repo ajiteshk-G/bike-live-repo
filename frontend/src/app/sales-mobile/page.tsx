@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { SalesMobileApp } from "@/components/SalesMobileApp";
 import { fetchCatalog } from "@/lib/api";
-import { DEFAULT_VEHICLES } from "@/lib/defaultCatalog";
+import { DEFAULT_VEHICLES, DEFAULT_VEHICLE_ID } from "@/lib/defaultCatalog";
 import { useCustomerProfile } from "@/hooks/useCustomerProfile";
 import { VehicleItem, TestRideInsightResponse } from "@/types";
 
@@ -39,7 +39,7 @@ export default function SalesMobilePage() {
         <SalesMobileApp
           vehicles={vehicles}
           profile={profile}
-          selectedVehicleId="thar_roxx"
+          selectedVehicleId={vehicles[0]?.id || DEFAULT_VEHICLE_ID}
           onProceedToOutboundCall={handleProceedToOutboundCall}
           isStandalone={true}
         />

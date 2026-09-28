@@ -21,6 +21,8 @@ def test_websocket_live_chat_and_tools(monkeypatch):
     asyncio.run(_init_mem_db())
     monkeypatch.setattr("app.main.engine", test_engine)
     monkeypatch.setattr("app.main.AsyncSessionLocal", TestingSessionLocal)
+    # Keep startup dealership seeding off the real data/auto.db during tests.
+    monkeypatch.setattr("seeds.seed_dealerships.AsyncSessionLocal", TestingSessionLocal)
     monkeypatch.setattr("app.routers.ws_live.get_bearer_token", _fake_bearer_token)
     monkeypatch.setattr("app.routers.ws_live.AsyncSessionLocal", TestingSessionLocal)
     app.dependency_overrides[get_db] = _override_get_db
@@ -32,10 +34,10 @@ def test_websocket_live_chat_and_tools(monkeypatch):
                 assert data["type"] == "SESSION_INITIALIZED"
                 assert "name" in data["customer"] and len(data["customer"]["name"]) > 0
 
-                # Send test drive query
+                # Send test ride query
                 websocket.send_json({
                     "type": "USER_CHAT",
-                    "text": "Can I book a test drive for Thar ROXX near Bandra tomorrow at 5pm?"
+                    "text": "Can I book a test ride for the Apache RTR 160 4V near Andheri tomorrow at 5pm?"
                 })
                 
                 # We may receive VIDEO_CHUNK, AUDIO_CHUNK, UI_ACTION or ASSISTANT_RESPONSE

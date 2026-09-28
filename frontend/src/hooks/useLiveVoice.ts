@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { LiveAudioOutputManager } from "@/lib/audioManager";
 import { saveFullSessionTranscript } from "@/lib/api";
+import { DEFAULT_VEHICLE_ID } from "@/lib/defaultCatalog";
 
 export interface LiveMessage {
   id: string;
@@ -14,9 +15,7 @@ export interface LiveMessage {
 }
 
 export const KAVYA_AUDIO_GREETING =
-  "Namaste! Welcome to our Virtual Showroom. I am Kavya, your AI Showroom Specialist. Ask me anything about our vehicles or speak with me in your preferred language!";
-
-export const KABIR_AUDIO_GREETING = KAVYA_AUDIO_GREETING;
+  "Namaste! Welcome to our Virtual Showroom. I am Kavya, your AI Showroom Specialist. Ask me anything about our motorcycles and scooters, or speak with me in your preferred language!";
 
 export function useLiveVoice(onUiEvent?: (event: any) => void) {
   const [isConnected, setIsConnected] = useState(true);
@@ -345,7 +344,7 @@ export function useLiveVoice(onUiEvent?: (event: any) => void) {
               window.speechSynthesis.cancel();
             }
 
-            // Client-side safety net: if assistant speaks a clear closing farewell (and not during a test-drive booking or asking a question), auto-end call after playback finishes
+            // Client-side safety net: if assistant speaks a clear closing farewell (and not during a test-ride booking or asking a question), auto-end call after playback finishes
             const lowClean = cleanText.toLowerCase();
             const isClosingFarewell =
               !lastTurnWasBookingRef.current &&
@@ -434,7 +433,11 @@ export function useLiveVoice(onUiEvent?: (event: any) => void) {
     if (!text.trim()) return;
 
     const low = text.toLowerCase();
-    if (low.includes("successfully booked") || low.includes("reference:") || (low.includes("test drive") && low.includes("book"))) {
+    if (
+      low.includes("successfully booked") ||
+      low.includes("reference:") ||
+      ((low.includes("test ride") || low.includes("test drive")) && low.includes("book"))
+    ) {
       lastTurnWasBookingRef.current = true;
     } else {
       lastTurnWasBookingRef.current = false;
@@ -561,7 +564,7 @@ export function useLiveVoice(onUiEvent?: (event: any) => void) {
     }
     const resolvedName = (customerName || customerInfoRef.current.name || "").trim();
     const resolvedPhone = (customerPhone || customerInfoRef.current.phone || "").trim();
-    const resolvedVehicle = vehicleId || customerInfoRef.current.vehicle_id || "thar_roxx";
+    const resolvedVehicle = vehicleId || customerInfoRef.current.vehicle_id || DEFAULT_VEHICLE_ID;
 
     // Generate a fresh unique session_id for each new conversation so multiple conversations are tracked separately
     const freshSessionId =
@@ -787,7 +790,7 @@ export function useLiveVoice(onUiEvent?: (event: any) => void) {
         customer_id: customerInfoRef.current.customer_id,
         customer_name: customerInfoRef.current.name,
         customer_phone: customerInfoRef.current.phone,
-        vehicle_id: customerInfoRef.current.vehicle_id || "thar_roxx",
+        vehicle_id: customerInfoRef.current.vehicle_id || DEFAULT_VEHICLE_ID,
         channel: "VOICE_LIVE",
         messages: currentMsgs
       });

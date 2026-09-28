@@ -12,7 +12,7 @@ import { BrandStudioModal } from "@/components/BrandStudioModal";
 import { useCustomerProfile } from "@/hooks/useCustomerProfile";
 import { useLiveVoice } from "@/hooks/useLiveVoice";
 import { fetchCatalog, fetchDealerships, fetchActiveBrand } from "@/lib/api";
-import { DEFAULT_VEHICLES } from "@/lib/defaultCatalog";
+import { DEFAULT_VEHICLES, DEFAULT_VEHICLE_ID } from "@/lib/defaultCatalog";
 import {
   VehicleItem,
   DealershipItem,
@@ -29,8 +29,8 @@ export default function Home() {
   const [isBrandStudioOpen, setIsBrandStudioOpen] = useState(false);
 
   // Dynamic brand identities
-  const brandName = activeBrand?.name ? activeBrand.name.replace(/\(.*\)/, "").trim() : "Mahindra";
-  const primaryColor = activeBrand?.primary_color || "#d71920";
+  const brandName = activeBrand?.name ? activeBrand.name.replace(/\(.*\)/, "").trim() : "TVS Motor";
+  const primaryColor = activeBrand?.primary_color || "#1d3f8f";
   const agentName = activeBrand?.agent_name || activeBrand?.avatar_name || "Kavya";
 
   // Active Omnichannel Stage
@@ -39,7 +39,7 @@ export default function Home() {
   >("presales");
 
   // Selected vehicle & insights state
-  const [selectedVehicleId, setSelectedVehicleId] = useState<string>("thar_roxx");
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string>(DEFAULT_VEHICLE_ID);
   const [testRideInsights, setTestRideInsights] = useState<TestRideInsightResponse | null>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isGlobalLeadModalOpen, setIsGlobalLeadModalOpen] = useState(false);
@@ -75,13 +75,13 @@ export default function Home() {
       }
     }
 
-    // 4. Significant distinct token match (e.g. 'creta', 'vitara', 'fronx', 'jimny', 'roxx', 'scorpio', 'ioniq', 'brezza', 'swift')
+    // 4. Significant distinct token match (e.g. 'apache', 'ronin', 'ntorq', 'jupiter', 'iqube', 'splendor', 'xpulse', 'destini')
     for (const v of sortedVehicles) {
       const tokens = v.name
         .toLowerCase()
         .replace(/[^a-z0-9\s]/g, " ")
         .split(/\s+/)
-        .filter((t) => t.length >= 3 && !["suv", "car", "all", "new", "the", "and", "edition", "door"].includes(t));
+        .filter((t) => t.length >= 3 && !["tvs", "hero", "bike", "scooter", "motorcycle", "electric", "all", "new", "the", "and", "edition", "plus", "abs", "disc", "drum"].includes(t));
       for (const token of tokens) {
         try {
           const regex = new RegExp(`\\b${token}\\b`, "i");
@@ -199,9 +199,9 @@ export default function Home() {
       preferred_language: "Hinglish",
       current_phase: "PRE_SALES",
       interested_vehicle_id: selectedVehicleId,
-      interested_variant: "AX7L Diesel AT 4x4",
-      budget_range: "₹18 Lakh - ₹25 Lakh",
-      odometer_km: 9820
+      interested_variant: vehicles.find((v) => v.id === selectedVehicleId)?.variants?.[0]?.name || "",
+      budget_range: "₹1 Lakh - ₹1.5 Lakh",
+      odometer_km: 0
     });
     setActiveStage("presales");
   };
@@ -240,7 +240,7 @@ export default function Home() {
 
       {/* Main Container */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 w-full flex-1">
-        {/* Stage 1: Pre-Sales Car Website & Virtual Showroom */}
+        {/* Stage 1: Pre-Sales Two-Wheeler Website & Virtual Showroom */}
         {activeStage === "presales" && (
           <PreSalesShowroom
             vehicles={vehicles}

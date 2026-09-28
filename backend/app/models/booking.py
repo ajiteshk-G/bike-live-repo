@@ -8,16 +8,16 @@ class TestDriveBooking(Base):
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     booking_reference = Column(String(64), unique=True, index=True, nullable=False) # e.g. "BK-MAH-2026-8821"
-    brand_id = Column(String(64), index=True, default="mahindra", nullable=False)
+    brand_id = Column(String(64), index=True, default="tvs", nullable=False)
     customer_id = Column(Integer, ForeignKey("customers.id"), nullable=False)
     
-    vehicle_id = Column(String(64), nullable=False) # "thar_roxx", "be_6e", "xuv700"
-    variant = Column(String(128), nullable=False) # "AX7L Diesel AT 4x4"
+    vehicle_id = Column(String(64), nullable=False) # "tvs_apache_rtr_160_4v", "tvs_iqube", "hero_motocorp_xpulse_200_4v"
+    variant = Column(String(128), nullable=False) # "Dual Channel ABS"
     color = Column(String(64), default="Stealth Black")
     
     dealership_id = Column(String(64), default="bayview_bandra")
-    dealership_name = Column(String(128), default="Bayview Mahindra, Bandra West")
-    sales_advisor_name = Column(String(128), default="Rajesh Varma")
+    dealership_name = Column(String(128), default="TVS Motor Authorised Dealer – Andheri West")
+    sales_advisor_name = Column(String(128), default="Sales Consultant")
     
     booking_type = Column(String(32), default="HOME_DOORSTEP") # HOME_DOORSTEP, SHOWROOM_VISIT
     delivery_address = Column(Text, nullable=True)
@@ -38,11 +38,11 @@ class TestDriveSlot(Base):
     __tablename__ = "test_drive_slots"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    brand_id = Column(String(64), index=True, default="mahindra", nullable=False)
+    brand_id = Column(String(64), index=True, default="tvs", nullable=False)
     slot_date = Column(String(32), index=True, nullable=False) # e.g. "2026-08-26"
     slot_time = Column(String(32), nullable=False) # e.g. "11:00 AM"
     dealership_id = Column(String(64), default="bayview_bandra")
-    vehicle_id = Column(String(64), nullable=True) # "thar_roxx" or None for all
+    vehicle_id = Column(String(64), nullable=True) # "tvs_apache_rtr_160_4v" or None for all
     status = Column(String(32), default="AVAILABLE", nullable=False) # "AVAILABLE", "RESERVED", "BLOCKED"
     
     # Customer Details when reserved

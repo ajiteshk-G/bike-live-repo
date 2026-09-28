@@ -10,7 +10,7 @@ from sqlalchemy import func
 from app.database import get_db
 from app.models.dealership import Dealership
 
-router = APIRouter(prefix="/catalog", tags=["Vehicle Catalog"])
+router = APIRouter(prefix="/catalog", tags=["Two-Wheeler Catalog"])
 
 @router.get("", response_model=List[VehicleItem])
 async def list_vehicles(category: Optional[str] = None):
@@ -35,7 +35,7 @@ async def list_dealerships(
     db: AsyncSession = Depends(get_db)
 ):
     from app.services.brand_service import BrandService
-    b_id = (brand_id or (BrandService.get_active_brand().id if BrandService.get_active_brand() else "mahindra")).lower()
+    b_id = (brand_id or (BrandService.get_active_brand().id if BrandService.get_active_brand() else "tvs")).lower()
     cache_key = f"dealerships_{b_id}_{city or 'all'}"
     cached = cache.get(cache_key)
     if cached is not None:
@@ -104,3 +104,30 @@ async def get_vehicle(vehicle_id: str):
 @router.post("/compare", response_model=List[VehicleItem])
 async def compare_vehicles(req: VehicleComparisonRequest):
     return CatalogService.compare_vehicles(req.vehicle_ids)
+
+@router.post("/compare-specs")
+async def compare_vehicle_specs(req: VehicleComparisonRequest):
+    """Side-by-side two-wheeler spec matrix (power, torque, weight, seat height, ABS, modes, rivals)."""
+    return CatalogService.build_comparison_table(req.vehicle_ids)
+
+@router.get("/{vehicle_id}/emi")
+async def get_vehicle_emi_estimate(
+    vehicle_id: str,
+    down_payment_pct: float = Query(15.0, description="Down payment % (clamped to 10-25%)"),
+    tenure_months: int = Query(36, description="Loan tenure in months (clamped to 12-48)"),
+    annual_rate_pct: float = Query(10.49, description="Annual interest rate % (clamped to 9.5-16%)"),
+):
+    """Indicative two-wheeler loan EMI for a model's starting ex-showroom price."""
+    from app.services.financing_service import estimate_emi_for_price_range
+    vehicle = CatalogService.get_vehicle_by_id(vehicle_id)
+    if not vehicle:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+    quote = estimate_emi_for_price_range(
+        vehicle.price_range,
+        down_payment_pct=down_payment_pct,
+        tenure_months=tenure_months,
+        annual_rate_pct=annual_rate_pct,
+    )
+    if not quote:
+        raise HTTPException(status_code=422, detail="Price not available for this vehicle")
+    return {"vehicle_id": vehicle.id, "vehicle_name": vehicle.name, **quote}

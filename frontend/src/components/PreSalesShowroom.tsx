@@ -11,7 +11,7 @@ import { ComparisonMatrix } from "@/components/ComparisonMatrix";
 import { fetchCustomerSessions } from "@/lib/api";
 import { getSmartPeerVehicle } from "@/lib/compareHelper";
 import {
-  Car,
+  Bike,
   MessageSquare,
   Sparkles,
   Calendar,
@@ -28,6 +28,8 @@ import {
   ArrowUpRight,
   CheckCircle2
 } from "lucide-react";
+import { CATEGORY_FILTERS, isElectricVehicle, matchesCategoryFilter } from "@/lib/vehicleCategory";
+import { BIKE_PLACEHOLDER_IMAGE } from "@/lib/defaultCatalog";
 
 interface PreSalesShowroomProps {
   vehicles: VehicleItem[];
@@ -55,8 +57,8 @@ export function PreSalesShowroom({
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
 
   // Dynamic brand identities
-  const brandName = brand?.name ? brand.name.replace(/\(.*\)/, "").trim() : "Mahindra";
-  const primaryColor = brand?.primary_color || "#d71920";
+  const brandName = brand?.name ? brand.name.replace(/\(.*\)/, "").trim() : "TVS Motor";
+  const primaryColor = brand?.primary_color || "#1d3f8f";
   const agentName = brand?.agent_name || brand?.avatar_name || "Kavya";
 
   // Layout mode: "carousel" (like reference app) or "grid"
@@ -116,24 +118,20 @@ export function PreSalesShowroom({
 
   // Compute categories dynamically from vehicles
   const categories = React.useMemo(() => {
-    const rawCategories = Array.from(
-      new Set(vehicles.map((v) => v.category || "SUV").filter(Boolean))
-    );
-    return [
-      { id: "ALL", label: `All Lineup (${vehicles.length})` },
-      ...rawCategories.map((cat) => ({
-        id: cat,
-        label: `${cat} (${vehicles.filter((v) => v.category === cat).length})`
-      }))
-    ];
+    // Two-wheeler filter chips: All / Motorcycles / Scooters / Electric (empty groups hidden)
+    return CATEGORY_FILTERS.map((f) => ({
+      id: f.id as string,
+      count: vehicles.filter((v) => matchesCategoryFilter(v, f.id)).length,
+      label: f.label
+    }))
+      .filter((f) => f.id === "ALL" || f.count > 0)
+      .map((f) => ({ id: f.id, label: `${f.label} (${f.count})` }));
   }, [vehicles]);
 
-  const filteredVehicles = selectedCategory === "ALL"
-    ? vehicles
-    : vehicles.filter((v) => v.category === selectedCategory);
+  const filteredVehicles = vehicles.filter((v) => matchesCategoryFilter(v, selectedCategory));
 
   const currentVehicle = vehicles.find((v) => v.id === selectedVehicleId) || vehicles[0];
-  const isElectric = currentVehicle?.category === "Born Electric SUV";
+  const isElectric = isElectricVehicle(currentVehicle);
 
   const handleStartConsultation = (vehicle?: VehicleItem) => {
     const target = vehicle || currentVehicle;
@@ -168,7 +166,12 @@ export function PreSalesShowroom({
   };
 
   const loadPastSessions = async () => {
-    const phoneOrId = activeSession?.phone || currentProfile?.phone || "+919820155432";
+    const phoneOrId = activeSession?.phone || currentProfile?.phone || currentProfile?.customer_id || "";
+    if (!phoneOrId) {
+      setPastSessions([]);
+      setIsHistoryModalOpen(true);
+      return;
+    }
     try {
       const sess = await fetchCustomerSessions(phoneOrId);
       setPastSessions(sess);
@@ -213,7 +216,7 @@ export function PreSalesShowroom({
                 referrerPolicy="no-referrer"
                 onError={(e) => {
                   e.currentTarget.onerror = null;
-                  e.currentTarget.src = "/assets/placeholder-car.svg";
+                  e.currentTarget.src = BIKE_PLACEHOLDER_IMAGE;
                 }}
               />
             </div>
@@ -254,7 +257,7 @@ export function PreSalesShowroom({
               className="bg-slate-900 hover:bg-slate-800 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all"
             >
               <Calendar className="w-3.5 h-3.5 text-amber-400" />
-              <span className="hidden md:inline">Book Test Drive</span>
+              <span className="hidden md:inline">Book Test Ride</span>
             </button>
 
             <button
@@ -290,7 +293,7 @@ export function PreSalesShowroom({
               className={`p-1.5 rounded-lg text-xs font-bold flex items-center gap-1 transition-all ${
                 viewMode === "carousel" ? "bg-white text-slate-900 shadow-xs" : "text-slate-500 hover:text-slate-900"
               }`}
-              title="Carousel Mode (Selected Car always in view)"
+              title="Carousel Mode (Selected bike always in view)"
             >
               <SlidersHorizontal className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Carousel</span>
@@ -321,7 +324,7 @@ export function PreSalesShowroom({
       {/* Showroom Showcase Container */}
       <div className="w-full space-y-6">
         <div className="w-full space-y-6">
-          {/* Active Car Hero Spotlight Stage Card */}
+          {/* Active Bike Hero Spotlight Stage Card */}
           <div
             ref={heroCardRef}
             className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden p-6 space-y-5 transition-all duration-300"
@@ -353,7 +356,7 @@ export function PreSalesShowroom({
                   </span>
                 )}
                 <span className="text-[10px] font-bold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200">
-                  {currentVehicle.category || "SUV"}
+                  {currentVehicle.category || "Two-Wheeler"}
                 </span>
               </div>
             </div>
@@ -399,7 +402,7 @@ export function PreSalesShowroom({
             </div>
 
             {/* Studio Presentation Canvas */}
-            <div className="relative h-64 sm:h-72 w-full bg-gradient-to-b from-slate-100/90 via-slate-50 to-white rounded-2xl border border-slate-200/80 flex items-center justify-center p-4 overflow-hidden car-reflection">
+            <div className="relative h-64 sm:h-72 w-full bg-gradient-to-b from-slate-100/90 via-slate-50 to-white rounded-2xl border border-slate-200/80 flex items-center justify-center p-4 overflow-hidden vehicle-reflection">
               <img
                 key={currentVehicle.id}
                 src={currentVehicle.hero_image}
@@ -408,7 +411,7 @@ export function PreSalesShowroom({
                 referrerPolicy="no-referrer"
                 onError={(e) => {
                   e.currentTarget.onerror = null;
-                  e.currentTarget.src = "/assets/placeholder-car.svg";
+                  e.currentTarget.src = BIKE_PLACEHOLDER_IMAGE;
                 }}
               />
             </div>
@@ -456,7 +459,7 @@ export function PreSalesShowroom({
                 className="bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-xl font-black shadow-md flex items-center justify-center gap-2 transition-all text-xs cursor-pointer"
               >
                 <Calendar className="w-4 h-4 text-red-400" />
-                <span>Book Test Drive / Enquiry</span>
+                <span>Book Test Ride / Enquiry</span>
               </button>
 
               <button
@@ -474,7 +477,7 @@ export function PreSalesShowroom({
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div>
                 <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
-                  <Car className="w-4 h-4" style={{ color: primaryColor }} />
+                  <Bike className="w-4 h-4" style={{ color: primaryColor }} />
                   <span>Explore {brandName} Lineup ({filteredVehicles.length} Models)</span>
                 </h3>
               </div>
@@ -527,7 +530,7 @@ export function PreSalesShowroom({
               >
                 {filteredVehicles.map((vehicle) => {
                   const isSelected = vehicle.id === selectedVehicleId;
-                  const isEV = vehicle.category === "Born Electric SUV";
+                  const isEV = isElectricVehicle(vehicle);
 
                   return (
                     <div
@@ -562,7 +565,7 @@ export function PreSalesShowroom({
                           referrerPolicy="no-referrer"
                           onError={(e) => {
                             e.currentTarget.onerror = null;
-                            e.currentTarget.src = "/assets/placeholder-car.svg";
+                            e.currentTarget.src = BIKE_PLACEHOLDER_IMAGE;
                           }}
                         />
                         {vehicle.is_custom_source_of_truth && (
@@ -596,7 +599,7 @@ export function PreSalesShowroom({
                           className="py-1.5 px-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-bold flex items-center justify-center gap-1 transition-colors cursor-pointer"
                         >
                           <Calendar className="w-3 h-3 text-amber-400" />
-                          <span>Book Drive</span>
+                          <span>Book Ride</span>
                         </button>
 
                         <button
@@ -618,7 +621,7 @@ export function PreSalesShowroom({
               <div className={`grid gap-4 ${isChatOpen ? "grid-cols-1 sm:grid-cols-2 xl:grid-cols-3" : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"}`}>
                 {filteredVehicles.map((vehicle) => {
                   const isSelected = vehicle.id === selectedVehicleId;
-                  const isEV = vehicle.category === "Born Electric SUV";
+                  const isEV = isElectricVehicle(vehicle);
 
                   return (
                     <div
@@ -646,7 +649,7 @@ export function PreSalesShowroom({
                           referrerPolicy="no-referrer"
                           onError={(e) => {
                             e.currentTarget.onerror = null;
-                            e.currentTarget.src = "/assets/placeholder-car.svg";
+                            e.currentTarget.src = BIKE_PLACEHOLDER_IMAGE;
                           }}
                         />
                         {vehicle.is_custom_source_of_truth && (
@@ -679,7 +682,7 @@ export function PreSalesShowroom({
                           className="py-1.5 px-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-bold flex items-center justify-center gap-1 transition-colors cursor-pointer"
                         >
                           <Calendar className="w-3 h-3 text-amber-400" />
-                          <span>Book Drive</span>
+                          <span>Book Ride</span>
                         </button>
 
                         <button
@@ -702,14 +705,14 @@ export function PreSalesShowroom({
         </div>
       </div>
 
-      {/* Modals for Test Drive, Compare, Lead Identification, and History */}
+      {/* Modals for Test Ride, Compare, Lead Identification, and History */}
       {modalVehicle && (
         <TestDriveModal
           isOpen={isTestDriveOpen}
           onClose={() => setIsTestDriveOpen(false)}
           vehicle={modalVehicle}
           dealerships={[]}
-          customerId={currentProfile?.customer_id || "CUST-9820155432"}
+          customerId={currentProfile?.customer_id || "CUST-GUEST"}
           onBookingSuccess={() => setIsTestDriveOpen(false)}
         />
       )}

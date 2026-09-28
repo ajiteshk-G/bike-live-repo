@@ -1,0 +1,1279 @@
+{
+  "id": "tvs",
+  "name": "TVS Motor",
+  "tagline": "Making Mobility Exciting",
+  "logo_url": "/uploads/tvs/logos/logo.svg",
+  "primary_color": "#1d3f8f",
+  "secondary_color": "#0f172a",
+  "accent_color": "#e31e24",
+  "avatar_name": "Kavya",
+  "avatar_voice": "Aoede",
+  "source_urls": [
+    "https://www.tvsmotor.com/"
+  ],
+  "is_active": true,
+  "vehicles": [
+    {
+      "id": "tvs_apache_rtr_160_4v",
+      "name": "TVS Apache RTR 160 4V",
+      "tagline": "Concept SMARTER PERFORMANCE",
+      "category": "Naked Streetfighter",
+      "price_range": "\u20b91,14,390 - \u20b91,44,690",
+      "hero_image": "/uploads/tvs/vehicles/tvs_apache_rtr_160_4v.png",
+      "engine_specs": "159.7cc SI, 4 stroke, Oil cooled, SOHC, Fuel Injection, 17.55 PS, 14.73 Nm",
+      "seating_capacity": "Rider + Pillion",
+      "fuel_or_battery": "Petrol",
+      "range_or_mileage": "47 kmpl (approx.)",
+      "key_highlights": [
+        "Race Derived O3C Engine",
+        "Dual-channel ABS with RLP Control",
+        "Upside Down Suspension",
+        "Advanced 5\u201d TFT Cluster with Google Map Mirroring",
+        "Class-D Projector Headlamps",
+        "Traction Control System"
+      ],
+      "usp": "The Apache RTR 160 4V carries this legacy with 17.55 PS of power, race-tuned USD suspension, Dual-channel ABS, Projector Headlamp, advanced Traction Control System and a 5\" TFT cluster.",
+      "variants": [
+        {
+          "name": "TVS Apache RTR 160 4V Single Channel ABS",
+          "price_ex_showroom": "\u20b91,24,870",
+          "engine_or_battery": "159.7cc, 17.55 PS",
+          "transmission": "5-speed manual",
+          "key_features": [
+            "Single Channel ABS",
+            "Telescopic Fork"
+          ]
+        },
+        {
+          "name": "TVS Apache RTR 160 4V Dual Channel ABS",
+          "price_ex_showroom": "\u20b91,30,090",
+          "engine_or_battery": "159.7cc, 17.55 PS",
+          "transmission": "5-speed manual",
+          "key_features": [
+            "Dual Channel ABS",
+            "Telescopic Fork"
+          ]
+        },
+        {
+          "name": "TVS Apache RTR 160 4V Dual Channel ABS with USD",
+          "price_ex_showroom": "\u20b91,33,370",
+          "engine_or_battery": "159.7cc, 17.55 PS",
+          "transmission": "5-speed manual",
+          "key_features": [
+            "Dual Channel ABS",
+            "37mm Upside Down Suspension"
+          ]
+        },
+        {
+          "name": "TVS Apache RTR 160 4V Dual Channel ABS with USD and TFT",
+          "price_ex_showroom": "\u20b91,36,970",
+          "engine_or_battery": "159.7cc, 17.55 PS",
+          "transmission": "5-speed manual",
+          "key_features": [
+            "Dual Channel ABS",
+            "37mm Upside Down Suspension",
+            "Advanced 5\u201d TFT Cluster"
+          ]
+        },
+        {
+          "name": "TVS Apache RTR 160 4V Dual Channel ABS with USD and TFT Map",
+          "price_ex_showroom": "\u20b91,44,690",
+          "engine_or_battery": "159.7cc, 17.55 PS",
+          "transmission": "5-speed manual",
+          "key_features": [
+            "Dual Channel ABS",
+            "37mm Upside Down Suspension",
+            "Advanced 5\u201d TFT Cluster with Google Map Mirroring",
+            "Traction Control System",
+            "Adjustable Levers",
+            "Champagne Gold Alloy Wheels"
+          ]
+        }
+      ],
+      "is_custom_source_of_truth": false,
+      "uploaded_image_url": null,
+      "source_url": "https://www.tvsmotor.com/tvs-apache/apache-rtr-160-4v",
+      "displacement_cc": "159.7",
+      "max_power": "12.91 kW (17.55 PS) @ 9250 rpm (Sport)",
+      "max_torque": "14.73 Nm @ 7500 rpm (Sport)",
+      "kerb_weight": "146 kg (approx.)",
+      "seat_height": "800 mm (approx.)",
+      "fuel_tank_or_battery": "12 litres (approx.)",
+      "top_speed": "114 km/h (approx.)",
+      "braking": "Dual Channel ABS with RLP Control",
+      "riding_modes": [
+        "Sport",
+        "Urban",
+        "Rain"
+      ],
+      "colors": [
+        "Arctic Teal",
+        "Racing Red",
+        "Metallic Blue",
+        "Knight Black"
+      ],
+      "competitors": [
+        "Bajaj Pulsar NS160",
+        "Hero Xtreme 160R",
+        "Yamaha FZ-S FI"
+      ]
+    },
+    {
+      "id": "tvs_apache_rtr_200_4v",
+      "name": "TVS Apache RTR 200 4V",
+      "tagline": "CONCEPT ENGINEERED TO STAND OUT",
+      "category": "Naked Streetfighter",
+      "price_range": "\u20b91,48,240 - \u20b91,53,290",
+      "hero_image": "/uploads/tvs/vehicles/tvs_apache_rtr_200_4v.webp",
+      "engine_specs": "197.75cc single-cylinder oil-cooled SOHC, 20.82 PS, 17.25 Nm",
+      "seating_capacity": "Rider + Pillion",
+      "fuel_or_battery": "Petrol",
+      "range_or_mileage": "40 kmpl (approx.)",
+      "key_highlights": [
+        "Race-tuned USD suspension",
+        "Dual-channel ABS with RLP Control",
+        "5-inch TFT cluster with Google Map Mirroring",
+        "Traction Control System",
+        "Class-D Projector Headlamp",
+        "Adjustable Front Suspension"
+      ],
+      "usp": "The Apache RTR 200 4V carries the legacy with 20.8 PS of power, race-tuned USD suspension, Dual-channel ABS, a Projector Headlamp, Traction Control System and a 5\" TFT cluster.",
+      "variants": [
+        {
+          "name": "TVS Apache RTR 200 4V Single Channel ABS",
+          "price_ex_showroom": "\u20b91,48,240",
+          "engine_or_battery": "197.75cc single-cylinder oil-cooled",
+          "transmission": "5-speed manual",
+          "key_features": [
+            "Single Channel ABS",
+            "5-inch TFT Cluster",
+            "Race-Derived O3C Engine"
+          ]
+        },
+        {
+          "name": "TVS Apache RTR 200 4V Dual Channel ABS",
+          "price_ex_showroom": "\u20b91,53,290",
+          "engine_or_battery": "197.75cc single-cylinder oil-cooled",
+          "transmission": "5-speed manual",
+          "key_features": [
+            "Dual Channel ABS with RLP Control",
+            "Adjustable Front Suspension",
+            "Google Map Mirroring (on TFT)",
+            "Traction Control System",
+            "Panic Brake Alert",
+            "Type-C Charger"
+          ]
+        }
+      ],
+      "is_custom_source_of_truth": false,
+      "uploaded_image_url": null,
+      "source_url": "https://www.tvsmotor.com/tvs-apache/apache-rtr-200-4v",
+      "displacement_cc": "197.75",
+      "max_power": "20.82 PS @ 9000 rpm (Sport Mode)",
+      "max_torque": "17.25 Nm @ 7250 rpm (Sport Mode)",
+      "kerb_weight": "152 kg",
+      "seat_height": "800 mm",
+      "fuel_tank_or_battery": "12 litres",
+      "top_speed": "127 Km/h (Sports Mode)",
+      "braking": "Dual Channel ABS with RLP Control",
+      "riding_modes": [
+        "Sport",
+        "Urban",
+        "Rain"
+      ],
+      "colors": [
+        "SEPANG BLUE",
+        "Gloss Black",
+        "Pearl White"
+      ],
+      "competitors": [
+        "Bajaj Pulsar NS200",
+        "KTM 200 Duke",
+        "Honda Hornet 2.0"
+      ]
+    },
+    {
+      "id": "tvs_apache_rtr_310",
+      "name": "TVS Apache RTR 310",
+      "tagline": "racing DNA RUNS ONE RACING GENE. TWO EXPRESSIONS.",
+      "category": "Naked Streetfighter",
+      "price_range": "\u20b92,42,990 - \u20b92,63,990",
+      "hero_image": "/uploads/tvs/vehicles/tvs_apache_rtr_310.png",
+      "engine_specs": "312.2 cc reverse inclined DOHC engine",
+      "seating_capacity": "Rider + Pillion",
+      "fuel_or_battery": "Petrol",
+      "range_or_mileage": "30 km/l (Urban/Rain Mode), 28 km/l (Sport/Track/SuperMoto Mode)",
+      "key_highlights": [
+        "Adaptive Bi-LED Cyborg Headlamp with sequential TSL",
+        "6-Speed Gearbox with Bidirectional Quickshifter",
+        "Race Tuned Slipper Clutch",
+        "5-inch horizontal TFT race computer with SmartXonnect",
+        "Fully Adjustable Front and Rear Suspension",
+        "Cornering ABS and Cornering Traction Control"
+      ],
+      "usp": "The ALL NEW TVS APACHE RTR 310 keeps the essence of performance of the TVS Apache RR310 but strips away everything else to give you the naked sport that's engineered for play.",
+      "variants": [
+        {
+          "name": "TVS Apache RTR 310",
+          "price_ex_showroom": "\u20b92,42,990 - \u20b92,63,990",
+          "engine_or_battery": "312.2 cc reverse inclined DOHC engine",
+          "transmission": "6-speed manual",
+          "key_features": [
+            "Adaptive Bi-LED Cyborg Headlamp",
+            "Bidirectional Quickshifter",
+            "Race Tuned Slipper Clutch",
+            "5-inch TFT race computer",
+            "TVS SmartXonnect",
+            "Multiple Riding Modes"
+          ]
+        }
+      ],
+      "is_custom_source_of_truth": false,
+      "uploaded_image_url": null,
+      "source_url": "https://www.tvsmotor.com/tvs-apache/apache-rtr-310",
+      "displacement_cc": "312.2",
+      "max_power": "35.6 PS @ 9700 rpm (approx.)",
+      "max_torque": "higher peak torque across the rev range",
+      "kerb_weight": "169 kg",
+      "seat_height": "800 mm (approx.)",
+      "fuel_tank_or_battery": "15 L (approx.)",
+      "top_speed": "150 km/h (approx.)",
+      "braking": "Dual-channel ABS, Cornering ABS, Rear Wheel Lift-off Protection",
+      "riding_modes": [
+        "Urban",
+        "Rain",
+        "Sport",
+        "Track",
+        "Supermoto"
+      ],
+      "colors": [
+        "Fiery Red",
+        "Arsenal Black",
+        "Fury Yellow",
+        "Sepang Blue"
+      ],
+      "competitors": [
+        "KTM 390 Duke",
+        "Bajaj Dominar 400",
+        "BMW G 310 R",
+        "Honda CB300R"
+      ]
+    },
+    {
+      "id": "tvs_apache_rr_310",
+      "name": "TVS Apache RR 310",
+      "tagline": "TVS Apache RR 310 BS6: Price, Mileage, Colors, Features & Specs",
+      "category": "Supersport",
+      "price_range": "\u20b92,79,000",
+      "hero_image": "/uploads/tvs/vehicles/tvs_apache_rr_310.webp",
+      "engine_specs": "312.2cc single-cylinder, liquid-cooled, 34 PS, 27.3 Nm",
+      "seating_capacity": "Rider + Pillion",
+      "fuel_or_battery": "Petrol",
+      "range_or_mileage": "33.1 kmpl (claimed)",
+      "key_highlights": [
+        "Race-tuned USD forks",
+        "Ride-by-Wire",
+        "Multi-information Race Computer",
+        "Dual-channel ABS",
+        "TFT display with SmartXonnect"
+      ],
+      "usp": "High-performance 310cc sport bike with advanced racing features.",
+      "variants": [
+        {
+          "name": "TVS Apache RR 310 BS6",
+          "price_ex_showroom": "\u20b92,79,000",
+          "engine_or_battery": "312.2cc single-cylinder, liquid-cooled",
+          "transmission": "6-speed manual",
+          "key_features": [
+            "Ride Modes",
+            "Dual-channel ABS",
+            "TFT Display"
+          ]
+        }
+      ],
+      "is_custom_source_of_truth": false,
+      "uploaded_image_url": null,
+      "source_url": "https://www.tvsmotor.com/tvs-apache/rr-310",
+      "displacement_cc": "312.2",
+      "max_power": "34 PS @ 9700 rpm",
+      "max_torque": "27.3 Nm @ 7700 rpm",
+      "kerb_weight": "174 kg",
+      "seat_height": "810 mm",
+      "fuel_tank_or_battery": "11 litres",
+      "top_speed": "160 kmph",
+      "braking": "Dual-channel ABS",
+      "riding_modes": [
+        "Urban",
+        "Rain",
+        "Sport",
+        "Track"
+      ],
+      "colors": [
+        "Titanium Black",
+        "Racing Red"
+      ],
+      "competitors": [
+        "KTM RC 390",
+        "Kawasaki Ninja 300",
+        "BMW G 310 RR"
+      ]
+    },
+    {
+      "id": "tvs_raider_125_igo",
+      "name": "TVS Raider 125 iGO",
+      "tagline": "Go wicked with distinct sporty styling, best in class performance and high-tech advanced features",
+      "category": "Premium Commuter",
+      "price_range": "\u20b995,219 - \u20b91,02,735 (approx.)",
+      "hero_image": "/uploads/tvs/vehicles/tvs_raider_125_igo.png",
+      "engine_specs": "124.8 cc single-cylinder air & oil-cooled, 3-valve, 8.37 kW @ 7500 rpm, 11.75 Nm @ 6000 rpm (iGO Assist)",
+      "seating_capacity": "Rider + Pillion",
+      "fuel_or_battery": "Petrol",
+      "range_or_mileage": "67 kmpl (claimed)",
+      "key_highlights": [
+        "TFT display with 99+ Connected features",
+        "Voice Assist",
+        "ISG - Silent start",
+        "5-step adjustable mono-shock suspension",
+        "Dual Disc Brakes with ABS and Traction Control (select variants)",
+        "Riding Modes (Power & Eco)"
+      ],
+      "usp": "India\u2019s first commuter bike with a connected TFT console & iGO assist.",
+      "variants": [
+        {
+          "name": "TVS Raider 125 iGO",
+          "price_ex_showroom": "\u20b995,219 (approx.)",
+          "engine_or_battery": "124.8 cc",
+          "transmission": "5-speed manual",
+          "key_features": [
+            "iGO assist",
+            "11.75Nm at 6000 rpm",
+            "Side stand indicator with engine cut-off"
+          ]
+        },
+        {
+          "name": "TVS Raider 125 Drum",
+          "price_ex_showroom": "\u20b995,219 (approx.)",
+          "engine_or_battery": "124.8 cc",
+          "transmission": "5-speed manual",
+          "key_features": [
+            "Drum brake with SBT",
+            "Reverse LCD digital cluster",
+            "Ride modes",
+            "0-60 km/h in 5.9 sec"
+          ]
+        },
+        {
+          "name": "TVS Raider 125 Disc",
+          "price_ex_showroom": "\u20b999,990 (approx.)",
+          "engine_or_battery": "124.8 cc",
+          "transmission": "5-speed manual",
+          "key_features": [
+            "Disc brake with SBT",
+            "Reverse multicolor LCD digital display with 85+ connected features",
+            "Roto petal disc",
+            "Side stand indicator with engine cut-off"
+          ]
+        },
+        {
+          "name": "TVS Raider 125 SmartXonnect (SXC DD)",
+          "price_ex_showroom": "\u20b91,02,735 (approx.)",
+          "engine_or_battery": "124.8 cc",
+          "transmission": "5-speed manual",
+          "key_features": [
+            "SmartXonnect with 85+ connected features",
+            "Best in class torque- 11.75 Nm @ 6000 rpm with Boost Mode",
+            "Reverse LCD digital display",
+            "Side stand indicator with engine cut-off"
+          ]
+        },
+        {
+          "name": "TVS Raider 125 TFT DD",
+          "price_ex_showroom": "\u20b91,02,735 (approx.)",
+          "engine_or_battery": "124.8 cc",
+          "transmission": "5-speed manual",
+          "key_features": [
+            "TFT display with 99+ Connected features",
+            "Voice Assist",
+            "Dual Disc brakes with ABS",
+            "Best in class torque- 11.75 Nm @ 6000 rpm with Boost Mode",
+            "Side stand indicator with engine cut-off"
+          ]
+        }
+      ],
+      "is_custom_source_of_truth": false,
+      "uploaded_image_url": null,
+      "source_url": "https://www.tvsmotor.com/tvs-raider",
+      "displacement_cc": "124.8",
+      "max_power": "8.37kW @ 7500 rpm",
+      "max_torque": "11.75Nm @ 6000 rpm",
+      "kerb_weight": "123 KG (SSE, iGO, Split Seat) / 124 KG (Single Seat, Drum) / 127 KG (TFT DD, SXC DD)",
+      "seat_height": "780 mm (approx.)",
+      "fuel_tank_or_battery": "10 litres",
+      "top_speed": "99 km/h",
+      "braking": "Disc - 240mm with ABS (TFT DD and SXC DD) / Disc - 240mm (SSE, iGO, Split Seat and Single Seat) / Drum - 130mm with SBT",
+      "riding_modes": [
+        "Boost",
+        "Eco"
+      ],
+      "colors": [
+        "NITRO GREEN",
+        "STRIKING RED",
+        "METALLIC BLUE",
+        "BLAZING BLUE",
+        "FIERY YELLOW",
+        "Wicked Black"
+      ],
+      "competitors": [
+        "Bajaj Pulsar 125",
+        "Hero Glamour 125",
+        "Honda SP 125",
+        "Keeway SR125"
+      ]
+    },
+    {
+      "id": "tvs_ronin_225",
+      "name": "TVS Ronin 225",
+      "tagline": "Evolved like no other",
+      "category": "Cruiser / Retro",
+      "price_range": "\u20b91,49,200 - \u20b91,72,700 (approx.)",
+      "hero_image": "/uploads/tvs/vehicles/tvs_ronin_225.png",
+      "engine_specs": "225.9cc single-cylinder oil-cooled, 20.4 PS, 19.93 Nm",
+      "seating_capacity": "Rider + Pillion",
+      "fuel_or_battery": "Petrol",
+      "range_or_mileage": "42 kmpl (claimed)",
+      "key_highlights": [
+        "225.9cc engine",
+        "All-LED lighting",
+        "Asymmetric speedometer",
+        "T-shaped pilot lamp",
+        "Upside-down front fork",
+        "Voice assist"
+      ],
+      "usp": "A versatile 225 cc motorcycle with modern features and retro styling, suitable for various riding needs.",
+      "variants": [
+        {
+          "name": "TVS Ronin SS",
+          "price_ex_showroom": "\u20b91,49,200",
+          "engine_or_battery": "225.9cc single-cylinder oil-cooled",
+          "transmission": "5-speed manual",
+          "key_features": [
+            "Single-channel ABS",
+            "All-LED lighting",
+            "Asymmetric speedometer"
+          ]
+        },
+        {
+          "name": "TVS Ronin DS",
+          "price_ex_showroom": "\u20b91,56,500",
+          "engine_or_battery": "225.9cc single-cylinder oil-cooled",
+          "transmission": "5-speed manual",
+          "key_features": [
+            "Single-channel ABS",
+            "All-LED lighting",
+            "Asymmetric speedometer",
+            "TVS SmartXonnect"
+          ]
+        },
+        {
+          "name": "TVS Ronin TD",
+          "price_ex_showroom": "\u20b91,72,700",
+          "engine_or_battery": "225.9cc single-cylinder oil-cooled",
+          "transmission": "5-speed manual",
+          "key_features": [
+            "Dual-channel ABS",
+            "All-LED lighting",
+            "Asymmetric speedometer",
+            "TVS SmartXonnect",
+            "Upside-down front fork"
+          ]
+        }
+      ],
+      "is_custom_source_of_truth": false,
+      "uploaded_image_url": null,
+      "source_url": "https://www.tvsmotor.com/tvs-ronin",
+      "displacement_cc": "225.9",
+      "max_power": "20.4 PS",
+      "max_torque": "19.93 Nm",
+      "kerb_weight": "160 kg",
+      "seat_height": "795 mm",
+      "fuel_tank_or_battery": "14 litres",
+      "top_speed": "120 kmph",
+      "braking": "Single-channel ABS / Dual-channel ABS",
+      "riding_modes": [
+        "Urban",
+        "Rain"
+      ],
+      "colors": [
+        "Lightning Black",
+        "Magma Orange",
+        "Delta Blue",
+        "Stargaze Black",
+        "Galactic Grey",
+        "Dawn Orange"
+      ],
+      "competitors": [
+        "Royal Enfield Hunter 350",
+        "Bajaj Avenger Cruise 220",
+        "Honda H'ness CB350"
+      ]
+    },
+    {
+      "id": "tvs_radeon",
+      "name": "TVS Radeon",
+      "tagline": "TVS Radeon with 20 Best-In-Class Features & 15% More Mileage is the best Commuter Bike in India.",
+      "category": "Commuter Motorcycle",
+      "price_range": "\u20b962,405 - \u20b995,954",
+      "hero_image": "/uploads/tvs/vehicles/tvs_radeon.webp",
+      "engine_specs": "109.7cc single-cylinder, 8.19 PS, 8.7 Nm",
+      "seating_capacity": "Rider + Pillion",
+      "fuel_or_battery": "Petrol",
+      "range_or_mileage": "69.3 kmpl (claimed)",
+      "key_highlights": [
+        "Real Time Mileage Display",
+        "Longest Seat",
+        "USB Charger",
+        "Chrome bezel headlamp with DRL",
+        "Long Lasting Dura Life Engine",
+        "18\u201d bigger wheels"
+      ],
+      "usp": "20 Best-In-Class Features & 15% More Mileage",
+      "variants": [
+        {
+          "name": "TVS Radeon Base Edition",
+          "price_ex_showroom": "\u20b962,405",
+          "engine_or_battery": "109.7cc single-cylinder",
+          "transmission": "4-speed manual",
+          "key_features": [
+            "Drum brakes",
+            "Real Time Mileage Display"
+          ]
+        },
+        {
+          "name": "TVS Radeon Commuter of the Year Edition",
+          "price_ex_showroom": "\u20b979,000 (approx.)",
+          "engine_or_battery": "109.7cc single-cylinder",
+          "transmission": "4-speed manual",
+          "key_features": [
+            "Disc brake (front)",
+            "USB Charger",
+            "Chrome bezel headlamp with DRL"
+          ]
+        },
+        {
+          "name": "TVS Radeon Dual Tone Edition",
+          "price_ex_showroom": "\u20b995,954",
+          "engine_or_battery": "109.7cc single-cylinder",
+          "transmission": "4-speed manual",
+          "key_features": [
+            "Disc brake (front)",
+            "Dual Tone colours",
+            "USB Charger",
+            "Chrome bezel headlamp with DRL"
+          ]
+        }
+      ],
+      "is_custom_source_of_truth": false,
+      "uploaded_image_url": null,
+      "source_url": "https://www.tvsmotor.com/tvs-radeon",
+      "displacement_cc": "109.7",
+      "max_power": "8.19 PS",
+      "max_torque": "8.7 Nm",
+      "kerb_weight": "116 kg",
+      "seat_height": "780 mm",
+      "fuel_tank_or_battery": "10 litres",
+      "top_speed": "90 km/h",
+      "braking": "Drum / Disc (front), Drum (rear)",
+      "riding_modes": null,
+      "colors": [
+        "Dual Tone Blue-Black",
+        "Dual Tone Red-Black",
+        "Dual Tone Black",
+        "Dual Tone Red",
+        "Metal Black",
+        "Pearl White",
+        "Royal Purple",
+        "Starlight Blue",
+        "Titanium Grey"
+      ],
+      "competitors": [
+        "Hero Splendor Plus",
+        "Bajaj Platina 110",
+        "Honda CD 110 Dream"
+      ]
+    },
+    {
+      "id": "tvs_star_city_plus",
+      "name": "TVS Star City Plus",
+      "tagline": "Premium motorcycle with enhanced style and best-in-class features.",
+      "category": "Commuter Motorcycle",
+      "price_range": "\u20b969,600 - \u20b979,600",
+      "hero_image": "/uploads/tvs/vehicles/tvs_star_city_plus.webp",
+      "engine_specs": "110cc 'Eco Thrust' engine",
+      "seating_capacity": "Rider + Pillion",
+      "fuel_or_battery": "Petrol",
+      "range_or_mileage": "70 kmpl (approx.)",
+      "key_highlights": [
+        "ETFi Technology",
+        "LED Headlamp",
+        "Sporty Dual Tone Muffler",
+        "Dual Tone Mirrors",
+        "Roto Petal Disc Brake",
+        "SBT (Synchronized Braking Technology)"
+      ],
+      "usp": "Only bike in the 110cc segment to have LED Tech Headlamp.",
+      "variants": [
+        {
+          "name": "TVS Star City Plus BS6",
+          "price_ex_showroom": "\u20b969,600 - \u20b979,600",
+          "engine_or_battery": "110cc 'Eco Thrust' engine",
+          "transmission": "4-speed manual",
+          "key_features": [
+            "ETFi Technology",
+            "LED Headlamp",
+            "Dual Tone Muffler",
+            "Dual Tone Mirrors",
+            "Roto Petal Disc Brake",
+            "Dura Grip Tires"
+          ]
+        }
+      ],
+      "is_custom_source_of_truth": false,
+      "uploaded_image_url": null,
+      "source_url": "https://www.tvsmotor.com/tvs-star-city-plus",
+      "displacement_cc": "110",
+      "max_power": "8.19 PS @ 7350 rpm (approx.)",
+      "max_torque": "8.7 Nm @ 4500 rpm (approx.)",
+      "kerb_weight": "116 kg (approx.)",
+      "seat_height": "785 mm (approx.)",
+      "fuel_tank_or_battery": "10 L (approx.)",
+      "top_speed": "90 km/h (approx.)",
+      "braking": "240 mm front disc brake with roto petal design",
+      "riding_modes": null,
+      "colors": null,
+      "competitors": [
+        "Hero Splendor Plus",
+        "Bajaj Platina 110",
+        "Honda CD 110 Dream"
+      ]
+    },
+    {
+      "id": "tvs_sport",
+      "name": "TVS Sport",
+      "tagline": "Un-Matched Mileage",
+      "category": "Commuter Motorcycle",
+      "price_range": "\u20b966,358 - \u20b968,516",
+      "hero_image": "/uploads/tvs/vehicles/tvs_sport.webp",
+      "engine_specs": "109.7cc single-cylinder air-cooled, 6.03 kW @ 7350 rpm",
+      "seating_capacity": "Rider + Pillion",
+      "fuel_or_battery": "Petrol",
+      "range_or_mileage": "76.4 kmpl (claimed)",
+      "key_highlights": [
+        "15% more mileage with ETFi technology",
+        "110 cc long life Duralife engine",
+        "USB Charger",
+        "Adjustable rear suspension",
+        "Econometer",
+        "Alloy wheels"
+      ],
+      "usp": "Best in Class Mileage with ETFi Technology and Duralife Engine.",
+      "variants": [
+        {
+          "name": "Self Start ES - Alloy Wheels",
+          "price_ex_showroom": "\u20b966,358",
+          "engine_or_battery": "109.7cc, single-cylinder, air-cooled",
+          "transmission": "4-speed manual",
+          "key_features": [
+            "Self Start",
+            "Alloy Wheels"
+          ]
+        },
+        {
+          "name": "Self Start ES Plus - Alloy Wheels",
+          "price_ex_showroom": "\u20b968,516",
+          "engine_or_battery": "109.7cc, single-cylinder, air-cooled",
+          "transmission": "4-speed manual",
+          "key_features": [
+            "Self Start",
+            "Alloy Wheels",
+            "USB Charging"
+          ]
+        }
+      ],
+      "is_custom_source_of_truth": false,
+      "uploaded_image_url": null,
+      "source_url": "https://www.tvsmotor.com/commuter/tvs-sport",
+      "displacement_cc": "109.7",
+      "max_power": "6.03 kW @ 7350 rpm",
+      "max_torque": "8.7 Nm @ 4500 rpm",
+      "kerb_weight": "112 kg",
+      "seat_height": "790 mm",
+      "fuel_tank_or_battery": "10 litres",
+      "top_speed": "90 km/h",
+      "braking": "Front: 130mm Drum, Rear: 110mm Drum",
+      "riding_modes": null,
+      "colors": [
+        "Black Neon Grey",
+        "Red",
+        "Starlight Blue",
+        "All Black",
+        "All Grey",
+        "All Red"
+      ],
+      "competitors": [
+        "Hero HF Deluxe",
+        "Bajaj Platina 100",
+        "Honda Shine 100"
+      ]
+    },
+    {
+      "id": "tvs_ntorq",
+      "name": "TVS Ntorq",
+      "tagline": "Explore the complete range of TVS Ntorq 125 and TVS Ntorq 150, from stylish scooters to high-performance Race Edition.",
+      "category": "Performance Scooter",
+      "price_range": "\u20b984,000 - \u20b995,000",
+      "hero_image": "/uploads/tvs/vehicles/tvs_ntorq.webp",
+      "engine_specs": "124.8 cc single-cylinder, air-cooled, 4-stroke, fuel-injected, 7 kW @ 7000 RPM, 10.6 Nm @ 5500 RPM",
+      "seating_capacity": "Rider + Pillion",
+      "fuel_or_battery": "Petrol",
+      "range_or_mileage": "47 kmpl (approx.)",
+      "key_highlights": [
+        "SmartXonnect features",
+        "LED headlamps",
+        "Telescopic Suspension with Hydraulic Dampers",
+        "Tubeless Tyres",
+        "Automatic Centrifugal Clutch"
+      ],
+      "usp": "Advanced Design, Innovation, & Performance with SmartXonnect features.",
+      "variants": [
+        {
+          "name": "TVS Ntorq 125",
+          "price_ex_showroom": "\u20b984,000 (approx.)",
+          "engine_or_battery": "124.8 cc, 7 KW, 10.6 Nm",
+          "transmission": "CVT automatic",
+          "key_features": [
+            "Telescopic Suspension",
+            "Tubeless Tyres",
+            "Automatic Centrifugal Clutch"
+          ]
+        },
+        {
+          "name": "TVS Ntorq 125 Race Edition",
+          "price_ex_showroom": "\u20b995,000 (approx.)",
+          "engine_or_battery": "124.8 cc, 7 KW, 10.6 Nm",
+          "transmission": "CVT automatic",
+          "key_features": [
+            "LED headlamp",
+            "Front Disc Brake",
+            "SmartXonnect features"
+          ]
+        }
+      ],
+      "is_custom_source_of_truth": false,
+      "uploaded_image_url": null,
+      "source_url": "https://www.tvsmotor.com/commuter/tvs-ntorq",
+      "displacement_cc": "124.8",
+      "max_power": "7 KW @7000 RPM",
+      "max_torque": "10.6 Nm @ 5500 RPM",
+      "kerb_weight": "111 Kg",
+      "seat_height": "770 mm (approx.)",
+      "fuel_tank_or_battery": "5.8 litre",
+      "top_speed": "104km/hr",
+      "braking": "Front Disc 220mm with SBT / Drum 130mm with SBT, Rear Dia Drum 130mm",
+      "riding_modes": null,
+      "colors": [
+        "Midnight Black",
+        "Spiti White",
+        "Nardo Grey",
+        "Blaze Blue",
+        "Race Red",
+        "Dark Black",
+        "Inferno Red",
+        "Drift Blue",
+        "Rush Green",
+        "Iron Man",
+        "Thor",
+        "Black Panther",
+        "Neon"
+      ],
+      "competitors": [
+        "Suzuki Access 125",
+        "Honda Activa 125",
+        "Yamaha RayZR 125",
+        "Hero Maestro Edge 125"
+      ]
+    },
+    {
+      "id": "tvs_jupiter_disc_smartxonnect",
+      "name": "TVS Jupiter Disc SmartXonnect",
+      "tagline": "The best scooter featuring ETFi technology, a digital-analogue speedometer, and exceptional comfort.",
+      "category": "Scooter",
+      "price_range": "\u20b990,441 - \u20b991,591",
+      "hero_image": "/uploads/tvs/vehicles/tvs_jupiter_disc_smartxonnect.webp",
+      "engine_specs": "113.3 cc single cylinder, 4 stroke engine, 5.9KW @ 6500 rpm, 9.8 Nm @ 5000 rpm",
+      "seating_capacity": "Rider + Pillion",
+      "fuel_or_battery": "Petrol",
+      "range_or_mileage": "62 kmpl (claimed)",
+      "key_highlights": [
+        "SmartXonnect Bluetooth Connectivity",
+        "Digital-analogue speedometer",
+        "First in segment - Follow Me Headlamp",
+        "First in segment - Emergency Brake Warning",
+        "Largest underseat storage (33L)",
+        "TVS iGO Assist"
+      ],
+      "usp": "Advanced Bluetooth connectivity, digital console, LED headlamp, and front disc brake, offering a smart, safe, and stylish ride for urban commuters.",
+      "variants": [
+        {
+          "name": "TVS Jupiter Disc SmartXonnect",
+          "price_ex_showroom": "\u20b990,441 - \u20b991,591",
+          "engine_or_battery": "113.3 cc single cylinder, 4 stroke engine",
+          "transmission": "CVT automatic",
+          "key_features": [
+            "Front Disc Brake",
+            "SmartXonnect Bluetooth",
+            "Digital Colour Cluster",
+            "Voice Assisted Navigation",
+            "Call & SMS Alerts"
+          ]
+        }
+      ],
+      "is_custom_source_of_truth": false,
+      "uploaded_image_url": null,
+      "source_url": "https://www.tvsmotor.com/tvs-jupiter/jupiter-disc-smartxonnect",
+      "displacement_cc": "113.3",
+      "max_power": "5.9 KW @ 6500 rpm",
+      "max_torque": "9.8 Nm @ 5000 rpm",
+      "kerb_weight": "105 Kg",
+      "seat_height": "770 mm",
+      "fuel_tank_or_battery": "6 litres",
+      "top_speed": "80 km/h (approx.)",
+      "braking": "Disc brake with Synchronous Braking System (SBT)",
+      "riding_modes": [
+        "Eco",
+        "Power"
+      ],
+      "colors": [
+        "Dawn Blue Matte",
+        "Galactic Copper Matte",
+        "Starlight Blue Gloss"
+      ],
+      "competitors": [
+        "Honda Activa 6G",
+        "Suzuki Access 125",
+        "Hero Pleasure Plus Xtec"
+      ]
+    },
+    {
+      "id": "tvs_jupiter_125_smartxonnect",
+      "name": "TVS Jupiter 125 SmartXonnect",
+      "tagline": "Redefines your riding experience.",
+      "category": "Scooter",
+      "price_range": "\u20b989,935",
+      "hero_image": "/uploads/tvs/vehicles/tvs_jupiter_125_smartxonnect.webp",
+      "engine_specs": "124.8cc single-cylinder 4-stroke air-cooled engine",
+      "seating_capacity": "Rider + Pillion",
+      "fuel_or_battery": "Petrol",
+      "range_or_mileage": "57.27 kmpl (approx.)",
+      "key_highlights": [
+        "Connected Navigation with Voice Assist",
+        "Longest Seat (790mm)",
+        "Best in Class Under seat storage (33 litres)",
+        "Diamond Cut Alloy Wheels",
+        "All in One Lock",
+        "TVS iGO Assist"
+      ],
+      "usp": "First in segment scooter to accommodate two full-face helmets under the seat.",
+      "variants": [
+        {
+          "name": "SmartXonnect",
+          "price_ex_showroom": "\u20b989,935",
+          "engine_or_battery": "124.8cc, single-cylinder, 4-stroke, air-cooled engine",
+          "transmission": "CVT Automatic",
+          "key_features": [
+            "Connected Navigation with Voice Assist",
+            "Call & Social Media Alerts",
+            "Distance to Empty",
+            "Average Fuel Economy",
+            "Live Sports Updates",
+            "News Updates"
+          ]
+        }
+      ],
+      "is_custom_source_of_truth": false,
+      "uploaded_image_url": null,
+      "source_url": "https://www.tvsmotor.com/tvs-jupiter-125/smartxonnect",
+      "displacement_cc": "124.8",
+      "max_power": "8.15 PS @ 6000 rpm (approx.)",
+      "max_torque": "10.5 Nm @ 4500 rpm (approx.)",
+      "kerb_weight": "108 kgs",
+      "seat_height": "765 mm (approx.)",
+      "fuel_tank_or_battery": "6 L (approx.)",
+      "top_speed": "95 km/h (approx.)",
+      "braking": "Disc Brake with SBT Sync Braking Technology",
+      "riding_modes": null,
+      "colors": [
+        "Elite Green",
+        "Elegant Red",
+        "Matte Copper Bronze"
+      ],
+      "competitors": [
+        "Honda Activa 125",
+        "Suzuki Access 125",
+        "Hero Destini 125"
+      ]
+    },
+    {
+      "id": "tvs_zest_110",
+      "name": "TVS Zest 110",
+      "tagline": "Check out TVS Zest, a 110cc engine with ETFi technology and great features.",
+      "category": "Scooter",
+      "price_range": "\u20b965,450 - \u20b982,549",
+      "hero_image": "/uploads/tvs/vehicles/tvs_zest_110.webp",
+      "engine_specs": "110cc ETFi engine",
+      "seating_capacity": "Rider + Pillion",
+      "fuel_or_battery": "Petrol",
+      "range_or_mileage": "48 kmpl (approx.)",
+      "key_highlights": [
+        "ETFi Technology",
+        "Eco Thrust Engine",
+        "19L underseat storage",
+        "Easy Ground Reach",
+        "EaZy Centre Stand",
+        "LED Tail Lamp"
+      ],
+      "usp": "Lightweight with 102 Kg, offering easy ground reach and enhanced mileage.",
+      "variants": [
+        {
+          "name": "TVS Zest 110",
+          "price_ex_showroom": "\u20b965,450 - \u20b982,549",
+          "engine_or_battery": "110cc ETFi engine",
+          "transmission": "CVT automatic",
+          "key_features": [
+            "Stylish New Decals",
+            "New Dual-tone Seats",
+            "LED Tail Lamp",
+            "3D Premium Logo",
+            "Silveroak Interior Panels",
+            "Textured Floor Board"
+          ]
+        }
+      ],
+      "is_custom_source_of_truth": false,
+      "uploaded_image_url": null,
+      "source_url": "https://www.tvsmotor.com/tvs-zest",
+      "displacement_cc": "110",
+      "max_power": "7.81 PS @ 7500 rpm (approx.)",
+      "max_torque": "8.8 Nm @ 5500 rpm (approx.)",
+      "kerb_weight": "102 kg",
+      "seat_height": "760 mm (approx.)",
+      "fuel_tank_or_battery": "4.9 L (approx.)",
+      "top_speed": "80 km/h (approx.)",
+      "braking": "Front drum / rear drum (approx.)",
+      "riding_modes": null,
+      "colors": [
+        "Turquoise Blue",
+        "Purple",
+        "Red",
+        "Black",
+        "Matte Black",
+        "Matte Blue",
+        "Matte Red"
+      ],
+      "competitors": [
+        "Honda Activa 6G",
+        "Hero Pleasure Plus",
+        "TVS Jupiter",
+        "Suzuki Access 125"
+      ]
+    },
+    {
+      "id": "tvs_iqube",
+      "name": "TVS iQube",
+      "tagline": "Reinventing mobility solutions",
+      "category": "Electric Scooter",
+      "price_range": "\u20b994,434 - \u20b91,58,834",
+      "hero_image": "/uploads/tvs/vehicles/tvs_iqube.webp",
+      "engine_specs": "4.4 kW hub motor, 2.3 kWh to 5.3 kWh battery options",
+      "seating_capacity": "Rider + Pillion",
+      "fuel_or_battery": "Electric (2.3 kWh to 5.3 kWh)",
+      "range_or_mileage": "114 km - 212 km IDC range",
+      "key_highlights": [
+        "0-40 km/h in 4.2 seconds",
+        "Q-Park Assist",
+        "SmartXonnect connectivity",
+        "Portable 950W charger",
+        "IP67 rated Li-ion battery packs",
+        "3 year/50,000 kms battery warranty"
+      ],
+      "usp": "Ultra-low running cost of \u20b90.18/km and up to 212 km IDC range.",
+      "variants": [
+        {
+          "name": "iQube 2.3 kWh",
+          "price_ex_showroom": "\u20b994,434",
+          "engine_or_battery": "2.3 kWh battery",
+          "transmission": "Single-speed",
+          "key_features": [
+            "IDC Range 114 km",
+            "10-80% Charging 2 h 25 min",
+            "Top Speed 68 km/h"
+          ]
+        },
+        {
+          "name": "iQube 3.1 kWh",
+          "price_ex_showroom": "\u20b91,00,000",
+          "engine_or_battery": "3.1 kWh battery",
+          "transmission": "Single-speed",
+          "key_features": [
+            "IDC Range 123 km",
+            "10-80% Charging 3 h 30 min",
+            "Top Speed 82 km/h"
+          ]
+        },
+        {
+          "name": "iQube 3.5 kWh",
+          "price_ex_showroom": "\u20b91,08,993",
+          "engine_or_battery": "3.5 kWh battery",
+          "transmission": "Single-speed",
+          "key_features": [
+            "IDC Range 145 km",
+            "10-80% Charging 3 h 45 min",
+            "Top Speed 82 km/h"
+          ]
+        },
+        {
+          "name": "iQube MillionR Edition",
+          "price_ex_showroom": "\u20b91,08,993",
+          "engine_or_battery": "3.5 kWh battery",
+          "transmission": "Single-speed",
+          "key_features": [
+            "IDC Range 145 km",
+            "10-80% Charging 3 h 45 min",
+            "Top Speed 82 km/h"
+          ]
+        },
+        {
+          "name": "iQube S 4.7 kWh",
+          "price_ex_showroom": "\u20b91,17,642",
+          "engine_or_battery": "4.7 kWh battery",
+          "transmission": "Single-speed",
+          "key_features": [
+            "IDC Range 175 km",
+            "10-80% Charging 3 h 15 min",
+            "Top Speed 82 km/h"
+          ]
+        },
+        {
+          "name": "iQube ST 5.3 kWh",
+          "price_ex_showroom": "\u20b91,58,834",
+          "engine_or_battery": "5.3 kWh battery",
+          "transmission": "Single-speed",
+          "key_features": [
+            "IDC Range 212 km",
+            "10-80% Charging 4 h 00 min",
+            "Top Speed 82 km/h"
+          ]
+        }
+      ],
+      "is_custom_source_of_truth": false,
+      "uploaded_image_url": null,
+      "source_url": "https://www.tvsmotor.com/electric-scooters/tvs-iqube",
+      "displacement_cc": null,
+      "max_power": "4.4 kW",
+      "max_torque": "33 Nm (approx.)",
+      "kerb_weight": "118 kg (approx.)",
+      "seat_height": "770 mm (approx.)",
+      "fuel_tank_or_battery": "2.3 kWh, 3.1 kWh, 3.5 kWh, 4.7 kWh, 5.3 kWh",
+      "top_speed": "68 km/h - 82 km/h",
+      "braking": "Front disc / rear drum (approx.)",
+      "riding_modes": [
+        "Power Mode"
+      ],
+      "colors": null,
+      "competitors": [
+        "Ather 450X",
+        "Ola S1 Pro",
+        "Bajaj Chetak",
+        "Vida V1 Pro"
+      ]
+    },
+    {
+      "id": "tvs_orbiter",
+      "name": "TVS Orbiter",
+      "tagline": "New-age design that\u2019ll make you stand out",
+      "category": "Electric Scooter",
+      "price_range": "\u20b91,03,650 - \u20b91,06,804",
+      "hero_image": "/uploads/tvs/vehicles/tvs_orbiter.webp",
+      "engine_specs": "Orbiter V1: 1.8 kWh battery; Orbiter V2: 3.1 kWh battery",
+      "seating_capacity": "Rider + Pillion",
+      "fuel_or_battery": "Electric",
+      "range_or_mileage": "92 km IDC range (V1) / 158 km IDC range (V2)",
+      "key_highlights": [
+        "SmartXonnect App connectivity",
+        "Minimalistic Design",
+        "Unmatched Comfort",
+        "Built for Convenience",
+        "600+ rigorous safety tests"
+      ],
+      "usp": "Potential savings when compared to petrol 2 Wheeler",
+      "variants": [
+        {
+          "name": "TVS Orbiter V1",
+          "price_ex_showroom": "\u20b91,03,650",
+          "engine_or_battery": "1.8 kWh battery",
+          "transmission": "Single-speed",
+          "key_features": [
+            "92 km IDC Range",
+            "2 h 20m (0%-80% with 650W Charger)"
+          ]
+        },
+        {
+          "name": "TVS Orbiter V2",
+          "price_ex_showroom": "\u20b91,06,804",
+          "engine_or_battery": "3.1 kWh battery",
+          "transmission": "Single-speed",
+          "key_features": [
+            "158 km IDC Range",
+            "4 h 10 m (0%-80% with 650W Charger)"
+          ]
+        }
+      ],
+      "is_custom_source_of_truth": false,
+      "uploaded_image_url": null,
+      "source_url": "https://www.tvsmotor.com/electric-scooters/tvs-orbiter",
+      "displacement_cc": null,
+      "max_power": "3 kW (approx.)",
+      "max_torque": "16 Nm (approx.)",
+      "kerb_weight": "100 kg (approx.)",
+      "seat_height": "845mm",
+      "fuel_tank_or_battery": "1.8 kWh (V1) / 3.1 kWh (V2)",
+      "top_speed": "68 km/h",
+      "braking": "Front disc / rear drum (approx.)",
+      "riding_modes": null,
+      "colors": [
+        "Neon Sunburst",
+        "Stratos Blue",
+        "Martian Copper",
+        "Cosmic Titanium",
+        "Stellar Silver",
+        "Lunar Grey"
+      ],
+      "competitors": [
+        "Ola S1 Air",
+        "Ather 450S",
+        "Bajaj Chetak Urbane",
+        "Vida V1 Plus"
+      ]
+    },
+    {
+      "id": "tvs_x",
+      "name": "TVS X",
+      "tagline": "Electric goes THRILLECTRIC",
+      "category": "Electric Scooter",
+      "price_range": "\u20b92,66,141",
+      "hero_image": "/uploads/tvs/vehicles/tvs_x.webp",
+      "engine_specs": "Permanent magnet synchronous motor, 4.4 kW peak power, 11 kW peak power (claimed)",
+      "seating_capacity": "Rider + Pillion",
+      "fuel_or_battery": "Electric",
+      "range_or_mileage": "140 km range",
+      "key_highlights": [
+        "10.2 inch TFT Panoramic display",
+        "Smart Hill Hold technology",
+        "Portable 950 W charger",
+        "Regen selection choice",
+        "TVS Xleton TM platform"
+      ],
+      "usp": "The most expansive tiltable 10.2 inch TFT Panoramic display with captivating segment-first features",
+      "variants": [
+        {
+          "name": "TVS X",
+          "price_ex_showroom": "\u20b92,66,141",
+          "engine_or_battery": "4.4 kWh battery, 11 kW peak power",
+          "transmission": "Single-speed",
+          "key_features": [
+            "10.2 inch TFT Panoramic display",
+            "Smart Hill Hold",
+            "Portable 950 W charger",
+            "Xtealth, Xtride, Xonic riding modes"
+          ]
+        }
+      ],
+      "is_custom_source_of_truth": false,
+      "uploaded_image_url": null,
+      "source_url": "https://www.tvsmotor.com/electric-scooters/tvs-x",
+      "displacement_cc": null,
+      "max_power": "11 kW",
+      "max_torque": "40 Nm (approx.)",
+      "kerb_weight": "134 kg (approx.)",
+      "seat_height": "770 mm (approx.)",
+      "fuel_tank_or_battery": "4.4 kWh",
+      "top_speed": "105 kmph",
+      "braking": "Front disc / rear disc, ABS (approx.)",
+      "riding_modes": [
+        "Xtealth",
+        "Xtride",
+        "Xonic"
+      ],
+      "colors": null,
+      "competitors": [
+        "Ather 450X",
+        "Ola S1 Pro",
+        "Bajaj Chetak",
+        "Vida V1 Pro"
+      ]
+    }
+  ],
+  "dealerships": [
+    {
+      "id": "tvs_mumbai",
+      "name": "TVS Motor Authorised Dealer - Andheri West",
+      "address": "Andheri West, Mumbai",
+      "city": "Mumbai",
+      "phone": "",
+      "rating": 4.6,
+      "available_advisors": [
+        "Sales Consultant",
+        "Product Specialist"
+      ],
+      "has_test_drive_home_pickup": true
+    },
+    {
+      "id": "tvs_bengaluru",
+      "name": "TVS Motor Authorised Dealer - Indiranagar",
+      "address": "Indiranagar, Bengaluru",
+      "city": "Bengaluru",
+      "phone": "",
+      "rating": 4.6,
+      "available_advisors": [
+        "Sales Consultant",
+        "Product Specialist"
+      ],
+      "has_test_drive_home_pickup": true
+    },
+    {
+      "id": "tvs_delhi",
+      "name": "TVS Motor Authorised Dealer - Karol Bagh",
+      "address": "Karol Bagh, Delhi",
+      "city": "Delhi",
+      "phone": "",
+      "rating": 4.6,
+      "available_advisors": [
+        "Sales Consultant",
+        "Product Specialist"
+      ],
+      "has_test_drive_home_pickup": true
+    },
+    {
+      "id": "tvs_chennai",
+      "name": "TVS Motor Authorised Dealer - Anna Nagar",
+      "address": "Anna Nagar, Chennai",
+      "city": "Chennai",
+      "phone": "",
+      "rating": 4.6,
+      "available_advisors": [
+        "Sales Consultant",
+        "Product Specialist"
+      ],
+      "has_test_drive_home_pickup": true
+    }
+  ]
+}

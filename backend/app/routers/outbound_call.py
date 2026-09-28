@@ -37,18 +37,21 @@ async def trigger_outbound_call(
     db: AsyncSession = Depends(get_db)
 ):
     """Triggers proactive outbound voice call to customer following test ride completion."""
-    call = await OutboundCallService.trigger_outbound_call(db, req)
-    b_id = (req.brand_id or (BrandService.get_active_brand().id if BrandService.get_active_brand() else "mahindra")).lower()
+    try:
+        call = await OutboundCallService.trigger_outbound_call(db, req)
+    except LookupError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    b_id = (req.brand_id or (BrandService.get_active_brand().id if BrandService.get_active_brand() else "tvs")).lower()
     active_b = BrandService.get_brand(b_id)
-    caller_agent = f"{active_b.name if active_b else b_id.title()} Concierge (+91 22 6900 1000)"
+    caller_agent = f"Kavya – {active_b.name if active_b else b_id.title()} Concierge"
     return {
         "status": "CALL_INITIATED",
         "call_reference": call.call_reference,
         "brand_id": b_id,
         "customer_id": req.customer_id,
-        "phone_number": req.phone_number,
+        "phone_number": call.phone_number,
         "caller_id": caller_agent,
-        "message": f"Calling {req.customer_name} regarding their {req.vehicle_name} test drive experience."
+        "message": f"Calling {req.customer_name or 'the customer'} regarding their {call.locked_vehicle_variant or req.vehicle_name} test ride experience."
     }
 
 @router.post("/dialogue-turn", response_model=OutboundDialogueTurnResponse)
@@ -66,7 +69,7 @@ async def save_outbound_call_transcript(
 ):
     """Saves completed outbound feedback call transcript turns directly into OutboundCallLog for the Admin Console."""
     from app.services.brand_service import BrandService
-    b_id = (req.brand_id or (BrandService.get_active_brand().id if BrandService.get_active_brand() else "mahindra")).lower()
+    b_id = (req.brand_id or (BrandService.get_active_brand().id if BrandService.get_active_brand() else "tvs")).lower()
     active_b = BrandService.get_brand(b_id)
     brand_display = active_b.name if active_b else b_id.title()
 
@@ -81,13 +84,12 @@ async def save_outbound_call_transcript(
         customer = c_res.scalars().first()
 
     if not customer:
-        c_res = await db.execute(select(Customer).where(Customer.brand_id == b_id).limit(1))
-        customer = c_res.scalars().first()
+        raise HTTPException(status_code=404, detail="Customer not found for this brand; cannot attach call transcript.")
 
-    cust_id = customer.id if customer else 2
+    cust_id = customer.id
 
     formatted_lines = []
-    agent_label = f"{brand_display} AI"
+    agent_label = f"Kavya – {brand_display} AI"
     for t in req.turns:
         spk = t.get("speaker") or (agent_label if t.get("role") == "ai" else "Customer")
         txt = t.get("text") or t.get("message") or ""
@@ -96,9 +98,9 @@ async def save_outbound_call_transcript(
             formatted_lines.append(f"[{tm}] {spk}: \"{txt.strip()}\"")
 
     if not formatted_lines:
-        c_name = customer.name if customer else (req.customer_name or "Valued Customer")
+        c_name = customer.name
         v_name = req.vehicle_name or f"{brand_display} Vehicle"
-        formatted_lines.append(f'[00:02] {agent_label}: "Namaste {c_name} ji! Main {brand_display} se baat kar rahi hoon. Aapka {v_name} ka test drive kaisa raha?"')
+        formatted_lines.append(f'[00:02] {agent_label}: "Namaste {c_name} ji! Main {brand_display} se baat kar rahi hoon. Aapka {v_name} ka test ride kaisa raha?"')
 
     full_transcript = "\n".join(formatted_lines)
 
@@ -109,7 +111,7 @@ async def save_outbound_call_transcript(
     res = await db.execute(stmt)
     call_log = res.scalars().first()
 
-    def_veh = req.vehicle_name or (f"{brand_display} Flagship Model")
+    def_veh = req.vehicle_name or (f"{brand_display} Two-Wheeler")
 
     if call_log:
         call_log.brand_id = b_id
@@ -118,7 +120,7 @@ async def save_outbound_call_transcript(
         call_log.call_duration_seconds = req.duration_seconds or max(35, len(req.turns) * 12)
         call_log.customer_sentiment = "VERY_POSITIVE"
         call_log.customer_decision = "CONFIRMED_FAST_TRACK"
-        call_log.objection_resolution_status = "100% RESOLVED (Test Drive Feedback & Fast-Track Priority Allocation Locked)"
+        call_log.objection_resolution_status = "100% RESOLVED (Test Ride Feedback & Fast-Track Priority Allocation Locked)"
         call_log.locked_vehicle_variant = def_veh
         call_log.locked_allocation_days = 12
     else:
@@ -127,11 +129,11 @@ async def save_outbound_call_transcript(
             customer_id=cust_id,
             brand_id=b_id,
             agent_name=f"{brand_display} Client Experience Specialist",
-            phone_number=req.phone_number or "+91 98196 57034",
+            phone_number=req.phone_number or customer.phone,
             call_status="COMPLETED",
             call_duration_seconds=req.duration_seconds or 45,
             transcript=full_transcript,
-            objection_resolution_status="100% RESOLVED (Test Drive Feedback & Fast-Track Priority Allocation Locked)",
+            objection_resolution_status="100% RESOLVED (Test Ride Feedback & Fast-Track Priority Allocation Locked)",
             customer_sentiment="VERY_POSITIVE",
             customer_decision="CONFIRMED_FAST_TRACK",
             locked_vehicle_variant=def_veh,

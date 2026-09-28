@@ -27,12 +27,12 @@ export function LiveAudioControls({
   };
 
   const samplePrompts = [
-    "Book a doorstep test drive",
-    "Thar ROXX vs BE 6e electric",
-    "गाड़ी की कीमत क्या है?",
-    "गाडीची किंमत आणि मायलेज सांगा",
-    "காரின் விலை மற்றும் மைலேஜ் என்ன?",
-    "కారు మైలేజ్ ఎంత?"
+    "Book a doorstep test ride",
+    "Apache RTR 160 4V vs iQube electric",
+    "बाइक की कीमत क्या है?",
+    "बाइकची किंमत आणि मायलेज सांगा",
+    "பைக்கின் விலை மற்றும் மைலேஜ் என்ன?",
+    "బైక్ మైలేజ్ ఎంత?"
   ];
 
   const indianLanguages = [
@@ -54,7 +54,7 @@ export function LiveAudioControls({
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 flex flex-col h-[340px] sm:h-[380px] shadow-xs overflow-hidden">
-      {/* Header with Kabir Avatar Status */}
+      {/* Header with Kavya Avatar Status */}
       <div className="px-4 py-2.5 border-b border-slate-200 flex items-center justify-between bg-slate-50/80">
         <div className="flex items-center gap-2">
           <MessageSquare className="w-4 h-4 text-red-600" />

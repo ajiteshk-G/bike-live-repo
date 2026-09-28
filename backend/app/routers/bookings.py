@@ -26,7 +26,7 @@ from app.services.notification_service import NotificationService
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/bookings", tags=["Test Drive Bookings"])
+router = APIRouter(prefix="/bookings", tags=["Test Ride Bookings"])
 
 from app.services.brand_service import BrandService
 
@@ -38,7 +38,7 @@ async def resolve_dealership_from_db(
     brand_id: Optional[str] = None
 ) -> Optional[Dealership]:
     """Dynamically resolves the best matching dealership from the database, scoped to brand."""
-    b_id = (brand_id or (BrandService.get_active_brand().id if BrandService.get_active_brand() else "mahindra")).lower()
+    b_id = (brand_id or (BrandService.get_active_brand().id if BrandService.get_active_brand() else "tvs")).lower()
 
     # 1. By direct dealership_id
     if dealership_id:
@@ -67,9 +67,11 @@ async def resolve_dealership_from_db(
         elif clean_pin.startswith("110") or clean_pin.startswith("122") or clean_pin.startswith("201"):
             target_city = "Delhi"
         elif clean_pin.startswith("560"):
-            target_city = "Bangalore"
+            target_city = "Bengaluru"
         elif clean_pin.startswith("600"):
             target_city = "Chennai"
+        elif clean_pin.startswith("500") or clean_pin.startswith("501"):
+            target_city = "Hyderabad"
 
         if target_city:
             stmt = select(Dealership).where(func.lower(Dealership.city) == target_city.lower(), Dealership.is_active == True, Dealership.brand_id == b_id)
@@ -104,8 +106,8 @@ async def get_available_slots(
     date: str = Query(..., description="Target date in YYYY-MM-DD format"),
     pin_code: Optional[str] = Query(None, description="Customer Area PIN Code to find nearest showroom"),
     dealership_id: Optional[str] = Query(None, description="Specific Dealership ID if selected"),
-    city: Optional[str] = Query(None, description="City name (Mumbai, Pune, Delhi, Bangalore, Chennai)"),
-    brand_id: Optional[str] = Query(None, description="Brand ID (mahindra, bmw, hyundai, maruti_suzuki)"),
+    city: Optional[str] = Query(None, description="City name (Mumbai, Pune, Delhi, Bengaluru, Chennai, Hyderabad)"),
+    brand_id: Optional[str] = Query(None, description="Brand ID (tvs, hero_motocorp)"),
     vehicle_id: Optional[str] = None,
     db: AsyncSession = Depends(get_db)
 ):
@@ -122,7 +124,7 @@ async def get_available_slots(
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD.")
 
-    b_id = (brand_id or (BrandService.get_active_brand().id if BrandService.get_active_brand() else "mahindra")).lower()
+    b_id = (brand_id or (BrandService.get_active_brand().id if BrandService.get_active_brand() else "tvs")).lower()
 
     # 1. Resolve Showroom from Database
     dealership = await resolve_dealership_from_db(db, pin_code=pin_code, dealership_id=dealership_id, city=city, brand_id=b_id)
@@ -156,7 +158,7 @@ async def get_available_slots(
         return DateSlotsResponse(
             date=date,
             is_blocked=True,
-            blocked_reason=f"Public Holiday ({holiday_row.holiday_name}) - Showrooms & Test Drive Fleets are closed.",
+            blocked_reason=f"Public Holiday ({holiday_row.holiday_name}) - Showrooms & Test Ride Fleets are closed.",
             is_sunday=False,
             is_holiday=True,
             holiday_name=holiday_row.holiday_name,
@@ -260,7 +262,7 @@ async def reserve_test_drive_slot(
 
     # 1. Validate Sunday
     if parsed_date.weekday() == 6:
-        raise HTTPException(status_code=400, detail="Test drives cannot be booked on Sundays.")
+        raise HTTPException(status_code=400, detail="Test rides cannot be booked on Sundays.")
 
     # 2. Validate Public Holiday against DB
     h_stmt = select(PublicHoliday).where(
@@ -281,11 +283,11 @@ async def reserve_test_drive_slot(
     if req.slot_time not in allowed_slots:
         raise HTTPException(
             status_code=400,
-            detail="Invalid slot time. Test drives are strictly permitted only between 9:00 AM and 6:00 PM."
+            detail="Invalid slot time. Test rides are strictly permitted only between 9:00 AM and 6:00 PM."
         )
 
     # 4. Resolve Dealership from Database
-    b_id = (req.brand_id or (BrandService.get_active_brand().id if BrandService.get_active_brand() else "mahindra")).lower()
+    b_id = (req.brand_id or (BrandService.get_active_brand().id if BrandService.get_active_brand() else "tvs")).lower()
     active_b = BrandService.get_brand(b_id)
     brand_disp_name = active_b.name if active_b else b_id.title()
 
@@ -410,8 +412,8 @@ async def reserve_test_drive_slot(
         customer_id=customer.id,
         brand_id=b_id,
         vehicle_id=req.vehicle_id,
-        variant=req.variant or "Official Variant",
-        color=req.color or "Metallic Finish",
+        variant=req.variant or "Standard Variant",
+        color=req.color or "Standard Colour",
         dealership_id=dealership_id,
         dealership_name=dealership_name,
         sales_advisor_name=advisor_name,
@@ -432,7 +434,7 @@ async def reserve_test_drive_slot(
         db,
         customer_id_str=customer.customer_id,
         speaker=f"{b_id}_assistant",
-        message=f"Reserved test drive for {vehicle_display_name} at {dealership_name} on {req.slot_date} at {req.slot_time}. Reference: {booking_ref}",
+        message=f"Reserved test ride for {vehicle_display_name} at {dealership_name} on {req.slot_date} at {req.slot_time}. Reference: {booking_ref}",
         channel="VOICE_LIVE",
         session_id_str=f"BOOKING-{booking_ref}",
         intent="TEST_DRIVE_BOOKED",
@@ -449,7 +451,7 @@ async def reserve_test_drive_slot(
             customer_name=req.customer_name,
             booking_reference=booking_ref,
             vehicle_name=vehicle_display_name,
-            variant=req.variant or "Official Variant",
+            variant=req.variant or "Standard Variant",
             slot_date=req.slot_date,
             slot_time=req.slot_time,
             dealership_name=dealership_name,
@@ -557,26 +559,26 @@ async def create_booking(
     booking_in: TestDriveBookingCreate,
     db: AsyncSession = Depends(get_db)
 ):
-    b_id = (booking_in.brand_id or (BrandService.get_active_brand().id if BrandService.get_active_brand() else "mahindra")).lower()
+    b_id = (booking_in.brand_id or (BrandService.get_active_brand().id if BrandService.get_active_brand() else "tvs")).lower()
     customer = None
     if booking_in.customer_phone:
         customer = await CustomerService.get_customer_by_phone(db, booking_in.customer_phone, brand_id=b_id)
     if not customer and booking_in.customer_id:
         customer = await CustomerService.get_customer_by_id(db, booking_in.customer_id, brand_id=b_id)
-        if not customer:
-            customer = Customer(
-                customer_id=booking_in.customer_id,
-                brand_id=b_id,
-                name=booking_in.customer_name or "Valued Customer",
-                phone=f"+91 98{abs(hash(booking_in.customer_id)) % 100000000:08d}",
-                city="Mumbai",
-                interested_vehicle_id=booking_in.vehicle_id
-            )
-            db.add(customer)
-            await db.commit()
-            await db.refresh(customer)
+    if not customer and booking_in.customer_phone:
+        # Register the real rider from the entered name + phone (no fabricated identities).
+        customer = await CustomerService.get_or_create_customer_by_phone(
+            db,
+            phone=booking_in.customer_phone,
+            name=booking_in.customer_name,
+            vehicle_id=booking_in.vehicle_id,
+            brand_id=b_id,
+        )
     if not customer:
-        customer = await CustomerService.get_or_create_default_customer(db, brand_id=b_id)
+        raise HTTPException(
+            status_code=404,
+            detail="Customer not found. Provide customer_phone (and customer_name) to book a test ride.",
+        )
 
     booking_ref = f"BK-{b_id.upper()[:3]}-{int(time.time()) % 100000}"
     active_b = BrandService.get_brand(b_id)
@@ -597,7 +599,7 @@ async def create_booking(
         brand_id=b_id,
         vehicle_id=booking_in.vehicle_id,
         variant=booking_in.variant,
-        color=booking_in.color or "Metallic Finish",
+        color=booking_in.color or "Standard Colour",
         dealership_id=booking_in.dealership_id or (d_match.id if d_match else f"{b_id}_flagship"),
         dealership_name=d_match.name if d_match else f"{b_id.title()} Showroom",
         sales_advisor_name=advisor,

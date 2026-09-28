@@ -23,7 +23,7 @@ logger = logging.getLogger("outbound_call_service")
 class OutboundCallService:
     @staticmethod
     async def trigger_outbound_call(db: AsyncSession, req: OutboundCallTriggerRequest) -> OutboundCallLog:
-        b_id = (req.brand_id or (BrandService.get_active_brand().id if BrandService.get_active_brand() else "mahindra")).lower()
+        b_id = (req.brand_id or (BrandService.get_active_brand().id if BrandService.get_active_brand() else "tvs")).lower()
         active_brand = BrandService.get_brand(b_id)
         brand_name = active_brand.name if active_brand else b_id.title()
 
@@ -31,21 +31,14 @@ class OutboundCallService:
         stmt = select(Customer).where((Customer.customer_id == req.customer_id) & (Customer.brand_id == b_id))
         res = await db.execute(stmt)
         customer = res.scalars().first()
+        if not customer and req.phone_number:
+            # Resolve / register the real rider from the supplied phone (+ name); never borrow another customer.
+            from app.services.customer_service import CustomerService
+            customer = await CustomerService.get_or_create_customer_by_phone(
+                db, phone=req.phone_number, name=req.customer_name, brand_id=b_id
+            )
         if not customer:
-            stmt_all = select(Customer).where(Customer.brand_id == b_id).limit(1)
-            res_all = await db.execute(stmt_all)
-            customer = res_all.scalars().first()
-            if not customer:
-                customer = Customer(
-                    customer_id=req.customer_id,
-                    brand_id=b_id,
-                    name=req.customer_name,
-                    phone=req.phone_number,
-                    city="Mumbai",
-                    current_phase="POST_TEST_RIDE_CALL"
-                )
-                db.add(customer)
-                await db.flush()
+            raise LookupError(f"Customer '{req.customer_id}' not found for brand '{b_id}'.")
 
         # Find associated TestRideRecording for in-vehicle context
         tr_rec: Optional[TestRideRecording] = None
@@ -65,26 +58,26 @@ class OutboundCallService:
             c_res = await db.execute(c_stmt)
             tr_rec = c_res.scalars().first()
 
-        default_veh = f"{brand_name} Premium Line"
+        default_veh = f"{brand_name} Two-Wheeler"
         veh_name = req.vehicle_name or (tr_rec.vehicle_name if tr_rec else default_veh)
-        advisor_name = req.advisor_name or (tr_rec.sales_advisor_name if tr_rec else "Rajesh Varma")
-        advisor_short = advisor_name.split(" ")[0].replace("Specialist", "").strip("()") or "Rajesh"
+        advisor_name = req.advisor_name or (tr_rec.sales_advisor_name if tr_rec else "Sales Consultant")
+        advisor_short = advisor_name.split("(")[0].strip().split(" ")[0] or "Advisor"
         cust_name = req.customer_name or customer.name or "Valued Customer"
 
         call_ref = f"CALL-{b_id.upper()[:4]}-{datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%d')}-{uuid.uuid4().hex[:4].upper()}"
 
-        agent_display_name = f"{brand_name} AI (Post-Ride Concierge)"
+        agent_display_name = f"Kavya – {brand_name} AI (Post-Ride Concierge)"
 
         call_log = OutboundCallLog(
             call_reference=call_ref,
             customer_id=customer.id,
             brand_id=b_id,
             agent_name=agent_display_name,
-            phone_number=req.phone_number,
+            phone_number=req.phone_number or customer.phone,
             call_status="IN_PROGRESS",
             call_duration_seconds=0,
             transcript=None,
-            objection_resolution_status="100% RESOLVED (Test Drive Feedback & Stock Lock)",
+            objection_resolution_status="100% RESOLVED (Test Ride Feedback & Stock Lock)",
             customer_sentiment="POSITIVE",
             customer_decision="EVALUATING",
             locked_vehicle_variant=veh_name,
@@ -100,7 +93,7 @@ class OutboundCallService:
 
     @staticmethod
     async def process_dialogue_turn(db: AsyncSession, req: OutboundDialogueTurnRequest) -> OutboundDialogueTurnResponse:
-        user_speech = req.customer_speech or req.customer_response or "The drive was very good."
+        user_speech = req.customer_speech or req.customer_response or "The ride was very good."
         turn_idx = req.turn_index if req.turn_index is not None else (req.turn_number or 1)
 
         # Lookup call log
@@ -109,14 +102,7 @@ class OutboundCallService:
         call_log = res.scalars().first()
 
         # Lookup customer & test ride context
-        cust_name = "Customer"
-        veh_name = "Mahindra SUV"
-        advisor_short = "Rajesh"
-        tr_transcript = ""
-        loved_features = ["FSD Suspension", "Panoramic Skyroof", "Engine Pickup"]
-        objections = ["Delivery Waiting Period", "Flexible EMI"]
-
-        b_id = (call_log.brand_id if call_log and call_log.brand_id else (BrandService.get_active_brand().id if BrandService.get_active_brand() else "mahindra")).lower()
+        b_id = (call_log.brand_id if call_log and call_log.brand_id else (BrandService.get_active_brand().id if BrandService.get_active_brand() else "tvs")).lower()
         active_brand = BrandService.get_brand(b_id)
         brand_name = active_brand.name if active_brand else b_id.title()
 
@@ -125,8 +111,8 @@ class OutboundCallService:
         veh_name = f"{brand_name} Model"
         advisor_short = "Advisor"
         tr_transcript = ""
-        loved_features = ["Driving Dynamics", "Cabin Comfort", "Engine Pickup"]
-        objections = ["Delivery Waiting Period", "Flexible EMI"]
+        loved_features = ["Engine Pickup", "Braking Confidence", "Riding Comfort"]
+        objections = ["Delivery Waiting Period", "Two-Wheeler Loan EMI"]
 
         if call_log:
             c_stmt = select(Customer).where((Customer.id == call_log.customer_id) & (Customer.brand_id == b_id))
@@ -144,7 +130,7 @@ class OutboundCallService:
             tr = tr_res.scalars().first()
             if tr:
                 veh_name = tr.vehicle_name or veh_name
-                advisor_short = (tr.sales_advisor_name or "Advisor").split(" ")[0].replace("Specialist", "").strip("()") or "Advisor"
+                advisor_short = (tr.sales_advisor_name or "Advisor").split("(")[0].strip().split(" ")[0] or "Advisor"
                 tr_transcript = tr.transcript or ""
                 loved_features = tr.loved_features or loved_features
                 objections = tr.objections_raised or objections
@@ -155,28 +141,28 @@ class OutboundCallService:
             from google import genai
             from google.genai import types
 
-            client = genai.Client(vertexai=True, project=settings.VERTEX_PROJECT_ID, location=settings.VERTEX_LOCATION)
+            from app.services.genai_client import get_genai_client
+            client = get_genai_client()
             
-            system_prompt = f"""You are {brand_name} AI, an expert, polite, and attentive Post-Test Ride Customer Relationship Specialist from {brand_name}.
-You are in a live feedback phone call with {cust_name}, who recently completed a test drive of the {veh_name} with Sales Consultant {advisor_short}.
+            system_prompt = f"""You are Kavya, {brand_name}'s warm, polite and attentive Post-Test-Ride Customer Relationship Specialist (female voice).
+You are in a live feedback phone call with {cust_name}, who recently completed a TEST RIDE of the two-wheeler {veh_name} with Sales Consultant {advisor_short}.
 
-*** IN-VEHICLE TEST RIDE CONTEXT ***
+*** TEST RIDE CONTEXT ***
 Test Ride Transcript:
-{tr_transcript[:1000] if tr_transcript else "Customer test drove the vehicle and experienced the engine, suspension, and features."}
+{tr_transcript[:1000] if tr_transcript else "Customer test rode the motorcycle / scooter and experienced pickup, braking, handling and comfort."}
 
 Customer Loved Features: {", ".join(loved_features)}
 Objections / Questions Raised: {", ".join(objections)}
 
 *** YOUR GOALS IN THIS CALL ***
-1. Check if the test drive was good and confirm if Sales Consultant {advisor_short} answered all their questions and demonstrated features well.
-2. Address any remaining doubts about delivery waiting period, on-road pricing, or flexible financing.
-3. Offer to lock their preferred vehicle allocation and send digital financing / booking confirmation.
+1. Ask how the test ride felt — pickup / acceleration, braking & ABS confidence, handling in traffic and corners, seat height & rider fit, pillion comfort, mileage or EV range — and confirm {advisor_short} answered all questions (including helmet / riding-gear safety tips).
+2. Address remaining doubts on on-road price, colour / variant availability, delivery timeline, exchange of their old two-wheeler, and two-wheeler loan options (typically 10-25% down payment, 12-48 month tenure).
+3. Offer to reserve their preferred variant & colour and send the booking / loan link on WhatsApp.
 
 *** STRICT DOMAIN & SCOPE BOUNDARY (MANDATORY RULE) ***
-1. YOU MUST NEVER ANSWER ANY QUESTION OUTSIDE {brand_name.upper()} VEHICLES, TEST DRIVES, VEHICLE BOOKING, OR OFFICIAL FINANCING.
-2. If the user asks about competitor cars or unrelated topics:
-   - Politely decline and steer the conversation strictly back to their {brand_name} {veh_name} test drive and feedback.
-   - Example: "Main keval {brand_name} gaadiyon aur aapke test drive experience ke baare mein baat kar sakti hoon."
+1. NEVER answer questions outside {brand_name} two-wheelers, test rides, bookings, service, accessories, or official financing.
+2. If the customer asks about unrelated topics, politely steer back to their {veh_name} test ride. If they compare with competitor bikes/scooters, acknowledge briefly and highlight {brand_name}'s strengths without disparaging the competitor.
+   - Example: "Main keval {brand_name} bikes aur aapke test ride experience ke baare mein baat kar sakti hoon."
 3. Respond in conversational Hindi/Hinglish, natural, polite, and concise (under 30 words per turn)."""
 
             config = types.GenerateContentConfig(
@@ -210,14 +196,14 @@ Objections / Questions Raised: {", ".join(objections)}
 
         if not agent_reply:
             if "bye" in user_speech.lower() or "dhanyavaad" in user_speech.lower() or "thank" in user_speech.lower() or "finalize" in user_speech.lower():
-                agent_reply = f"Shukriya {cust_name} ji! Maine aapka allocation lock kar diya hai aur financing link WhatsApp par bhej diya hai. Have a wonderful day!"
+                agent_reply = f"Shukriya {cust_name} ji! Maine aapka pasandida variant reserve kar diya hai aur booking & loan link WhatsApp par bhej diya hai. Ride safe!"
             else:
-                agent_reply = f"Sunkar bahut achha laga {cust_name} ji! Kya {advisor_short} ji ne sabhi features theek se samjhaye the? Hum aapki booking aur financing process turant start kar sakte hain."
+                agent_reply = f"Sunkar bahut achha laga {cust_name} ji! Kya {advisor_short} ji ne braking, riding modes aur baaki features theek se samjhaye the? Hum aapki booking aur two-wheeler loan process turant start kar sakte hain."
 
         is_finished = "shukriya" in agent_reply.lower() or "thank" in agent_reply.lower() or turn_idx >= 4
 
         # Update call log transcript
-        agent_tag = f"{brand_name} AI"
+        agent_tag = f"Kavya – {brand_name} AI"
         if call_log:
             now_sec = (turn_idx * 15) + 12
             call_log.call_duration_seconds = now_sec
@@ -254,7 +240,7 @@ Objections / Questions Raised: {", ".join(objections)}
         return OutboundCallInsightsResponse(
             call_reference=call.call_reference,
             brand_id=call.brand_id,
-            customer_id=cust.customer_id if cust else "CUST-DEFAULT",
+            customer_id=cust.customer_id if cust else "",
             customer_name=cust.name if cust else "Valued Customer",
             agent_name=call.agent_name,
             phone_number=call.phone_number,
@@ -262,9 +248,9 @@ Objections / Questions Raised: {", ".join(objections)}
             call_duration_seconds=call.call_duration_seconds,
             transcript=call.transcript or "",
             objections_handled=[
-                "Test Drive Feedback Confirmed",
+                "Test Ride Feedback Confirmed",
                 "Sales Consultant Demonstration Quality Verified",
-                "Delivery Allocation & Instant EMI Processed"
+                "Variant / Colour Allocation & Two-Wheeler Loan EMI Processed"
             ],
             objection_resolution_status=call.objection_resolution_status or "100% RESOLVED",
             customer_sentiment=call.customer_sentiment or "VERY_POSITIVE",

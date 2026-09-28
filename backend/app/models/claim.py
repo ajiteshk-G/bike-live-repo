@@ -8,7 +8,7 @@ class InsuranceClaim(Base):
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     claim_id = Column(String(64), unique=True, index=True, nullable=False) # e.g. "MH-INS-99201"
-    brand_id = Column(String(64), index=True, default="mahindra", nullable=False)
+    brand_id = Column(String(64), index=True, default="tvs", nullable=False)
     customer_id = Column(Integer, ForeignKey("customers.id"), nullable=False)
     
     vin = Column(String(64), nullable=False)
@@ -28,7 +28,7 @@ class InsuranceClaim(Base):
     policy_number = Column(String(64), default="POL-ICICI-MH-2026-99201")
     claim_status = Column(String(32), default="DIGITALLY_APPROVED") # SUBMITTED, DIGITALLY_APPROVED, PARTS_DISPATCHED, SETTLED
     
-    workshop_name = Column(String(128), default="Bayview Mahindra Workshop")
+    workshop_name = Column(String(128), default="Authorised Two-Wheeler Service Workshop")
     parts_delivery_estimate = Column(String(64), default="Tomorrow Morning 9:00 AM")
     
     image_evidence_url = Column(String(256), nullable=True)

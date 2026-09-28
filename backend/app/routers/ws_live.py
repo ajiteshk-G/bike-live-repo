@@ -1,4 +1,5 @@
 import json
+import base64
 import logging
 import uuid
 import ssl
@@ -15,7 +16,7 @@ import websockets
 from app.config import settings
 from app.database import AsyncSessionLocal, get_db
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.services.gemini_live_session import AudioSessionManager, KABIR_SYSTEM_PROMPT, build_brand_system_prompt
+from app.services.gemini_live_session import AudioSessionManager, build_brand_system_prompt
 from app.services.brand_service import BrandService
 from app.services.customer_service import CustomerService
 from app.models.customer import Customer
@@ -24,22 +25,61 @@ logger = logging.getLogger("ws_live")
 logger.setLevel(logging.INFO)
 router = APIRouter(tags=["Live Audio & Multimodal Chat"])
 
-KAVYA_OUTBOUND_PROMPT = """You are Kavya, the official Proactive Post-Test Drive Experience Specialist for Mahindra & Mahindra.
-You are placing an outbound phone call to the customer who recently completed a test drive.
+KAVYA_OUTBOUND_PROMPT = """You are Kavya, the official Proactive Post-Test Ride Experience Specialist for {brand_name}.
+You are placing an outbound phone call to the customer who recently completed a two-wheeler test ride.
 
 Customer Details:
 - Customer Name: {cust_name}
-- Vehicle Tested: {veh_name}
+- Vehicle Test Ridden: {veh_name}
 - Senior Sales Consultant: {advisor_name}
 - Booking Reference: {lead_ref}
 
 Guidelines:
-1. Greet the customer warmly and politely in conversational Hindi/Hinglish:
-   "Namaste {cust_name} ji! Main Mahindra se Kavya baat kar rahi hoon. Aapka {veh_name} ka test drive kaisa raha? Kya hamare Sales Consultant {advisor_name} ji ne aapke sabhi sawalon ka theek se jawab diya?"
-2. Verify if the customer enjoyed the vehicle performance (FSD suspension, Panoramic Skyroof, engine power) and if the consultant provided complete support.
-3. If the customer asks about delivery timelines or financing, resolve their concerns and offer to lock their 12-day fast-track priority allocation.
-4. STRICT GUARDRAIL: Do NOT answer anything outside the Mahindra automotive ecosystem. If competitor cars (Kia, Tata, Hyundai) or unrelated topics are mentioned, politely steer back to Mahindra vehicles and their test drive.
+1. Greet the customer warmly and politely in conversational Hindi/Hinglish (strictly feminine grammar):
+   "Namaste {cust_name} ji! Main {brand_name} se Kavya baat kar rahi hoon. Aapki {veh_name} ki test ride kaisi rahi? Kya hamare Sales Consultant {advisor_name} ji ne aapke sabhi sawalon ka theek se jawab diya?"
+2. Verify if the customer enjoyed the ride (engine pickup, braking / ABS confidence, riding comfort and rider fit, mileage or EV range) and if the consultant provided complete support.
+3. If the customer asks about delivery timelines, financing/EMI, or accessories and riding gear, resolve their concerns and offer to lock their fast-track priority allocation.
+4. STRICT GUARDRAIL: Do NOT answer anything outside the {brand_name} two-wheeler ecosystem. If competitor two-wheeler brands (Bajaj, Honda, Yamaha, Royal Enfield, Suzuki, Ather, Ola) or unrelated topics are mentioned, politely steer back to {brand_name} motorcycles and scooters and their test ride.
 5. Keep your spoken responses concise, natural, polite, and under 30 words per turn for realistic phone conversation."""
+
+
+# Phrases (lower-cased) that indicate a test ride booking confirmation in the customer's turn.
+# Booking a test ride must NEVER end the call.
+BOOKING_CONFIRMATION_PATTERNS = ("successfully booked", "reference:")
+BOOKING_TOPIC_PATTERNS = ("test ride", "test drive", "टेस्ट राइड", "टेस्ट ड्राइव")
+BOOKING_ASSISTANT_PATTERNS = ("test ride book ho", "test drive book ho", "test ride is booked", "test ride has been booked", "टेस्ट राइड बुक")
+
+
+def _is_booking_text(low_text: str) -> bool:
+    """True if a (lower-cased) customer utterance is a test ride booking / confirmation message."""
+    if not low_text:
+        return False
+    if any(p in low_text for p in BOOKING_CONFIRMATION_PATTERNS):
+        return True
+    return any(p in low_text for p in BOOKING_TOPIC_PATTERNS) and ("book" in low_text or "बुक" in low_text)
+
+
+def _default_vehicle(brand) -> Optional[Any]:
+    """First vehicle of the given brand catalog (used for brand-agnostic defaults)."""
+    try:
+        if brand and brand.vehicles:
+            return brand.vehicles[0]
+    except Exception:
+        pass
+    return None
+
+
+def _vehicle_display_name(brand, vehicle_id: Optional[str]) -> str:
+    """Human-readable vehicle name from the brand catalog, falling back to a prettified id."""
+    if not vehicle_id:
+        return "two-wheeler"
+    try:
+        for v in (brand.vehicles if brand and brand.vehicles else []):
+            if v.id == vehicle_id:
+                return v.name
+    except Exception:
+        pass
+    return vehicle_id.replace("_", " ").title()
 
 
 SERVICE_URL = "wss://{host}/ws/google.cloud.aiplatform.internal.LlmBidiService/BidiGenerateContent"
@@ -53,9 +93,9 @@ def get_or_create_session(session_id: str, customer_id: str) -> AudioSessionMana
 
 class LiveChatRequest(BaseModel):
     message: str
-    customer_id: Optional[str] = "CUST-9820155432"
+    customer_id: Optional[str] = None
     session_id: Optional[str] = None
-    vehicle_id: Optional[str] = "thar_roxx"
+    vehicle_id: Optional[str] = None
     language: Optional[str] = "Hinglish"
 
 class LiveChatResponse(BaseModel):
@@ -70,24 +110,16 @@ class LiveChatResponse(BaseModel):
 async def post_live_chat(req: LiveChatRequest, db: AsyncSession = Depends(get_db)):
     """HTTP REST fallback for web proxy environments where direct WebSocket ports are blocked."""
     session_id = req.session_id or f"SESS-{datetime.now(timezone.utc).strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}"
-    customer_id = req.customer_id or "CUST-9820155432"
+    # Only attach to a real, previously captured lead; never fabricate a customer/phone.
+    customer = None
+    if req.customer_id:
+        customer = await CustomerService.get_customer_by_id(db, req.customer_id)
+        if not customer:
+            customer = await CustomerService.get_customer_by_phone(db, req.customer_id)
+    session_customer_id = customer.customer_id if customer else "GUEST-TRANSIENT"
 
-    customer = await CustomerService.get_customer_by_id(db, customer_id)
-    if not customer:
-        customer = await CustomerService.get_customer_by_phone(db, customer_id)
-    if not customer:
-        customer = Customer(
-            customer_id=customer_id,
-            name="Valued Customer",
-            phone=f"+91 98{abs(hash(customer_id)) % 100000000:08d}",
-            city="Mumbai",
-            interested_vehicle_id=req.vehicle_id or "thar_roxx"
-        )
-        db.add(customer)
-        await db.commit()
-        await db.refresh(customer)
-
-    await CustomerService.log_interaction(
+    if customer:
+      await CustomerService.log_interaction(
         db,
         customer_id_str=customer.customer_id,
         speaker="customer",
@@ -96,7 +128,7 @@ async def post_live_chat(req: LiveChatRequest, db: AsyncSession = Depends(get_db
         session_id_str=session_id
     )
 
-    session_mgr = get_or_create_session(session_id=session_id, customer_id=customer.customer_id)
+    session_mgr = get_or_create_session(session_id=session_id, customer_id=session_customer_id)
     if req.language and session_mgr.language == "Hinglish":
         session_mgr.language = req.language
     if req.vehicle_id and not session_mgr.active_vehicle_id:
@@ -108,7 +140,8 @@ async def post_live_chat(req: LiveChatRequest, db: AsyncSession = Depends(get_db
 
     result = await session_mgr.process_user_text_or_intent(req.message, capture_ui_event)
 
-    await CustomerService.log_interaction(
+    if customer:
+      await CustomerService.log_interaction(
         db,
         customer_id_str=customer.customer_id,
         speaker="mia",
@@ -118,7 +151,7 @@ async def post_live_chat(req: LiveChatRequest, db: AsyncSession = Depends(get_db
         intent=result.get("tool_call"),
         tool=result.get("tool_call")
     )
-    if result.get("checklist"):
+    if customer and result.get("checklist"):
         from app.services.checklist_service import ChecklistService
         await ChecklistService.update_customer_and_booking_checklist(
             db,
@@ -182,7 +215,7 @@ async def get_bearer_token(force_refresh: bool = False):
 @router.websocket("/ws/live-audio")
 async def live_audio_websocket(websocket: WebSocket):
     """
-    Bi-directional Gemini Live Bidi proxy implementing the exact pattern from mahindra-car-live-chat.
+    Bi-directional Gemini Live Bidi proxy for the two-wheeler Virtual Showroom voice agent (Kavya).
     Connects to wss://us-central1-aiplatform.googleapis.com/ws/google.cloud.aiplatform.internal.LlmBidiService/BidiGenerateContent
     """
     await websocket.accept()
@@ -190,17 +223,24 @@ async def live_audio_websocket(websocket: WebSocket):
     
     query_params = dict(websocket.query_params)
     is_outbound = query_params.get("mode") == "outbound_call" or query_params.get("role") == "outbound_feedback"
-    lead_ref = query_params.get("lead_ref") or "BK-MAH-23382"
+    brand_param = query_params.get("brand_id")
+    active_b = (
+        BrandService.get_brand(brand_param)
+        if brand_param
+        else BrandService.get_active_brand()
+    )
+    default_v = _default_vehicle(active_b)
+    lead_ref = query_params.get("lead_ref") or "BK-TR-23382"
     cust_name = query_params.get("customer_name") or "Valued Guest"
     cust_phone = query_params.get("customer_phone") or query_params.get("phone") or ""
-    veh_name = query_params.get("vehicle_name") or "Mahindra XUV700 AX7L"
+    veh_name = query_params.get("vehicle_name") or (default_v.name if default_v else "your two-wheeler")
     advisor_name = query_params.get("advisor_name") or "Rajesh Varma"
     session_id = query_params.get("session_id") or f"CALL-MIA-{datetime.now(timezone.utc).strftime('%Y%m%d')}-{uuid.uuid4().hex[:4].upper()}"
     customer_id = query_params.get("customer_id") or ""
 
     customer = None
     async with AsyncSessionLocal() as db:
-        if customer_id and customer_id not in ("CUST-9819657034", "CUST-9820155432", "GUEST-TRANSIENT"):
+        if customer_id and customer_id != "GUEST-TRANSIENT":
             customer = await CustomerService.get_customer_by_id(db, customer_id)
         if not customer and cust_phone and cust_phone.strip():
             customer = await CustomerService.get_or_create_customer_by_phone(
@@ -215,27 +255,21 @@ async def live_audio_websocket(websocket: WebSocket):
         customer = Customer(
             id=0,
             customer_id="GUEST-TRANSIENT",
-            brand_id=query_params.get("brand_id") or "mahindra",
+            brand_id=query_params.get("brand_id") or (active_b.id if active_b else None),
             name=cust_name,
             phone=cust_phone,
             city="Mumbai",
             preferred_language="Hinglish",
             current_phase="PRE_SALES",
-            interested_vehicle_id="thar_roxx",
-            interested_variant="AX7L Diesel AT 4x4",
-            budget_range="₹18 Lakh - ₹25 Lakh",
+            interested_vehicle_id=default_v.id if default_v else "",
+            interested_variant=(default_v.variants[0].name if (default_v and default_v.variants) else ""),
+            budget_range="₹1 Lakh - ₹1.5 Lakh",
             kyc_status="PENDING"
         )
 
     session_mgr = get_or_create_session(session_id=session_id, customer_id=customer.customer_id)
 
-    brand_param = query_params.get("brand_id")
-    active_b = (
-        BrandService.get_brand(brand_param)
-        if brand_param
-        else BrandService.get_active_brand()
-    )
-    brand_name = active_b.name if active_b else "Mahindra Auto"
+    brand_name = active_b.name if active_b else "our showroom"
     avatar_name = active_b.avatar_name if active_b else "Kavya"
     avatar_voice = active_b.avatar_voice if active_b else "Aoede"
 
@@ -251,7 +285,7 @@ async def live_audio_websocket(websocket: WebSocket):
             "name": customer.name,
             "phone": customer.phone
         },
-        "greeting": f"Namaste {customer.name}! Main {avatar_name}, {brand_name} se. Main aapki {customer.interested_vehicle_id.replace('_', ' ').title()} me madad kar sakti hoon."
+        "greeting": f"Hello {customer.name}! I am {avatar_name} from {brand_name}. I can help you explore the {_vehicle_display_name(active_b, customer.interested_vehicle_id)} and book a test ride."
     }))
 
     # 2. Obtain token asynchronously without blocking event loop
@@ -278,22 +312,13 @@ async def live_audio_websocket(websocket: WebSocket):
             ) as bidi_ws:
                 logger.info(f"Connected to Vertex Bidi service for session {session_id} (brand: {active_b.id if active_b else 'default'})")
 
-                brand_outbound_prompt = f"""You are {avatar_name}, the official Proactive Post-Test Drive Experience Specialist for {brand_name}.
-You are placing an outbound phone call to the customer who recently completed a test drive.
-
-Customer Details:
-- Customer Name: {cust_name}
-- Vehicle Tested: {veh_name}
-- Senior Sales Consultant: {advisor_name}
-- Booking Reference: {lead_ref}
-
-Guidelines:
-1. Greet the customer warmly and politely in conversational Hindi/Hinglish:
-   "Namaste {cust_name} ji! Main {brand_name} se {avatar_name} baat kar rahi hoon. Aapka {veh_name} ka test drive kaisa raha? Kya hamare Sales Consultant {advisor_name} ji ne aapke sabhi sawalon ka theek se jawab diya?"
-2. Verify if the customer enjoyed the vehicle performance and if the consultant provided complete support.
-3. If the customer asks about delivery timelines or financing, resolve their concerns and offer to lock their 12-day fast-track priority allocation.
-4. STRICT GUARDRAIL: Do NOT answer anything outside the {brand_name} automotive ecosystem. If competitor cars or unrelated topics are mentioned, politely steer back to {brand_name} vehicles and their test drive.
-5. Keep your spoken responses concise, natural, polite, and under 30 words per turn for realistic phone conversation."""
+                brand_outbound_prompt = KAVYA_OUTBOUND_PROMPT.replace("Kavya", avatar_name or "Kavya").format(
+                    brand_name=brand_name,
+                    cust_name=cust_name,
+                    veh_name=veh_name,
+                    advisor_name=advisor_name,
+                    lead_ref=lead_ref,
+                )
 
                 active_system_prompt = brand_outbound_prompt if is_outbound else build_brand_system_prompt(active_b.id if active_b else None)
 
@@ -303,13 +328,14 @@ Guidelines:
                 # Talk to AI Specialist uses Gemini 2.5 Native Live Audio; Outbound call uses Gemini Live Audio
                 brand_vehicles = active_b.vehicles if (active_b and active_b.vehicles) else []
                 cars_summary = ", ".join([f"'{v.id}' ({v.name})" for v in brand_vehicles]) if brand_vehicles else "all available lineup models"
+                ids_only = ", ".join([f"'{v.id}'" for v in brand_vehicles]) if brand_vehicles else "the exact vehicle ID from the catalog"
 
                 tools_config = [
                     {
                         "functionDeclarations": [
                             {
                                 "name": "lock_priority_allocation",
-                                "description": "Call this tool when the customer agrees to lock fast-track 12-day vehicle delivery allocation.",
+                                "description": "Call this tool when the customer agrees to lock fast-track 12-day two-wheeler delivery allocation.",
                                 "parameters": {
                                     "type": "object",
                                     "properties": {
@@ -336,7 +362,7 @@ Guidelines:
                         "functionDeclarations": [
                             {
                                 "name": "switch_vehicle_showroom",
-                                "description": f"Call this tool whenever the customer asks about, compares, inquires about, or mentions any vehicle in our lineup ({cars_summary}). This switches the showroom backdrop, hero stage, and focuses the vehicle carousel directly on that car.",
+                                "description": f"Call this tool whenever the customer asks about, compares, inquires about, or mentions any vehicle in our lineup ({cars_summary}). This switches the showroom backdrop, hero stage, and focuses the vehicle carousel directly on that motorcycle or scooter.",
                                 "parameters": {
                                     "type": "object",
                                     "properties": {
@@ -350,7 +376,7 @@ Guidelines:
                             },
                             {
                                 "name": "compare_vehicles",
-                                "description": "Call this tool when customer wants to compare vehicles.",
+                                "description": "Call this tool when customer wants to compare two motorcycles/scooters from our lineup (engine, mileage or EV range, brakes, weight, seat height, price).",
                                 "parameters": {
                                     "type": "object",
                                     "properties": {
@@ -362,7 +388,7 @@ Guidelines:
                             },
                             {
                                 "name": "update_advisor_checklist",
-                                "description": "Call this tool to add personalized demo points to the Sales Advisor Demo Checklist in database whenever customer inquires about features, comfort, safety, or tech.",
+                                "description": "Call this tool to add personalized test ride demo points to the Sales Consultant Demo Checklist in database whenever customer inquires about performance, mileage / EV range, ABS / braking, riding modes, connectivity, rider fit (seat height, weight), storage, or pillion comfort.",
                                 "parameters": {
                                     "type": "object",
                                     "properties": {
@@ -377,25 +403,25 @@ Guidelines:
                             },
                             {
                                 "name": "book_test_drive",
-                                "description": "Call this tool when customer wants to schedule or book a test drive for a specific vehicle model and variant.",
+                                "description": "Call this tool when customer wants to schedule or book a test ride for a specific two-wheeler model and variant (after confirming model, variant, home/showroom, address + PIN, and date/time).",
                                 "parameters": {
                                     "type": "object",
                                     "properties": {
                                         "model_name": {
                                             "type": "string",
-                                            "description": "The normalized vehicle ID: thar_roxx, scorpio_n, xuv700, be_6e, xev_9e, xuv_3xo, thar_3door, scorpio_classic"
+                                            "description": f"The normalized vehicle ID: {ids_only}"
                                         },
                                         "variant": {
                                             "type": "string",
-                                            "description": "Specific variant name e.g. AX7L Diesel AT 4x4, Z8L 4WD AT, Pack Two (79 kWh)"
+                                            "description": "Specific variant name from the catalog, e.g. 'Disc', 'Drum', 'Dual Channel ABS', '3.4 kWh'"
                                         },
                                         "transmission": {
                                             "type": "string",
-                                            "description": "Automatic or Manual"
+                                            "description": "Manual (geared motorcycle) or Automatic (CVT scooter / EV)"
                                         },
                                         "booking_type": {
                                             "type": "string",
-                                            "description": "HOME_DOORSTEP or SHOWROOM_VISIT"
+                                            "description": "HOME_DOORSTEP or SHOWROOM_VISIT test ride"
                                         },
                                         "pin_code": {
                                             "type": "string",
@@ -407,7 +433,7 @@ Guidelines:
                             },
                             {
                                 "name": "end_call",
-                                "description": "Call this tool immediately after speaking your polite farewell ONLY when the customer explicitly indicates they have finished the entire conversation (e.g. says 'no thank you', 'nahi chahiye thank you', 'bye', 'that is all', 'bas dhanyavaad', or asks to end/disconnect the call). NEVER call this tool when a test drive or test ride is booked — after booking a test drive, you MUST continue the conversation and ask if they have any other questions about features, variants, or financing.",
+                                "description": "Call this tool immediately after speaking your polite farewell ONLY when the customer explicitly indicates they have finished the entire conversation (e.g. says 'no thank you', 'nahi chahiye thank you', 'bye', 'that is all', 'bas dhanyavaad', or asks to end/disconnect the call). NEVER call this tool when a test ride is booked — after booking a test ride, you MUST continue the conversation and ask if they have any other questions about features, variants, riding gear, or financing.",
                                 "parameters": {
                                     "type": "object",
                                     "properties": {
@@ -462,7 +488,7 @@ Guidelines:
                                 "turns": [
                                     {
                                         "role": "user",
-                                        "parts": [{"text": f"Greet {cust_name} warmly in spoken Hindi, introducing yourself as Kavya from Mahindra, asking how their {veh_name} test drive went with {advisor_name}."}]
+                                        "parts": [{"text": f"Greet {cust_name} warmly in spoken Hindi (feminine grammar), introducing yourself as {avatar_name or 'Kavya'} from {brand_name}, asking how their {veh_name} test ride went with {advisor_name}."}]
                                     }
                                 ],
                                 "turnComplete": True
@@ -529,7 +555,7 @@ Guidelines:
                                                 "turns": [
                                                     {
                                                         "role": "user",
-                                                        "parts": [{"text": f"Please give a warm, concise spoken greeting 100% in English ('Hello {cust_name}! Welcome to the {brand_name} Virtual Showroom. I am {avatar_name}, your AI Showroom Specialist. Which vehicle would you like to explore today?'). Do NOT use any Hindi words in this initial greeting, and on every subsequent turn dynamically match whatever language the customer speaks. Do NOT call any tools during this greeting."}]
+                                                        "parts": [{"text": f"Please give a warm, concise spoken greeting 100% in English ('Hello {cust_name}! Welcome to the {brand_name} Virtual Showroom. I am {avatar_name}, your AI Showroom Specialist. Which motorcycle or scooter would you like to explore today?'). Do NOT use any Hindi words in this initial greeting, and on every subsequent turn dynamically match whatever language the customer speaks. Do NOT call any tools during this greeting."}]
                                                     }
                                                 ],
                                                 "turnComplete": True
@@ -545,11 +571,7 @@ Guidelines:
                                         from app.services.gemini_live_session import detect_indian_language
                                         session_mgr.language = detect_indian_language(user_text)
                                         low_user_text = user_text.lower()
-                                        is_booking_msg = (
-                                            "successfully booked" in low_user_text
-                                            or "reference:" in low_user_text
-                                            or ("test drive" in low_user_text and "book" in low_user_text)
-                                        )
+                                        is_booking_msg = _is_booking_text(low_user_text)
                                         if is_booking_msg:
                                             suppress_end_call_for_turn = True
 
@@ -570,7 +592,7 @@ Guidelines:
                                         asyncio.create_task(_log_user_chat(user_text))
 
                                         prompt_for_model = (
-                                            f"{user_text}\n[System Instruction: Confirm this test drive booking warmly in 1-2 sentences in {session_mgr.language}, and then ask the customer what else they would like to explore next—such as vehicle features, variant comparison, or EMI/financing options. Do NOT end the call and do NOT call end_call.]"
+                                            f"{user_text}\n[System Instruction: Confirm this test ride booking warmly in 1-2 sentences in {session_mgr.language}, remind them to carry their riding licence and a helmet, and then ask the customer what else they would like to explore next—such as features, variant comparison, riding gear, or EMI/financing options. Do NOT end the call and do NOT call end_call.]"
                                             if is_booking_msg
                                             else f"{user_text}\n[System Instruction: Respond 100% in {session_mgr.language} (the exact language the customer just used).]"
                                         )
@@ -741,10 +763,8 @@ Guidelines:
                                 low_in = last_user_turn_text.lower()
                                 is_booking_turn = (
                                     suppress_end_call_for_turn
-                                    or "successfully booked" in low_in
-                                    or "reference:" in low_in
-                                    or ("test drive" in low_in and "book" in low_in)
-                                    or "test drive book ho" in low_out
+                                    or _is_booking_text(low_in)
+                                    or any(bp in low_out for bp in BOOKING_ASSISTANT_PATTERNS)
                                 )
                                 if not is_booking_turn:
                                     if any(up in low_in for up in UNAMBIGUOUS_USER_DONE_PATTERNS):
@@ -767,7 +787,7 @@ Guidelines:
                                         session_id_str=session_id
                                     )
                                     from app.services.checklist_service import ChecklistService
-                                    veh_k = session_mgr.active_vehicle_id or customer.interested_vehicle_id or "thar_roxx"
+                                    veh_k = session_mgr.active_vehicle_id or customer.interested_vehicle_id or ""
                                     new_chk = ChecklistService.extract_checklist_items(in_text, vehicle_id=veh_k)
                                     if new_chk:
                                         await ChecklistService.update_customer_and_booking_checklist(
@@ -822,9 +842,7 @@ Guidelines:
                                         is_booking_context = (
                                             suppress_end_call_for_turn
                                             or fc_name in ("open_test_drive_booking", "book_test_drive")
-                                            or "successfully booked" in low_in_now
-                                            or "reference:" in low_in_now
-                                            or ("test drive" in low_in_now and "book" in low_in_now)
+                                            or _is_booking_text(low_in_now)
                                         )
                                         if fc_name in ("open_test_drive_booking", "book_test_drive"):
                                             suppress_end_call_for_turn = True
@@ -839,13 +857,13 @@ Guidelines:
                                             should_end_call = True
 
                                         if fc_name == "end_call" and not allow_end_call:
-                                            tool_note = f"Do NOT end the call yet—the customer booked a test drive or has not finished the consultation. Confirm the details warmly in {session_mgr.language} and ask what else they would like to explore (such as features, variants, or EMI/financing options)."
+                                            tool_note = f"Do NOT end the call yet—the customer booked a test ride or has not finished the consultation. Confirm the details warmly in {session_mgr.language} and ask what else they would like to explore (such as features, variants, riding gear, or EMI/financing options)."
                                         elif fc_name == "end_call":
                                             tool_note = f"Call disconnect scheduled. Speak a brief 1-sentence warm farewell in {session_mgr.language} if you have not already done so."
                                         elif fc_name in ("open_test_drive_booking", "book_test_drive"):
-                                            tool_note = f"Test drive booking calendar is open/updated on the customer's screen. Warmly guide the customer or confirm their booking in {session_mgr.language}, and continue the conversation by asking if they have any questions about vehicle features, variants, or EMI/financing. Do NOT end the call."
+                                            tool_note = f"Test ride booking calendar is open/updated on the customer's screen. Warmly guide the customer or confirm their booking in {session_mgr.language}, naturally remind them to bring a valid riding licence and a helmet, and continue the conversation by asking if they have any questions about features, variants, riding gear, or EMI/financing. Do NOT end the call."
                                         else:
-                                            tool_note = f"Showroom UI updated to focus on the selected vehicle. Now immediately answer the customer's question warmly and concisely in spoken audio as Kavya in {session_mgr.language} (matching the exact language the customer just spoke), without calling any more tools in this turn."
+                                            tool_note = f"Showroom UI updated to focus on the selected two-wheeler. Now immediately answer the customer's question warmly and concisely in spoken audio as {avatar_name or 'Kavya'} in {session_mgr.language} (matching the exact language the customer just spoke), quoting real catalog specs, without calling any more tools in this turn."
 
                                         tool_resp = {
                                             "toolResponse": {
@@ -928,9 +946,7 @@ Guidelines:
                                         is_booking_context = (
                                             suppress_end_call_for_turn
                                             or fc_name in ("open_test_drive_booking", "book_test_drive")
-                                            or "successfully booked" in low_in_now
-                                            or "reference:" in low_in_now
-                                            or ("test drive" in low_in_now and "book" in low_in_now)
+                                            or _is_booking_text(low_in_now)
                                         )
                                         if fc_name in ("open_test_drive_booking", "book_test_drive"):
                                             suppress_end_call_for_turn = True
@@ -945,13 +961,13 @@ Guidelines:
                                             should_end_call = True
 
                                         if fc_name == "end_call" and not allow_end_call:
-                                            tool_note = f"Do NOT end the call yet—the customer booked a test drive or has not finished the consultation. Confirm the details warmly in {session_mgr.language} and ask what else they would like to explore (such as features, variants, or EMI/financing options)."
+                                            tool_note = f"Do NOT end the call yet—the customer booked a test ride or has not finished the consultation. Confirm the details warmly in {session_mgr.language} and ask what else they would like to explore (such as features, variants, riding gear, or EMI/financing options)."
                                         elif fc_name == "end_call":
                                             tool_note = f"Call disconnect scheduled. Speak a brief 1-sentence warm farewell in {session_mgr.language} if you have not already done so."
                                         elif fc_name in ("open_test_drive_booking", "book_test_drive"):
-                                            tool_note = f"Test drive booking calendar is open/updated on the customer's screen. Warmly guide the customer or confirm their booking in {session_mgr.language}, and continue the conversation by asking if they have any questions about vehicle features, variants, or EMI/financing. Do NOT end the call."
+                                            tool_note = f"Test ride booking calendar is open/updated on the customer's screen. Warmly guide the customer or confirm their booking in {session_mgr.language}, naturally remind them to bring a valid riding licence and a helmet, and continue the conversation by asking if they have any questions about features, variants, riding gear, or EMI/financing. Do NOT end the call."
                                         else:
-                                            tool_note = f"Showroom UI updated to focus on the selected vehicle. Now immediately answer the customer's question warmly and concisely in spoken audio as Kavya in {session_mgr.language} (matching the exact language the customer just spoke), without calling any more tools in this turn."
+                                            tool_note = f"Showroom UI updated to focus on the selected two-wheeler. Now immediately answer the customer's question warmly and concisely in spoken audio as {avatar_name or 'Kavya'} in {session_mgr.language} (matching the exact language the customer just spoke), quoting real catalog specs, without calling any more tools in this turn."
 
                                         # Respond back immediately so Gemini Live audio generation proceeds
                                         tool_resp = {
@@ -1066,7 +1082,7 @@ Guidelines:
                 msg_type = payload.get("type", "USER_CHAT")
                 if msg_type == "START_SESSION":
                     cust_name = payload.get("customer_name") or customer.name or "there"
-                    prompt = f"Please give a warm, dynamic, non-static spoken greeting to {cust_name} as {avatar_name}, introducing yourself as {brand_name}'s female AI Showroom Specialist, welcoming them to the showroom in {session_mgr.language}, and asking which vehicle or SUV they'd like to check out today."
+                    prompt = f"Please give a warm, dynamic, non-static spoken greeting to {cust_name} as {avatar_name}, introducing yourself as {brand_name}'s female AI Showroom Specialist, welcoming them to the showroom in {session_mgr.language}, and asking which motorcycle or scooter they'd like to check out today."
                     result = await session_mgr.process_user_text_or_intent(prompt, lambda ev: None)
                     await websocket.send_text(json.dumps({
                         "type": "ASSISTANT_RESPONSE",

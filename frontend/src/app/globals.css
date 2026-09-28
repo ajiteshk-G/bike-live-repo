@@ -12,7 +12,7 @@
   --text-primary: #F8FAFC;
   --text-secondary: #94A3B8;
   --text-muted: #64748B;
-  --maruti-cyan: #00E5FF;
+  --accent-cyan: #00E5FF;
   --shadow-sm: 0 4px 14px rgba(0, 0, 0, 0.35);
   --shadow-speaking: 0 0 25px rgba(0, 229, 255, 0.35);
   --font-main: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -50,10 +50,10 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Studio Reflection Effect */
-.car-reflection {
+.vehicle-reflection {
   position: relative;
 }
-.car-reflection::after {
+.vehicle-reflection::after {
   content: '';
   position: absolute;
   bottom: 0;
@@ -66,7 +66,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* ==========================================================================
-   Chat & Live Avatar Panel Styles (from mahindra-car-live-chat reference)
+   Chat & Live Avatar Panel Styles
    ========================================================================== */
 .chat-avatar-panel {
   background: #0B0F17;
@@ -209,7 +209,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .avatar-stage.active-speaking {
-  border-color: var(--maruti-cyan);
+  border-color: var(--accent-cyan);
   box-shadow: var(--shadow-speaking);
 }
 
@@ -262,11 +262,11 @@ h1, h2, h3, h4, h5, h6 {
   height: 52px;
   border-radius: 50%;
   background: linear-gradient(135deg, rgba(0, 86, 179, 0.35), rgba(0, 229, 255, 0.35));
-  border: 1px solid var(--maruti-cyan);
+  border: 1px solid var(--accent-cyan);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--maruti-cyan);
+  color: var(--accent-cyan);
   animation: pulse-slow 2s infinite ease-in-out;
 }
 
@@ -309,7 +309,7 @@ h1, h2, h3, h4, h5, h6 {
   pointer-events: none;
 }
 
-.video-pane-badge.kabir-badge {
+.video-pane-badge.kavya-badge {
   border-color: rgba(0, 229, 255, 0.3);
 }
 
@@ -450,7 +450,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .lang-select-dropdown:hover, .lang-select-dropdown:focus {
   background: rgba(0, 229, 255, 0.25);
-  border-color: var(--maruti-cyan);
+  border-color: var(--accent-cyan);
   box-shadow: 0 0 8px rgba(0, 229, 255, 0.3);
 }
 
@@ -518,7 +518,7 @@ h1, h2, h3, h4, h5, h6 {
 .suggestion-chip {
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid var(--border-subtle);
-  color: var(--maruti-cyan);
+  color: var(--accent-cyan);
   font-size: 10.5px;
   font-weight: 500;
   padding: 3px 8px;
@@ -529,7 +529,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .suggestion-chip:hover {
   background: rgba(0, 229, 255, 0.25);
-  border-color: var(--maruti-cyan);
+  border-color: var(--accent-cyan);
   color: #ffffff;
 }
 
@@ -554,7 +554,7 @@ h1, h2, h3, h4, h5, h6 {
 .chat-bubble.model-bubble {
   background: rgba(15, 22, 36, 0.95);
   border: 1px solid var(--border-subtle);
-  border-left: 3px solid var(--maruti-cyan);
+  border-left: 3px solid var(--accent-cyan);
   color: var(--text-primary);
   align-self: flex-start;
   border-bottom-left-radius: 2px;
@@ -581,7 +581,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .chat-input-bar input:focus {
-  border-color: var(--maruti-cyan);
+  border-color: var(--accent-cyan);
 }
 
 .send-msg-btn {

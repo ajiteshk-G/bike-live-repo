@@ -22,3 +22,6 @@ android/
 *package-lock.json
 
 
+
+**/*.db-wal
+**/*.db-shm

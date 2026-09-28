@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400" width="640" height="400" role="img" aria-label="Two-wheeler image unavailable">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f1f5f9"/>
+      <stop offset="1" stop-color="#e2e8f0"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="400" fill="url(#bg)"/>
+  <ellipse cx="320" cy="318" rx="230" ry="12" fill="#cbd5e1" opacity="0.6"/>
+  <g fill="none" stroke="#94a3b8" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+    <!-- wheels -->
+    <circle cx="170" cy="258" r="58"/>
+    <circle cx="470" cy="258" r="58"/>
+    <circle cx="170" cy="258" r="12" fill="#94a3b8"/>
+    <circle cx="470" cy="258" r="12" fill="#94a3b8"/>
+    <!-- swingarm & front fork -->
+    <path d="M170 258 L262 232"/>
+    <path d="M470 258 L428 150"/>
+    <!-- handlebar -->
+    <path d="M428 150 L404 128 M428 150 L452 136"/>
+    <!-- frame -->
+    <path d="M262 232 L330 232 L420 170"/>
+    <path d="M262 232 L300 176"/>
+  </g>
+  <g fill="#94a3b8">
+    <!-- tank + seat -->
+    <path d="M290 176 C300 150 360 140 400 150 L420 170 L360 184 Z"/>
+    <path d="M200 168 C230 160 270 164 292 176 L286 188 C260 184 226 184 204 182 Z"/>
+    <!-- engine block -->
+    <rect x="286" y="196" width="64" height="44" rx="8"/>
+    <!-- headlamp -->
+    <circle cx="446" cy="160" r="9"/>
+  </g>
+  <text x="320" y="372" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="18" fill="#64748b">Image coming soon</text>
+</svg>

@@ -1,70 +1,69 @@
-# Mahindra Intelligent Assistant (MIA) — Omnichannel AI Platform
+# Two-Wheeler AI Showroom — Kavya Omnichannel Platform (TVS Motor · Hero MotoCorp)
 
-An enterprise-grade omnichannel automotive platform for **Mahindra & Mahindra**, reimagining the end-to-end customer journey from **Pre-Sales Virtual Discovery** with an interactive **AI Voice Avatar**, to **In-Vehicle Test Ride Audio Intelligence** on the Sales Mobile App, and **Post-Ride Outbound Feedback Voice Calls** via Gemini Live & Twilio.
+An omnichannel AI demo for **two-wheeler dealerships** (motorcycles & scooters). It covers the full customer journey:
+**Pre-Sales voice discovery** with the Kavya AI avatar → **Sales Consultant mobile app** that records the test ride and extracts insights →
+**post-ride outbound feedback call** → **two-wheeler financing (EMI) & document upload**.
 
-**Live deployment:** https://auto-interaction-hobr26cxda-uc.a.run.app
+The catalogs are **crawled from the official brand websites** (`tvsmotor.com`, `heromotocorp.com`) — real models, prices, specs and product images.
 
----
-
-## 🎬 3-Part End-to-End Demo Flow
-
-The demo is divided into **3 distinct parts**:
-
-### 1. PreSales — Website Journey
-- A prospective customer arrives at the Mahindra website and initiates an **interactive real-time Audio Chat** with the AI Agent.
-- The customer explores vehicles, asks specific questions regarding specifications, variants, safety ratings, and performance.
-- The AI Agent opens an **interactive calendar widget embedded directly inside the chat window**, allowing the customer to select their preferred date, time slot, and dealership to book a seamless Test Ride.
-- As the customer chats, Gemini automatically extracts their key interests and requirements (e.g. *Panoramic Skyroof*, *Level 2 ADAS*, *Ventilated Seats*) to build a customized Demo Checklist.
-
-### 2. Sales Mobile App — In-Vehicle Test Ride & Real-Time Intelligence
-- The Test Ride booking instantly syncs to the **Sales Consultant's Mobile App** as a new active CRM Lead.
-- The **complete pre-sales call transcript** and the **custom Demo Checklist** (dynamically derived from the audio conversation between Avatar and Customer) appear on screen for the Sales Consultant.
-- During the drive inside the car, the Sales Consultant **records or simulates the live test drive conversation** (covering engine acceleration, FSD suspension, safety features, competitor comparisons, and flexible financing options).
-- The platform uses Gemini to analyze the in-vehicle conversation and generates **real-time AI insights**:
-  - Customer Sentiment Score & Purchase Intent Score (dynamically evaluated).
-  - Advisor Pitch Score & Sales Coaching feedback.
-  - Loved Features & Objections Raised.
-- The lead status automatically updates to **`TestRide_Completed`** and persists in the database.
-
-### 3. Outbound Call — Post-Ride Customer Feedback & Resolution
-- In the Admin Console / CRM Dashboard, leads marked as `TestRide_Completed` display an **Outbound Feedback Call** option.
-- An Outbound Call is triggered via **Browser Voice (Gemini Live AI)** or **Direct Phone Call (Twilio Carrier)**.
-- The AI Agent takes the in-vehicle test ride transcript as context, asking the customer how their test drive was and whether the Sales Consultant answered all their questions thoroughly.
-- The Agent operates under **strict Mahindra domain guardrails** (deflecting competitor or off-topic queries back to Mahindra excellence) and provisionally confirms fast-track priority vehicle allocation.
+> This repo is a fork of the four-wheeler `auto-interaction` demo, kept as an independent codebase and deployed as a **separate Cloud Run service**.
 
 ---
 
-## 🚗 Omnichannel Process Architecture
+## 🎬 End-to-End Demo Flow
 
+### 1. Pre-Sales — Website voice journey
+- The rider opens the showroom and starts a real-time **Gemini Live** voice chat with **Kavya** (female voice `Aoede`).
+- Kavya qualifies the rider: daily commute, city vs highway, solo vs pillion, rider height and experience, petrol vs electric (home charging?), budget, and motorcycle vs scooter.
+- She quotes real specs from the crawled catalog: cc / PS / Nm, mileage (kmpl) or EV range, ABS/CBS, seat height, kerb weight, riding modes and connectivity.
+- She books a **test ride** through the in-chat calendar and reminds the rider about the **riding licence and helmet**.
+
+### 2. Sales Mobile App — Test ride recording & insights
+- The Sales Consultant loads the lead captured in step 1 and selects the bike.
+- They record the test-ride conversation with the phone's recorder (or simulate one). Audio goes to GCS and Gemini extracts insights: pickup, braking/ABS confidence, handling, rider fit, pillion comfort, mileage/range, competitor mentions (Bajaj, Honda, Yamaha, Royal Enfield, Ather, Ola) and next steps.
+
+### 3. Outbound Call — Post-ride feedback
+- Kavya calls the rider after the test ride with the ride transcript as context. She asks about the experience and resolves open questions, staying within the brand guardrails.
+
+### 4. Financing
+- Two-wheeler loan EMI: tenure 12–48 months, down payment 10–25%, default rate 10.49%. Documents (Aadhaar, salary slip, …) can be uploaded.
+
+---
+
+## 🏍️ Brands & Real Catalog Crawling
+
+| Brand | Brand id | Source | Models |
+|---|---|---|---|
+| TVS Motor (default active) | `tvs` | https://www.tvsmotor.com/ | 16 (Apache RTR/RR, Raider, Ronin, Radeon, Star City+, Sport, NTORQ, Jupiter, Zest, iQube, Orbiter, X) |
+| Hero MotoCorp | `hero_motocorp` | https://www.heromotocorp.com/en-in.html | 15 (Splendor+, Super Splendor, HF Deluxe, Passion+, Glamour X, Xtreme, Xpulse, Karizma XMR, Destini, Pleasure+, Xoom) |
+
+Catalogs live at `backend/data/brands/<brand_id>.json`. Images and logos are downloaded to `backend/static/uploads/<brand_id>/{vehicles,logos}/` and served at `/uploads/...`.
+
+### Re-crawl
+```bash
+cd backend
+PYTHONPATH=. ./.venv/bin/python scripts/crawl_bike_brands.py          # TVS + Hero (TVS set active)
+PYTHONPATH=. ./.venv/bin/python scripts/crawl_bike_brands.py hero     # one brand
 ```
-   ┌─────────────────────────────────────────────────────────────┐
-   │          Part 1: Pre-Sales Website Journey                  │
-   │  • Multimodal Live Audio Chat + Video Avatar                │
-   │  • Synchronized Co-Browsing Tool Calling                    │
-   │  • Dynamic Feature Checklist Extraction from Customer Chat  │
-   │  • Test Drive Booking with Embedded In-Chat Calendar Widget │
-   └──────────────────────────────┬──────────────────────────────┘
-                                  │
-                                  ▼
-   ┌─────────────────────────────────────────────────────────────┐
-   │          Part 2: Sales Mobile App & Test Ride               │
-   │  • Test Ride Booking Appears as CRM Lead with Call Transcript│
-   │  • Dynamic Demo Checklist on Screen for Sales Consultant    │
-   │  • In-Vehicle Test Drive Audio Recording / Simulation       │
-   │  • Gemini Dynamic Audio Insights (Sentiment, Pitch Score)   │
-   │  • Lead Status Updates to 'TestRide_Completed'              │
-   └──────────────────────────────┬──────────────────────────────┘
-                                  │
-                                  ▼
-   ┌─────────────────────────────────────────────────────────────┐
-   │          Part 3: Outbound Feedback Call & Admin Console     │
-   │  • Trigger Outbound Voice Call for 'TestRide_Completed' Leads│
-   │  • Dual-Mode: Browser Call (Gemini Live) & Twilio Carrier   │
-   │  • In-Vehicle Transcript Context & Advisor Review           │
-   │  • Strict Mahindra Domain Guardrails & Objection Resolution │
-   │  • Priority Fast-Track Allocation Confirmation              │
-   └─────────────────────────────────────────────────────────────┘
-```
+A full crawl takes about one minute per brand. Brand Studio in the UI uses the same pipeline (`BrandCrawlerService.crawl_and_extract_catalog`) for any brand URL.
+
+### How the crawler works (`backend/app/services/brand_crawler_service.py`)
+1. **Discovery:** starts from curated official model URLs per known brand and adds links matching a model URL pattern found on the seed pages.
+2. **Page scrape** (httpx + BeautifulSoup):
+   - Collects JSON-LD, og:image and `<img>`/`<source>` images.
+   - Collects **360° spin / colour-configurator frames** found in the page's JS/JSON (the cleanest studio shots).
+   - Falls back to embedded JSON state for Sitecore JSS / Next.js pages.
+3. **Extraction:** one Gemini call per model page returns a `VehicleItem`, including the two-wheeler fields.
+4. **Gap fill:** mileage/range and missing specs (seat height, kerb weight, top speed, …) come from model knowledge and are **marked "(approx.)"**. Values scraped from the page are never overwritten.
+5. **Hero image:** candidates are ranked, downloaded and scored by heuristics (transparent/white background, aspect ratio, blank-frame rejection). A **Gemini vision pick** then chooses the clean product photo in batches of 8; if none qualifies, a placeholder is used.
+6. **Fallbacks:** a knowledge-only catalog for JS-only sites, default dealerships, and a generated vector logo.
+
+Known limits:
+- Hero's EV brand **Vida** (`vidaworld.com`) renders only in JavaScript, so it is not crawled.
+- TVS loads prices client-side, so prices without a scraped value are knowledge-filled and marked "(approx.)".
+
+Two-wheeler fields on `VehicleItem` (`backend/app/schemas/catalog.py`, all optional):
+`source_url, displacement_cc, max_power, max_torque, kerb_weight, seat_height, fuel_tank_or_battery, top_speed, braking, riding_modes[], colors[], competitors[]`.
 
 ---
 
@@ -72,147 +71,101 @@ The demo is divided into **3 distinct parts**:
 
 | Path | Description |
 | :--- | :--- |
-| `backend/` | FastAPI service — REST APIs, Gemini Live WebSocket bridge, SQLAlchemy models, services |
-| `backend/app/routers/ws_live.py` | Bidirectional Gemini Live proxy (browser ⇄ Vertex AI Bidi), tool calling, transcript persistence |
-| `backend/app/services/gemini_live_session.py` | System prompts, language detection, audio session state |
-| `frontend/` | Next.js 14 App Router UI (React 18 + Tailwind CSS) |
-| `frontend/src/hooks/useLiveVoice.ts` | Browser-side live audio capture, playback, and WebSocket session lifecycle |
-| `android/` | Sales Consultant mobile app assets |
-| `Dockerfile` / `entrypoint.sh` | Combined single-container build (Next.js + FastAPI) for Cloud Run |
+| `backend/app/routers/ws_live.py` | Gemini Live Bidi proxy (browser ⇄ Vertex AI), tool calling, transcript persistence, REST chat fallback |
+| `backend/app/services/gemini_live_session.py` | Brand-agnostic Kavya prompt built from the active catalog, language detection |
+| `backend/app/services/brand_crawler_service.py` | Official-website crawler (see above) |
+| `backend/app/services/genai_client.py` | Shared `google-genai` client: ADC on Cloud Run, `gcloud` user token locally |
+| `backend/app/services/financing_service.py` | Two-wheeler EMI calculator |
+| `backend/scripts/crawl_bike_brands.py` | CLI to (re)crawl TVS / Hero |
+| `backend/seeds/seed_dealerships.py` | Re-runnable seed: 6 demo dealerships each for `tvs` and `hero_motocorp` (`--purge` clears user data) |
+| `frontend/` | Next.js App Router UI (React + Tailwind) |
+| `Dockerfile` / `entrypoint.sh` | Single-container build (Next.js + FastAPI) for Cloud Run |
 
 ---
 
 ## 🗣️ Live Voice Session Behaviour
 
-The pre-sales voice agent runs on **Gemini Live native audio** over the Vertex AI Bidi WebSocket endpoint.
+- **Default language `en-IN`.** The greeting is always in English. **Dynamic follow-up language mode:** Kavya mirrors the language of each customer turn (Hindi / Hinglish / regional languages), using feminine Hindi grammar.
+- **Booking a test ride does not end the call.** `end_call` is suppressed on booking turns.
+- **Automatic end on farewells** ("no thank you", "bye", Devanagari variants), or on an unambiguous closing line from Kavya.
+- **Guardrails:** Kavya stays on the active brand and politely deflects questions about competitors or off-topic subjects.
 
-- **Default language is `en-IN`.** The greeting is always delivered in English.
-- **Dynamic follow-up language mode.** Each turn, the user's speech transcript and text input are inspected and the assistant is instructed to mirror that language for the reply. A customer who switches to Hindi mid-call gets Hindi replies; switching back to English switches the assistant back.
-- **Booking a test ride does not end the call.** Turns identified as booking confirmations suppress the `end_call` tool so the conversation continues after the slot is confirmed. The in-chat calendar collapses shortly after a slot is chosen.
-- **Automatic call termination on farewells.** The call ends only when the customer signals they are done (e.g. *"no, thank you"*, *"nothing else"*, *"bye"*) or when the assistant delivers an unambiguous closing line. Both romanized and Devanagari farewell phrasings are recognised.
-
-### Local authentication for Gemini Live
-
-The Bidi endpoint requires a token with `aiplatform.endpoints.predict` on the target project.
-
-- **On Cloud Run** (`K_SERVICE` is set) the service account's Application Default Credentials are used.
-- **Locally** the token is sourced from `gcloud auth print-access-token`, because ADC on a developer workstation is often a different identity than the one authorised for Vertex AI.
-
-If `Start Live` fails locally, confirm the active gcloud account can reach Vertex AI:
-
-```bash
-gcloud auth list
-gcloud config get-value project
-```
-
-A wrong identity surfaces as the WebSocket closing with `1008 policy violation — Permission 'aiplatform.endpoints.predict' denied`.
+### Local authentication for Gemini
+All Gemini calls (Live, REST chat, crawler, sales insights, outbound) need `aiplatform.endpoints.predict` on the project.
+- **Cloud Run** (`K_SERVICE` set): service-account ADC.
+- **Local:** the token comes from `gcloud auth print-access-token` and is refreshed every 45 minutes, because workstation ADC is often a different identity. Check with `gcloud auth list`.
 
 ---
 
 ## ⚙️ Configuration & Environment Variables
 
-All values below are read from the environment, falling back to the listed default (see `backend/app/config.py`).
-
 | Variable | Description | Default |
 | :--- | :--- | :--- |
-| `PROJECT_ID` / `VERTEX_PROJECT_ID` | GCP Project ID with Vertex AI APIs enabled | `mb-poc-352009` |
-| `LOCATION` / `VERTEX_LOCATION` | GCP Region for Vertex AI | `us-central1` |
-| `GEMINI_LIVE_MODEL` | Model for the bidirectional live native audio session | `gemini-live-2.5-flash-native-audio` |
-| `REST_CHAT_MODEL` | Model for text/JSON intelligence generation | `gemini-2.5-flash` |
-| `AVATAR_NAME` | Display name of the voice avatar | `Kavya` |
-| `AVATAR_VOICE` | Vertex AI prebuilt voice for the avatar | `Aoede` |
-| `AVATAR_MODALITY` | Live session response modality | `AUDIO` |
-| `DATABASE_URL` | SQLite or PostgreSQL connection string | `sqlite+aiosqlite:///data/auto.db` |
-| `GCS_RECORDINGS_BUCKET` / `GCS_BUCKET` | Bucket for test-drive audio recordings | `mb-poc-352009-sales-recordings` |
-| `ENABLE_SMS_DISPATCH` | Enables SMS dispatch for booking notifications and call follow-ups | `true` |
-| `PORT` | Frontend HTTP port exposed by the container | `8080` |
+| `PROJECT_ID` / `VERTEX_PROJECT_ID` | GCP project with Vertex AI | `mb-poc-352009` |
+| `LOCATION` / `VERTEX_LOCATION` | Vertex AI region | `us-central1` |
+| `GEMINI_LIVE_MODEL` | Live native-audio model | `gemini-live-2.5-flash-native-audio` |
+| `REST_CHAT_MODEL` | Text/JSON/vision model (chat fallback, crawler, insights) | `gemini-2.5-flash` |
+| `AVATAR_NAME` / `AVATAR_VOICE` | Persona / Vertex voice | `Kavya` / `Aoede` |
+| `PROJECT_NAME` | Service title | `Two-Wheeler Intelligent Assistant with Kavya AI` |
+| `DEFAULT_LOCALE` | Default locale | `en-IN` |
+| `DEFAULT_DEALERSHIP` | Fallback dealership label | `Authorised Two-Wheeler Dealership, Mumbai` |
+| `DATABASE_URL` | SQLite or PostgreSQL DSN | `sqlite+aiosqlite:///data/auto.db` |
+| `GCS_RECORDINGS_BUCKET` / `GCS_BUCKET` | Test-ride recordings bucket | `mb-poc-352009-sales-recordings` |
+| `ENABLE_SMS_DISPATCH` | SMS for bookings / follow-ups | `true` |
+| `CRAWLER_MAX_MODELS` | Max models per brand crawl | `16` |
+| `CRAWLER_FETCH_CONCURRENCY` / `CRAWLER_GEMINI_CONCURRENCY` | Crawl parallelism | `6` / `6` |
+| `CRAWLER_PAGE_TIMEOUT_S` | Per-page fetch timeout | `15` |
+| `PORT` | Frontend port in the container | `8080` |
 
-> [!NOTE]
-> `DEFAULT_LOCALE` is still declared in `config.py` (default `hi-IN`) but is not referenced anywhere in the application. The live session language is controlled by the `en-IN` default in the Bidi `speechConfig` plus per-turn language detection, not by this setting.
-
-### Frontend variables
-
-Both are optional; when unset the frontend uses the current origin and relies on the Next.js rewrites.
-
-| Variable | Description |
-| :--- | :--- |
-| `NEXT_PUBLIC_API_URL` | Overrides the REST API base URL |
-| `NEXT_PUBLIC_WS_URL` | Overrides the live-audio WebSocket URL |
-
-### Port model
-
-The container runs two processes. The **backend is always bound to port `8000`** internally; the **Next.js frontend binds to `$PORT`** (`8080` by default) and proxies `/api`, `/uploads`, and `/ws` to `127.0.0.1:8000` via the rewrites in `frontend/next.config.mjs`. Only `$PORT` is exposed.
+Frontend (optional): `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_WS_URL`. When unset, the frontend uses the current origin and the Next.js rewrites (`/api`, `/uploads`, `/ws` → `127.0.0.1:8000`).
 
 ---
 
 ## 💻 Local Development
 
-### 1. Backend (FastAPI + Python 3.11+)
 ```bash
+# Backend
 cd backend
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+python3 -m venv .venv && ./.venv/bin/pip install -r requirements.txt
+PYTHONPATH=. ./.venv/bin/pytest tests -q                   # 34 tests
+PYTHONPATH=. ./.venv/bin/python seeds/seed_dealerships.py  # demo dealerships (re-runnable)
+PYTHONPATH=. ./.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir app
 
-# Run backend test suite (23 automated tests)
-PYTHONPATH=. pytest tests -v
-
-# Start backend server on port 8000
-PYTHONPATH=. uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-```
-
-Verify it is up:
-```bash
-curl -s http://127.0.0.1:8000/api/health
-```
-
-### 2. Frontend (Next.js 14 + Tailwind CSS)
-```bash
+# Frontend (second terminal)
 cd frontend
 npm install
-npm run build   # Verify TypeScript and static builds
-npm run dev     # Starts Next.js dev server on http://localhost:3000
+npx tsc --noEmit
+npm run dev -- -p 3000 -H 0.0.0.0
 ```
-
-Open http://localhost:3000. The frontend proxies API and WebSocket traffic to the backend on `127.0.0.1:8000`, so **both processes must be running**.
-
-> [!IMPORTANT]
-> Browse to the app over the **same origin** the frontend is served from. The live-voice WebSocket only dials port `8000` directly for `localhost` / `127.0.0.1`; on any other host (remote workstation, proxy domain, Cloud Run) it uses the current origin and relies on the Next.js rewrite.
-
-### 3. Docker Compose (optional)
-```bash
-docker compose up --build
-```
+Open http://localhost:3000. Both processes must be running. Always browse via the frontend origin.
 
 ---
 
 ## ☁️ Cloud Run Deployment
 
-The platform is containerized as a single unified service (FastAPI backend + Next.js frontend) with WebSockets and session affinity enabled.
+Deployed as its **own service** (`auto-interaction-bikes`) so the car demo (`auto-interaction`) is unaffected.
 
 ```bash
-gcloud run deploy auto-interaction \
+# make sure SQLite WAL files are merged / absent before building
+sqlite3 backend/data/auto.db "PRAGMA wal_checkpoint(TRUNCATE);" && rm -f backend/data/auto.db-wal backend/data/auto.db-shm
+
+gcloud run deploy auto-interaction-bikes \
   --source . \
   --project=mb-poc-352009 \
   --region=us-central1 \
   --platform=managed \
   --allow-unauthenticated \
   --set-env-vars="ENABLE_SMS_DISPATCH=true,PROJECT_ID=mb-poc-352009,LOCATION=us-central1,VERTEX_PROJECT_ID=mb-poc-352009,VERTEX_LOCATION=us-central1" \
-  --memory=2Gi \
-  --cpu=2 \
-  --timeout=3600 \
-  --session-affinity
+  --memory=2Gi --cpu=2 --timeout=3600 --session-affinity
 ```
-
-Notes:
-- `--session-affinity` and the long `--timeout` are required to keep the live audio WebSocket pinned to a single instance for the duration of a call.
-- `gcloud run deploy --source .` builds the **current working directory**, not a git ref. Check out the branch you intend to ship before deploying.
-- The deploying service account must hold `aiplatform.endpoints.predict` on the target project, otherwise live voice sessions will fail at runtime while the rest of the app stays healthy.
+- `--session-affinity` and the long timeout keep the live-audio WebSocket on one instance.
+- `backend/static/uploads/{tvs,hero_motocorp}` and `backend/data/brands/*.json` ship in the image; the catalog references those images.
+- The runtime service account needs `aiplatform.endpoints.predict`.
 
 ---
 
 ## 🗃️ Data & Customer Identity
 
-- A customer is uniquely identified by **name + phone number**. Repeat conversations from the same person are attributed to that single customer record.
-- Conversations are grouped **per calendar day** in the Sales Consultant view, surfacing the vehicle of interest, features discussed, and stated budget for each day's interactions.
-- The default database is SQLite at `backend/data/auto.db`. Set `DATABASE_URL` to a PostgreSQL DSN (`asyncpg` is installed) for a shared or persistent deployment — the container filesystem is ephemeral, so SQLite data does not survive a Cloud Run revision change.
+- **No synthetic users.** The DB ships with only reference data (dealerships, slots, holidays). Customers are created only when a real rider shares a name and phone number.
+- A unique customer is **name + phone**. Conversations are grouped **per day** in the Sales Consultant view: bike of interest, features discussed, budget.
+- SQLite is ephemeral on Cloud Run. Set `DATABASE_URL` to PostgreSQL for persistence.

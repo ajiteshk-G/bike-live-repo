@@ -2,6 +2,8 @@
 
 import React, { useState } from "react";
 import { VehicleItem } from "@/types";
+import { CATEGORY_FILTERS, isElectricVehicle, matchesCategoryFilter } from "@/lib/vehicleCategory";
+import { BIKE_PLACEHOLDER_IMAGE } from "@/lib/defaultCatalog";
 import { Zap, Shield, Compass, Calendar, Layers, ChevronRight, CheckCircle } from "lucide-react";
 
 interface VehicleCarouselProps {
@@ -21,11 +23,7 @@ export function VehicleCarousel({
 }: VehicleCarouselProps) {
   const [filterCategory, setFilterCategory] = useState<string>("ALL");
 
-  const categories = ["ALL", "Authentic SUV", "Born Electric SUV", "Tech SUV"];
-
-  const filtered = filterCategory === "ALL"
-    ? vehicles
-    : vehicles.filter((v) => v.category === filterCategory);
+  const filtered = vehicles.filter((v) => matchesCategoryFilter(v, filterCategory));
 
   const selectedVehicle = vehicles.find((v) => v.id === selectedVehicleId) || vehicles[0];
 
@@ -35,24 +33,24 @@ export function VehicleCarousel({
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h2 className="text-lg font-black tracking-wide text-white flex items-center gap-2">
-            <span className="w-2.5 h-2.5 bg-mahindra-red rounded-xs"></span>
-            MAHINDRA SUV SHOWCASE
+            <span className="w-2.5 h-2.5 bg-moto-red rounded-xs"></span>
+            TWO-WHEELER SHOWCASE
           </h2>
-          <p className="text-xs text-gray-400">Authentic ICE & Born Electric Origins Lineup</p>
+          <p className="text-xs text-gray-400">Motorcycles, Scooters & Electric Lineup</p>
         </div>
 
-        <div className="flex items-center gap-1.5 bg-mahindra-charcoal p-1 rounded-xl border border-mahindra-border">
-          {categories.map((cat) => (
+        <div className="flex items-center gap-1.5 bg-moto-charcoal p-1 rounded-xl border border-moto-border">
+          {CATEGORY_FILTERS.map(({ id: cat, label }) => (
             <button
               key={cat}
               onClick={() => setFilterCategory(cat)}
               className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
                 filterCategory === cat
-                  ? "bg-mahindra-red text-white shadow-md"
+                  ? "bg-moto-red text-white shadow-md"
                   : "text-gray-400 hover:text-white"
               }`}
             >
-              {cat === "ALL" ? "All Lineup" : cat}
+              {label}
             </button>
           ))}
         </div>
@@ -62,7 +60,7 @@ export function VehicleCarousel({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {filtered.map((vehicle) => {
           const isSelected = vehicle.id === selectedVehicleId;
-          const isElectric = vehicle.category === "Born Electric SUV";
+          const isElectric = isElectricVehicle(vehicle);
 
           return (
             <div
@@ -71,9 +69,9 @@ export function VehicleCarousel({
               className={`rounded-2xl transition-all duration-300 cursor-pointer overflow-hidden border flex flex-col justify-between ${
                 isSelected
                   ? isElectric
-                    ? "border-mahindra-electric bg-gradient-to-b from-mahindra-electricBg to-mahindra-card shadow-xl shadow-cyan-950/40 scale-[1.02]"
-                    : "border-mahindra-red bg-gradient-to-b from-mahindra-charcoal to-mahindra-card shadow-xl shadow-red-950/40 scale-[1.02]"
-                  : "border-mahindra-border/80 bg-mahindra-card hover:border-gray-600 hover:shadow-lg"
+                    ? "border-moto-electric bg-gradient-to-b from-moto-electricBg to-moto-card shadow-xl shadow-cyan-950/40 scale-[1.02]"
+                    : "border-moto-red bg-gradient-to-b from-moto-charcoal to-moto-card shadow-xl shadow-red-950/40 scale-[1.02]"
+                  : "border-moto-border/80 bg-moto-card hover:border-gray-600 hover:shadow-lg"
               }`}
             >
               {/* Card Image & Badge */}
@@ -81,9 +79,12 @@ export function VehicleCarousel({
                 <img
                   src={vehicle.hero_image}
                   alt={vehicle.name}
-                  className="w-full h-full object-cover opacity-85 hover:scale-105 transition-transform duration-500"
+                  onError={(e) => {
+                    if (!e.currentTarget.src.endsWith(BIKE_PLACEHOLDER_IMAGE)) e.currentTarget.src = BIKE_PLACEHOLDER_IMAGE;
+                  }}
+                  className="w-full h-full object-contain opacity-85 hover:scale-105 transition-transform duration-500"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-mahindra-card via-transparent to-black/60" />
+                <div className="absolute inset-0 bg-gradient-to-t from-moto-card via-transparent to-black/60" />
 
                 {/* Category Pill */}
                 <div className="absolute top-3 left-3">
@@ -116,26 +117,26 @@ export function VehicleCarousel({
                 </div>
 
                 {/* Highlights List */}
-                <div className="space-y-1 bg-mahindra-dark/60 p-2.5 rounded-xl border border-mahindra-border/50 text-[11px]">
+                <div className="space-y-1 bg-moto-dark/60 p-2.5 rounded-xl border border-moto-border/50 text-[11px]">
                   {vehicle.key_highlights.slice(0, 2).map((h, i) => (
                     <div key={i} className="text-gray-300 flex items-center gap-1.5 truncate">
-                      <span className="w-1 h-1 rounded-full bg-mahindra-red"></span>
+                      <span className="w-1 h-1 rounded-full bg-moto-red"></span>
                       {h}
                     </div>
                   ))}
                 </div>
 
                 {/* Action Buttons */}
-                <div className="grid grid-cols-3 gap-2 pt-2 border-t border-mahindra-border/60 text-xs">
+                <div className="grid grid-cols-3 gap-2 pt-2 border-t border-moto-border/60 text-xs">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       onOpenTestDrive(vehicle);
                     }}
-                    className="bg-mahindra-red hover:bg-red-600 text-white font-semibold py-1.5 rounded-lg flex items-center justify-center gap-1 transition-all"
+                    className="bg-moto-red hover:bg-red-600 text-white font-semibold py-1.5 rounded-lg flex items-center justify-center gap-1 transition-all"
                   >
                     <Calendar className="w-3.5 h-3.5" />
-                    Book Drive
+                    Book Ride
                   </button>
 
                   <button
@@ -143,7 +144,7 @@ export function VehicleCarousel({
                       e.stopPropagation();
                       onOpenCompare(vehicle);
                     }}
-                    className="bg-mahindra-charcoal hover:bg-mahindra-border text-gray-300 font-medium py-1.5 rounded-lg border border-mahindra-border flex items-center justify-center gap-1 transition-all"
+                    className="bg-moto-charcoal hover:bg-moto-border text-gray-300 font-medium py-1.5 rounded-lg border border-moto-border flex items-center justify-center gap-1 transition-all"
                   >
                     <Layers className="w-3.5 h-3.5" />
                     Compare

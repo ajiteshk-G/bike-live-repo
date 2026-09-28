@@ -37,8 +37,8 @@ export function AvatarVideoPlayer({ isRecording, rmsLevel, isSpeaking }: AvatarV
               }`}
             >
               <img
-                src="/avatars/jay.png"
-                alt="Kabir Avatar"
+                src="/avatars/kavya.png"
+                alt="Kavya Avatar"
                 className="w-full h-full object-cover object-[50%_15%] rounded-full"
               />
             </div>
@@ -51,11 +51,11 @@ export function AvatarVideoPlayer({ isRecording, rmsLevel, isSpeaking }: AvatarV
 
           <div className="text-center space-y-1">
             <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-white">
-              <span>Kabir</span>
-              <span className="text-[10px] text-cyan-400 font-mono font-medium">Mahindra AI Specialist</span>
+              <span>Kavya</span>
+              <span className="text-[10px] text-cyan-400 font-mono font-medium">Two-Wheeler AI Specialist</span>
             </div>
             <p className="text-[11px] text-slate-300 max-w-[220px]">
-              {isRecording ? "Listening to you..." : "Click Start Live Session to talk with Kabir"}
+              {isRecording ? "Listening to you..." : "Click Start Live Session to talk with Kavya"}
             </p>
           </div>
         </div>

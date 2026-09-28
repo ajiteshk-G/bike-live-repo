@@ -3,12 +3,12 @@ from typing import Optional
 from pydantic import BaseModel, ConfigDict
 
 class TestDriveBookingCreate(BaseModel):
-    customer_id: Optional[str] = "CUST-9820155432"
+    customer_id: Optional[str] = None
     customer_phone: Optional[str] = None
     customer_name: Optional[str] = None
     brand_id: Optional[str] = None
-    vehicle_id: str = "thar_roxx"
-    variant: str = "AX7L Diesel AT 4x4"
+    vehicle_id: str = "tvs_apache_rtr_160_4v"
+    variant: str = "Dual Channel ABS"
     color: Optional[str] = "Stealth Black"
     dealership_id: Optional[str] = "bayview_bandra"
     booking_type: Optional[str] = "HOME_DOORSTEP"
@@ -21,7 +21,7 @@ class TestDriveBookingCreate(BaseModel):
 class TestDriveBookingResponse(BaseModel):
     id: int
     booking_reference: str
-    brand_id: Optional[str] = "mahindra"
+    brand_id: Optional[str] = "tvs"
     customer_id: int
     vehicle_id: str
     variant: str
@@ -72,8 +72,8 @@ class SlotReserveRequest(BaseModel):
     customer_name: str
     customer_phone: str
     brand_id: Optional[str] = None
-    vehicle_id: str = "thar_roxx"
-    variant: Optional[str] = "AX7L Diesel AT 4x4"
+    vehicle_id: str = "tvs_apache_rtr_160_4v"
+    variant: Optional[str] = "Dual Channel ABS"
     color: Optional[str] = "Stealth Black"
     dealership_id: Optional[str] = None
     booking_type: Optional[str] = "HOME_DOORSTEP" # HOME_DOORSTEP or SHOWROOM_VISIT

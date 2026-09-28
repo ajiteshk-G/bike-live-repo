@@ -67,7 +67,7 @@ async def onboard_brand(req: BrandOnboardRequest, db: AsyncSession = Depends(get
     Onboard a brand by providing the brand name and optional URLs.
     If no URLs are provided, synthesizes a complete brand catalog and vehicle lineup using Gemini.
     Crawls pages (if provided), extracts logos/vehicles/specs/images with Gemini, registers brand,
-    and auto-creates rich omnichannel seed data in database.
+    and ensures generic demo dealerships exist for it (no synthetic customers are created).
     """
     if not req.brand_name.strip():
         raise HTTPException(status_code=400, detail="Brand name cannot be empty")
@@ -80,7 +80,7 @@ async def onboard_brand(req: BrandOnboardRequest, db: AsyncSession = Depends(get
         )
         saved = BrandService.onboard_or_save_brand(catalog, set_active=True)
 
-        # Auto-create rich omnichannel seed data in Cloud SQL database for the brand in background
+        # Ensure demo dealerships exist for the brand in background (no synthetic customer data)
         try:
             asyncio.create_task(SeedGeneratorService.seed_data_for_brand_background(saved))
         except Exception as se:
@@ -156,7 +156,7 @@ async def generate_vehicle_image(
     req: GenerateVehicleImageRequest = Body(default_factory=GenerateVehicleImageRequest)
 ):
     """
-    Generates a photorealistic, non-proprietary concept vehicle image using Gemini
+    Generates a photorealistic, non-proprietary motorcycle / scooter image using Gemini
     (Nano Banana / gempix-1) and sets it as the vehicle's Source of Truth hero image.
     """
     brand = BrandService.get_brand(brand_id)
@@ -177,7 +177,7 @@ async def generate_vehicle_image(
     )
 
     if not url:
-        raise HTTPException(status_code=500, detail="Failed to generate concept car image with Gemini")
+        raise HTTPException(status_code=500, detail="Failed to generate two-wheeler image with Gemini")
 
     updated_v = BrandService.update_vehicle_image(brand_id, vehicle_id, url)
     if not updated_v:
@@ -230,7 +230,7 @@ async def update_vehicle(brand_id: str, vehicle_id: str, req: VehicleUpdateReque
 
 @router.post("/{brand_id}/vehicles", response_model=VehicleItem)
 async def add_vehicle(brand_id: str, vehicle: VehicleItem, db: AsyncSession = Depends(get_db)):
-    """Manually add a vehicle to the brand catalog and auto-seed database records for it."""
+    """Manually add a vehicle to the brand catalog (ensures the brand has dealerships; no synthetic data)."""
     vehicle.is_custom_source_of_truth = True
     added = BrandService.add_vehicle(brand_id, vehicle)
     if not added:

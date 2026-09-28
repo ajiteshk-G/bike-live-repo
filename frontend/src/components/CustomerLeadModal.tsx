@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   Bot
 } from "lucide-react";
+import { DEFAULT_VEHICLE_ID } from "@/lib/defaultCatalog";
 
 interface CustomerLeadModalProps {
   isOpen: boolean;
@@ -78,7 +79,7 @@ export function CustomerLeadModal({
         name: name.trim(),
         phone: formattedPhone,
         session_type: sessionType,
-        vehicle_id: selectedVehicle?.id || "thar_roxx"
+        vehicle_id: selectedVehicle?.id || DEFAULT_VEHICLE_ID
       });
 
       onCustomerIdentified({
@@ -168,7 +169,7 @@ export function CustomerLeadModal({
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Kunal Mathuria"
+                placeholder="e.g. Priya Nair"
                 required
                 className={`w-full bg-slate-50 border rounded-xl pl-9 pr-3 py-2.5 text-slate-900 font-medium placeholder-slate-400 focus:bg-white focus:outline-none transition-colors ${
                   name.length === 0
@@ -192,7 +193,7 @@ export function CustomerLeadModal({
                   }`}
                 >
                   {isPhoneValid ? <CheckCircle2 className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
-                  {isPhoneValid ? "Valid Indian Mobile" : "10-digit number (e.g. 9820155432)"}
+                  {isPhoneValid ? "Valid Indian Mobile" : "10-digit number (e.g. 9876543210)"}
                 </span>
               )}
             </label>
@@ -204,7 +205,7 @@ export function CustomerLeadModal({
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                placeholder="e.g. 9820155432 or +91 9820155432"
+                placeholder="e.g. 9876543210 or +91 9876543210"
                 required
                 className={`w-full bg-slate-50 border rounded-xl pl-9 pr-3 py-2.5 text-slate-900 font-medium placeholder-slate-400 focus:bg-white focus:outline-none transition-colors ${
                   phone.length === 0

@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { triggerOutboundCall, sendOutboundDialogueTurn, fetchOutboundCallInsights } from "@/lib/api";
+import { triggerOutboundCall, sendOutboundDialogueTurn, fetchOutboundCallInsights, fetchBrands } from "@/lib/api";
+import type { BrandSummary } from "@/types";
 import {
   Search,
   Filter,
@@ -9,7 +10,7 @@ import {
   Calendar,
   Clock,
   MapPin,
-  Car,
+  Bike,
   MessageSquare,
   Volume2,
   CheckCircle2,
@@ -114,6 +115,26 @@ export function AdminBookingsTable() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>("" );
   const [selectedBrand, setSelectedBrand] = useState<string>("ALL");
+  const [brandOptions, setBrandOptions] = useState<BrandSummary[]>([]);
+
+  // Brand filter tabs are driven by the live /api/brands registry (no hardcoded brands).
+  useEffect(() => {
+    let cancelled = false;
+    fetchBrands()
+      .then((list) => {
+        if (!cancelled && Array.isArray(list)) setBrandOptions(list);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const brandLabel = (brandId?: string) => {
+    if (!brandId) return "our brand";
+    const match = brandOptions.find((b) => b.id === brandId);
+    return match?.name || brandId.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  };
   const [selectedCity, setSelectedCity] = useState<string>("ALL");
   const [selectedStatus, setSelectedStatus] = useState<string>("ALL");
 
@@ -170,9 +191,9 @@ export function AdminBookingsTable() {
       if (outboundCallChannel === "twilio") {
         setTwilioDispatchStatus(`Twilio Call placed to ${b.customer_phone}. Call Ref: ${resp.call_reference}`);
       } else {
-        const welcomeTurn = resp.initial_greeting || `Namaste ${b.customer_name} ji! Main Mahindra se Kavya baat kar rahi hoon. Aapka ${b.vehicle_name} ka test drive kaisa raha?`;
+        const welcomeTurn = resp.initial_greeting || `Namaste ${b.customer_name} ji! Main ${brandLabel(b.brand_id)} se Kavya baat kar rahi hoon. Aapka ${b.vehicle_name} ka test ride kaisa raha?`;
         setOutboundDialogue([
-          { speaker: "MIA (Mahindra AI Voice Specialist)", text: welcomeTurn, time: "00:01" }
+          { speaker: `Kavya (${brandLabel(b.brand_id)} AI Voice Specialist)`, text: welcomeTurn, time: "00:01" }
         ]);
       }
     } catch (err: any) {
@@ -209,7 +230,7 @@ export function AdminBookingsTable() {
         const replyTime = String(Math.floor((callDurationSec + 2) / 60)).padStart(2, '0') + ":" + String((callDurationSec + 2) % 60).padStart(2, '0');
         setOutboundDialogue((prev) => [
           ...prev,
-          { speaker: "MIA (Mahindra AI Voice Specialist)", text: turnResp.ai_reply || "Shukriya sir! Main turant aapka allocation lock karke digital financing details SMS aur WhatsApp par bhej rahi hoon.", time: replyTime }
+          { speaker: `Kavya (${brandLabel(activeOutboundBooking?.brand_id)} AI Voice Specialist)`, text: turnResp.ai_reply || "Shukriya sir! Main turant aapka allocation lock karke digital financing details SMS aur WhatsApp par bhej rahi hoon.", time: replyTime }
         ]);
       }, 1200);
     } catch (e) {
@@ -301,7 +322,7 @@ export function AdminBookingsTable() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `mahindra_test_rides_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute("download", `test_rides_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -359,7 +380,7 @@ export function AdminBookingsTable() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by customer, phone, booking ref, SUV..."
+            placeholder="Search by customer, phone, booking ref, model..."
             className="w-full text-xs pl-9 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-300 focus:border-red-600 focus:bg-white text-slate-900 placeholder-slate-400 outline-none transition-all"
           />
         </div>
@@ -370,10 +391,7 @@ export function AdminBookingsTable() {
           <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 overflow-x-auto scrollbar-thin">
             {[
               { id: "ALL", label: "All Brands" },
-              { id: "mahindra", label: "Mahindra" },
-              { id: "bmw", label: "BMW" },
-              { id: "hyundai", label: "Hyundai" },
-              { id: "maruti_suzuki", label: "Maruti Suzuki" }
+              ...brandOptions.map((brand) => ({ id: brand.id, label: brand.name }))
             ].map((b) => (
               <button
                 key={b.id}
@@ -527,7 +545,7 @@ export function AdminBookingsTable() {
                       {/* Column 3: Vehicle & Variant */}
                       <td className="py-4 px-4 align-top">
                         <div className="font-bold text-slate-900 flex items-center gap-1">
-                          <Car className="w-3.5 h-3.5 text-red-600 shrink-0" />
+                          <Bike className="w-3.5 h-3.5 text-red-600 shrink-0" />
                           <span>{booking.vehicle_name}</span>
                         </div>
                         <div className="inline-block px-2 py-0.5 rounded bg-red-50 border border-red-200 text-[10px] font-bold text-red-700 mt-1">
@@ -591,7 +609,7 @@ export function AdminBookingsTable() {
                           <div className="p-2.5 rounded-xl bg-purple-50/70 border border-purple-200 space-y-1">
                             <div className="flex items-center justify-between text-[9.5px]">
                               <span className="font-bold text-purple-900 font-mono">
-                                {booking.test_ride_transcript.length} In-Vehicle Turns
+                                {booking.test_ride_transcript.length} Test Ride Turns
                               </span>
                               {booking.purchase_intent !== null && (
                                 <span className="px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 border border-emerald-300 text-[9px] font-bold">
@@ -644,7 +662,7 @@ export function AdminBookingsTable() {
                             <button
                               onClick={() => {
                                 if (typeof window !== "undefined") {
-                                  sessionStorage.setItem("mahindra_selected_outbound_lead", JSON.stringify({
+                                  sessionStorage.setItem("dealer_selected_outbound_lead", JSON.stringify({
                                     booking_reference: booking.booking_reference,
                                     customer_id: booking.customer_id,
                                     customer_name: booking.customer_name,
@@ -652,7 +670,7 @@ export function AdminBookingsTable() {
                                     vehicle_name: booking.vehicle_name,
                                     sales_advisor_name: booking.sales_advisor_name,
                                     session_id: booking.test_ride_sessions?.[0]?.session_id || `TR-${booking.booking_reference}`,
-                                    loved_features: booking.loved_features || ["FSD Suspension", "Panoramic Skyroof"],
+                                    loved_features: booking.loved_features || ["Smooth refined engine", "Comfortable riding posture"],
                                     objections_raised: booking.objections_raised || ["Delivery timeline"]
                                   }));
                                   window.location.href = `/?stage=outbound_call&lead_ref=${booking.booking_reference}`;
@@ -703,7 +721,7 @@ export function AdminBookingsTable() {
                 </div>
                 <div>
                   <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
-                    <span>MIA Proactive Post-Ride Outbound Voice Call</span>
+                    <span>Kavya Proactive Post-Ride Outbound Voice Call</span>
                     <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-800 border border-red-200 text-[9.5px] font-bold">
                       Stage 3 AI Loop
                     </span>
@@ -757,14 +775,14 @@ export function AdminBookingsTable() {
               <div className="p-3 rounded-2xl bg-amber-50/80 border border-amber-200 text-xs space-y-1">
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-amber-900 uppercase text-[10px] tracking-wider flex items-center gap-1">
-                    <FileText className="w-3.5 h-3.5 text-amber-700" /> In-Vehicle Test Ride Context Loaded
+                    <FileText className="w-3.5 h-3.5 text-amber-700" /> Test Ride Context Loaded
                   </span>
                   <span className="text-[10px] font-mono font-bold text-emerald-800 bg-emerald-100 px-2 py-0.2 rounded border border-emerald-300">
-                    Strict Mahindra Guardrails Active
+                    Strict {brandLabel(activeOutboundBooking.brand_id)} Guardrails Active
                   </span>
                 </div>
                 <p className="text-slate-700 text-[11px]">
-                  Agent references test drive for <strong>{activeOutboundBooking.vehicle_name} ({activeOutboundBooking.variant})</strong>, verifies sales consultant demonstration quality, and strictly declines questions outside Mahindra.
+                  Agent references test ride for <strong>{activeOutboundBooking.vehicle_name} ({activeOutboundBooking.variant})</strong>, verifies sales consultant demonstration quality, and strictly declines questions outside {brandLabel(activeOutboundBooking.brand_id)}.
                 </p>
               </div>
 
@@ -779,7 +797,7 @@ export function AdminBookingsTable() {
                           {outboundCallState === "calling" ? "📞 Dialing Customer..." : outboundCallState === "connected" ? "🟢 Call Active • Connected to Customer" : "🔴 Call Completed"}
                         </div>
                         <div className="text-[11px] text-slate-400 font-mono">
-                          Caller ID: MIA Voice Agent (+91 22 6900 1000) • Booking Ref: {activeOutboundBooking.booking_reference}
+                          Caller ID: Kavya Voice Agent (+91 22 6900 1000) • Booking Ref: {activeOutboundBooking.booking_reference}
                         </div>
                       </div>
                     </div>
@@ -822,7 +840,7 @@ export function AdminBookingsTable() {
                     {isAiSpeaking && (
                       <div className="flex items-center gap-2 text-xs text-red-600 italic px-2">
                         <Sparkles className="w-3.5 h-3.5 animate-spin" />
-                        <span>MIA Voice Agent is speaking...</span>
+                        <span>Kavya Voice Agent is speaking...</span>
                       </div>
                     )}
                   </div>
@@ -835,22 +853,22 @@ export function AdminBookingsTable() {
                       </span>
                       <div className="flex flex-wrap gap-2">
                         {[
-                          "Drive bahut achhi thi, Sales Consultant ne saare features ache se dikhaye!",
-                          "Suspension aur power top-class hai. Lekin waiting period kitna rahega?",
-                          "Tata Safari aur Hyundai Creta ke baare mein batao?",
-                          "Bahut pasand aaya! Stealth Black AX7L ki booking finalize kar dijiye."
+                          "Ride bahut achhi thi, Sales Consultant ne saare features ache se dikhaye!",
+                          "Pickup aur handling top-class hai. Lekin mileage aur waiting period kitna rahega?",
+                          "Bajaj Pulsar aur Honda Shine ke baare mein batao?",
+                          "Bahut pasand aaya! Top variant ki booking finalize kar dijiye."
                         ].map((replyText, idx) => (
                           <button
                             key={idx}
                             onClick={() => handleSendCustomerResponse(replyText)}
                             disabled={isAiSpeaking}
                             className={`px-3 py-1.5 rounded-xl border text-xs font-semibold shadow-2xs transition-all cursor-pointer disabled:opacity-50 text-left ${
-                              replyText.includes("Tata")
+                              replyText.includes("Bajaj")
                                 ? "bg-amber-50 border-amber-300 text-amber-900 hover:bg-amber-100"
                                 : "bg-white hover:bg-red-50 border-slate-200 hover:border-red-300 text-slate-800 hover:text-red-900"
                             }`}
                           >
-                            💬 &ldquo;{replyText}&rdquo; {replyText.includes("Tata") && <span className="text-[9.5px] font-bold text-amber-700">(Test Guardrail)</span>}
+                            💬 &ldquo;{replyText}&rdquo; {replyText.includes("Bajaj") && <span className="text-[9.5px] font-bold text-amber-700">(Test Guardrail)</span>}
                           </button>
                         ))}
                       </div>
@@ -907,7 +925,7 @@ export function AdminBookingsTable() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-slate-500">Caller ID:</span>
-                      <span className="font-mono font-bold text-slate-800">+91 22 6900 1000 (MIA Mahindra)</span>
+                      <span className="font-mono font-bold text-slate-800">+91 22 6900 1000 (Kavya AI)</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-slate-500">Agent Script:</span>
@@ -1021,7 +1039,7 @@ export function AdminBookingsTable() {
                 }`}
               >
                 <Volume2 className="w-3.5 h-3.5" />
-                <span>2. In-Vehicle Test Ride Transcript &amp; Insights</span>
+                <span>2. Test Ride Transcript &amp; Insights</span>
               </button>
 
               <button
@@ -1120,7 +1138,7 @@ export function AdminBookingsTable() {
                             </span>
 
                             <span className="text-xs font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 flex items-center gap-1">
-                              <Car className="w-3 h-3 text-amber-600 inline" />
+                              <Bike className="w-3 h-3 text-amber-600 inline" />
                               <span>{session.vehicleName}</span>
                             </span>
                           </div>
@@ -1194,7 +1212,7 @@ export function AdminBookingsTable() {
                           : [{
                               session_id: `TR-${activeModalBooking.booking_reference}`,
                               booking_reference: activeModalBooking.booking_reference,
-                              gcs_uri: activeModalBooking.gcs_recording_uri || `gs://mahindra-sales-recordings/test_rides/2026-08-26/${activeModalBooking.booking_reference}.wav`,
+                              gcs_uri: activeModalBooking.gcs_recording_uri || `gs://dealer-sales-recordings/test_rides/2026-08-26/${activeModalBooking.booking_reference}.wav`,
                               vehicle_name: activeModalBooking.vehicle_name,
                               sales_advisor_name: activeModalBooking.sales_advisor_name,
                               duration_seconds: 184,
@@ -1226,7 +1244,7 @@ export function AdminBookingsTable() {
                                 </span>
 
                                 <span className="text-xs font-bold text-slate-800 bg-white px-2 py-0.5 rounded-md border border-slate-200 flex items-center gap-1">
-                                  <Car className="w-3 h-3 text-purple-600 inline" />
+                                  <Bike className="w-3 h-3 text-purple-600 inline" />
                                   <span>{sess.vehicle_name}</span>
                                 </span>
                               </div>
@@ -1288,7 +1306,7 @@ export function AdminBookingsTable() {
                                       </span>
                                     ))
                                   ) : (
-                                    <span className="text-xs text-slate-400 italic">FSD Suspension, Panoramic Skyroof</span>
+                                    <span className="text-xs text-slate-400 italic">Smooth refined engine, Comfortable riding posture</span>
                                   )}
                                 </div>
                               </div>
@@ -1298,7 +1316,7 @@ export function AdminBookingsTable() {
                             {sess.advisor_coaching_feedback && (
                               <div className="p-3 rounded-xl bg-purple-50 border border-purple-200 text-xs text-purple-900 shadow-xs space-y-1">
                                 <p className="font-bold flex items-center gap-1.5 text-purple-800">
-                                  <TrendingUp className="w-3.5 h-3.5 text-purple-600" /> Advisor In-Vehicle Coaching:
+                                  <TrendingUp className="w-3.5 h-3.5 text-purple-600" /> Advisor Test Ride Coaching:
                                 </p>
                                 <p className="text-[11px] text-purple-950 leading-relaxed">
                                   {sess.advisor_coaching_feedback}
@@ -1356,7 +1374,7 @@ export function AdminBookingsTable() {
                       <div>
                         <h4 className="text-sm font-bold text-slate-800">No Test Ride Transcript Recorded Yet</h4>
                         <p className="text-xs text-slate-500 max-w-md mx-auto mt-1 leading-relaxed">
-                          This booking is scheduled for <strong>{activeModalBooking.scheduled_date} at {activeModalBooking.scheduled_time_slot}</strong>. In-vehicle audio recordings, live transcription, and sentiment insights will be inserted automatically once the test drive flow is completed.
+                          This booking is scheduled for <strong>{activeModalBooking.scheduled_date} at {activeModalBooking.scheduled_time_slot}</strong>. Test ride audio recordings, live transcription, and sentiment insights will be inserted automatically once the test ride flow is completed.
                         </p>
                       </div>
                     </div>
@@ -1368,7 +1386,7 @@ export function AdminBookingsTable() {
                     <div className="flex items-center gap-2">
                       <PhoneCall className="w-4 h-4 text-blue-600 shrink-0" />
                       <span>
-                        Outbound Post-Test Ride Voice Call with <strong>Kavya AI (Mahindra Specialist)</strong> for <strong>{activeModalBooking.customer_name}</strong> ({activeModalBooking.customer_phone}).
+                        Outbound Post-Test Ride Voice Call with <strong>Kavya AI ({brandLabel(activeModalBooking.brand_id)} Specialist)</strong> for <strong>{activeModalBooking.customer_name}</strong> ({activeModalBooking.customer_phone}).
                       </span>
                     </div>
                     <span className="text-[11px] font-mono bg-blue-100 text-blue-800 px-2.5 py-0.5 rounded-lg border border-blue-300 font-bold shrink-0">

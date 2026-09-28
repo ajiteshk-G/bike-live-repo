@@ -14,7 +14,7 @@ class Customer(Base):
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     customer_id = Column(String(64), unique=True, index=True, nullable=False) # e.g. "CUST-9820155432"
-    brand_id = Column(String(64), index=True, default="mahindra", nullable=False)
+    brand_id = Column(String(64), index=True, default="tvs", nullable=False)
     name = Column(String(128), nullable=False)
     phone = Column(String(32), index=True, nullable=False) # Unique Phone per brand
     email = Column(String(128), nullable=True)
@@ -23,8 +23,8 @@ class Customer(Base):
     
     # Persistent State across lifecycle
     current_phase = Column(String(32), default="PRE_SALES") # PRE_SALES, FINANCING, PURCHASED, POST_SALES
-    interested_vehicle_id = Column(String(64), default="thar_roxx")
-    interested_variant = Column(String(64), default="AX7L Diesel AT 4x4")
+    interested_vehicle_id = Column(String(64), nullable=True)
+    interested_variant = Column(String(64), nullable=True)
     budget_range = Column(String(64), nullable=True)
     advisor_checklist = Column(JSON, nullable=True) # Pre-sales inquiry demo items
     
@@ -35,18 +35,18 @@ class Customer(Base):
     kyc_extracted_data = Column(JSON, nullable=True)
     
     # Financing details
-    loan_preapproval_amount = Column(Integer, default=1850000)
-    loan_interest_rate = Column(String(16), default="8.15%")
+    loan_preapproval_amount = Column(Integer, default=150000)
+    loan_interest_rate = Column(String(16), default="10.49%")
     voice_consent_hash = Column(String(128), nullable=True)
     loan_status = Column(String(32), default="NOT_APPLIED")
     
     # Vehicle Ownership details (for Post-Sales)
-    owned_vin = Column(String(64), default="MAH1THARROXX2026MUM01")
-    owned_vehicle_name = Column(String(128), default="Mahindra Thar ROXX AX7L Diesel AT")
-    registration_number = Column(String(32), default="MH 02 FJ 9090")
-    odometer_km = Column(Integer, default=9820)
-    insurance_policy_number = Column(String(64), default="POL-ICICI-MH-2026-99201")
-    insurance_type = Column(String(64), default="Zero-Depreciation Comprehensive")
+    owned_vin = Column(String(64), nullable=True)
+    owned_vehicle_name = Column(String(128), nullable=True)
+    registration_number = Column(String(32), nullable=True)
+    odometer_km = Column(Integer, default=0)
+    insurance_policy_number = Column(String(64), nullable=True)
+    insurance_type = Column(String(64), nullable=True)
     
     created_at = Column(DateTime(timezone=True), default=utc_now)
     updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now)
@@ -64,10 +64,10 @@ class ConversationSession(Base):
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     session_id = Column(String(64), unique=True, index=True, nullable=False) # e.g. "SESS-20260825-ABCD"
-    brand_id = Column(String(64), index=True, default="mahindra", nullable=False)
+    brand_id = Column(String(64), index=True, default="tvs", nullable=False)
     customer_id = Column(Integer, ForeignKey("customers.id"), nullable=False)
     session_type = Column(String(32), default="LIVE_CALL") # "LIVE_CALL" | "CHAT_BOT"
-    vehicle_id = Column(String(64), default="thar_roxx")
+    vehicle_id = Column(String(64), default="tvs_apache_rtr_160_4v")
     summary = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), default=utc_now)
     ended_at = Column(DateTime(timezone=True), nullable=True)
@@ -79,7 +79,7 @@ class InteractionLog(Base):
     __tablename__ = "interaction_logs"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    brand_id = Column(String(64), index=True, default="mahindra", nullable=False)
+    brand_id = Column(String(64), index=True, default="tvs", nullable=False)
     session_id = Column(Integer, ForeignKey("conversation_sessions.id"), nullable=True)
     customer_id = Column(Integer, ForeignKey("customers.id"), nullable=False)
     channel = Column(String(32), default="VOICE_LIVE") # VOICE_LIVE, WHATSAPP, WEB_CHAT, DEALER_TABLET

@@ -12,7 +12,7 @@ DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__
 
 class BrandService:
     _brands: Dict[str, BrandCatalog] = {}
-    _active_brand_id: str = "mahindra"
+    _active_brand_id: str = "tvs"
     _initialized: bool = False
 
     @classmethod
@@ -59,13 +59,22 @@ class BrandService:
     @classmethod
     def get_brand(cls, brand_id: str) -> Optional[BrandCatalog]:
         cls.initialize()
-        return cls._brands.get(brand_id.lower())
+        bid = (brand_id or "").lower()
+        if bid and bid not in cls._brands and os.path.exists(os.path.join(DATA_DIR, f"{bid}.json")):
+            # A catalog JSON was added on disk after startup (e.g. a fresh crawl) -> hot reload.
+            cls.initialize(force_reload=True)
+        return cls._brands.get(bid)
 
     @classmethod
     def get_active_brand(cls) -> BrandCatalog:
         cls.initialize()
         brand = cls._brands.get(cls._active_brand_id)
         if not brand:
+            if not cls._brands:
+                # No brand JSON on disk (e.g. crawl still pending) -> lazy reload once
+                cls.initialize(force_reload=True)
+            if not cls._brands:
+                raise LookupError("No brand catalogs are available in data/brands.")
             # Fallback to first brand
             cls._active_brand_id = next(iter(cls._brands.keys()))
             brand = cls._brands[cls._active_brand_id]
@@ -194,7 +203,7 @@ class BrandService:
 
         # If active brand was deleted, switch to another brand
         if cls._active_brand_id == brand_id:
-            new_active = "mahindra" if "mahindra" in cls._brands else next(iter(cls._brands.keys()))
+            new_active = "tvs" if "tvs" in cls._brands else next(iter(cls._brands.keys()))
             cls.set_active_brand(new_active)
 
         cache.invalidate()

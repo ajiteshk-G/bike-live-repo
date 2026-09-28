@@ -14,10 +14,11 @@ import {
   ShieldCheck,
   Star,
   Sparkles,
-  Car,
+  Bike,
   Layers,
   ChevronDown
 } from "lucide-react";
+import { DEFAULT_VEHICLES, DEFAULT_VEHICLE_ID } from "@/lib/defaultCatalog";
 
 interface SlotItem {
   id?: number | null;
@@ -67,93 +68,14 @@ interface VehicleCatalogItem {
   variants: VehicleVariantOption[];
 }
 
-const FALLBACK_VEHICLES: VehicleCatalogItem[] = [
-  {
-    id: "thar_roxx",
-    name: "Mahindra Thar ROXX (5-Door)",
-    category: "Authentic SUV",
-    price_range: "₹12.52L - ₹23.52L",
-    variants: [
-      { name: "AX7L Diesel AT 4x4", price_ex_showroom: "₹22.49 Lakh", engine_or_battery: "2.2L mHawk Diesel (175 PS)", transmission: "6-Speed Automatic 4x4" },
-      { name: "AX5L Diesel AT 4x2", price_ex_showroom: "₹18.99 Lakh", engine_or_battery: "2.2L mHawk Diesel (152 PS)", transmission: "6-Speed Automatic RWD" },
-      { name: "MX5 Petrol MT 4x2", price_ex_showroom: "₹16.49 Lakh", engine_or_battery: "2.0L mStallion Turbo (177 PS)", transmission: "6-Speed Manual" },
-      { name: "AX7L Petrol AT 4x2", price_ex_showroom: "₹20.99 Lakh", engine_or_battery: "2.0L mStallion Turbo (177 PS)", transmission: "6-Speed Automatic" }
-    ]
-  },
-  {
-    id: "scorpio_n",
-    name: "Mahindra Scorpio-N",
-    category: "Authentic SUV",
-    price_range: "₹13.69L - ₹25.49L",
-    variants: [
-      { name: "Z8L Diesel 4WD AT", price_ex_showroom: "₹24.54 Lakh", engine_or_battery: "2.2L mHawk Diesel (175 PS / 400 Nm)", transmission: "6-Speed Automatic 4WD" },
-      { name: "Z8L Petrol AT 2WD", price_ex_showroom: "₹21.98 Lakh", engine_or_battery: "2.0L mStallion Turbo (203 PS)", transmission: "6-Speed Automatic" },
-      { name: "Z8 Diesel MT 4WD", price_ex_showroom: "₹21.49 Lakh", engine_or_battery: "2.2L mHawk Diesel (175 PS)", transmission: "6-Speed Manual 4WD" },
-      { name: "Z6 Diesel AT 2WD", price_ex_showroom: "₹17.99 Lakh", engine_or_battery: "2.2L mHawk Diesel (175 PS)", transmission: "6-Speed Automatic" }
-    ]
-  },
-  {
-    id: "xuv700",
-    name: "Mahindra XUV700",
-    category: "Luxury Tech SUV",
-    price_range: "₹13.99L - ₹26.04L",
-    variants: [
-      { name: "AX7 Luxury Diesel AT AWD", price_ex_showroom: "₹25.49 Lakh", engine_or_battery: "2.2L mHawk Diesel (185 PS)", transmission: "6-Speed Automatic AWD" },
-      { name: "AX7 Diesel AT 7-Str", price_ex_showroom: "₹21.99 Lakh", engine_or_battery: "2.2L mHawk Diesel (185 PS)", transmission: "6-Speed Automatic" },
-      { name: "AX5 Petrol AT 5-Str", price_ex_showroom: "₹18.49 Lakh", engine_or_battery: "2.0L mStallion Turbo (200 PS)", transmission: "6-Speed Automatic" }
-    ]
-  },
-  {
-    id: "be_6e",
-    name: "Mahindra BE 6e (Born Electric)",
-    category: "Electric Origin SUV",
-    price_range: "₹18.90L - ₹26.90L",
-    variants: [
-      { name: "Pack Two (79 kWh, 682km Range)", price_ex_showroom: "₹21.90 Lakh", engine_or_battery: "79 kWh LFP Blade (285 PS)", transmission: "Single-Speed EV Direct" },
-      { name: "Pack One (59 kWh, 535km Range)", price_ex_showroom: "₹18.90 Lakh", engine_or_battery: "59 kWh LFP Blade (231 PS)", transmission: "Single-Speed EV Direct" }
-    ]
-  },
-  {
-    id: "xev_9e",
-    name: "Mahindra XEV 9e (Electric Luxury Coupe)",
-    category: "Electric Origin SUV",
-    price_range: "₹21.90L - ₹30.50L",
-    variants: [
-      { name: "Pack Two (79 kWh, 656km Range)", price_ex_showroom: "₹24.90 Lakh", engine_or_battery: "79 kWh LFP Battery (285 PS)", transmission: "Single-Speed EV Direct" },
-      { name: "Pack One (59 kWh, 512km Range)", price_ex_showroom: "₹21.90 Lakh", engine_or_battery: "59 kWh LFP Battery (231 PS)", transmission: "Single-Speed EV Direct" }
-    ]
-  },
-  {
-    id: "xuv_3xo",
-    name: "Mahindra XUV 3XO",
-    category: "Compact SUV",
-    price_range: "₹7.49L - ₹15.49L",
-    variants: [
-      { name: "AX7L TGDi Petrol AT (Level 2 ADAS)", price_ex_showroom: "₹13.99 Lakh", engine_or_battery: "1.2L mStallion TGDi (130 PS)", transmission: "6-Speed AISIN AT" },
-      { name: "AX5 Diesel MT", price_ex_showroom: "₹11.49 Lakh", engine_or_battery: "1.5L Turbo Diesel (117 PS)", transmission: "6-Speed Manual" }
-    ]
-  },
-  {
-    id: "thar_3door",
-    name: "Mahindra Thar (3-Door)",
-    category: "Authentic Off-Roader",
-    price_range: "₹11.35L - ₹17.60L",
-    variants: [
-      { name: "LX Hard Top Diesel 4x4 AT", price_ex_showroom: "₹17.60 Lakh", engine_or_battery: "2.2L mHawk Diesel (130 PS)", transmission: "6-Speed Automatic 4x4" },
-      { name: "LX Hard Top Diesel 4x4 MT", price_ex_showroom: "₹16.20 Lakh", engine_or_battery: "2.2L mHawk Diesel (130 PS)", transmission: "6-Speed Manual 4x4" }
-    ]
-  },
-  {
-    id: "scorpio_classic",
-    name: "Mahindra Scorpio Classic",
-    category: "Authentic SUV",
-    price_range: "₹13.62L - ₹17.49L",
-    variants: [
-      { name: "S11 Diesel MT 7-Str", price_ex_showroom: "₹17.49 Lakh", engine_or_battery: "2.2L mHawk Gen-2 Diesel (132 PS)", transmission: "6-Speed Manual" },
-      { name: "S Diesel MT 9-Str", price_ex_showroom: "₹13.62 Lakh", engine_or_battery: "2.2L mHawk Gen-2 Diesel (132 PS)", transmission: "6-Speed Manual" }
-    ]
-  }
-];
+// Offline fallback: TVS two-wheeler catalog (real models crawled from tvsmotor.com).
+const FALLBACK_VEHICLES: VehicleCatalogItem[] = DEFAULT_VEHICLES.map((v) => ({
+  id: v.id,
+  name: v.name,
+  category: v.category,
+  price_range: v.price_range,
+  variants: v.variants
+}));
 
 const CITIES = [
   { name: "Mumbai", samplePin: "400050" },
@@ -174,11 +96,11 @@ interface TestDriveChatCalendarProps {
 }
 
 export function TestDriveChatCalendar({
-  vehicleId = "thar_roxx",
-  vehicleName = "Mahindra Thar ROXX",
-  initialVariant = "AX7L Diesel AT 4x4",
-  customerName = "Aarav Sharma",
-  customerPhone = "+91 98196 57034",
+  vehicleId = DEFAULT_VEHICLE_ID,
+  vehicleName = DEFAULT_VEHICLES[0]?.name || "",
+  initialVariant = DEFAULT_VEHICLES[0]?.variants?.[0]?.name || "",
+  customerName = "Guest Customer",
+  customerPhone = "",
   onSlotBooked,
   onClose
 }: TestDriveChatCalendarProps) {
@@ -371,7 +293,7 @@ export function TestDriveChatCalendar({
     }
 
     if (bookingType === "HOME_DOORSTEP" && !deliveryAddress.trim()) {
-      setErrorMsg("Please enter your doorstep delivery address.");
+      setErrorMsg("Please enter your address for the doorstep test ride.");
       return;
     }
 
@@ -381,7 +303,7 @@ export function TestDriveChatCalendar({
       const deliveryLocation =
         bookingType === "HOME_DOORSTEP"
           ? deliveryAddress.trim()
-          : `Showroom Visit (${activeDealership?.name || "Mahindra Showroom"})`;
+          : `Showroom Visit (${activeDealership?.name || "Authorised Showroom"})`;
 
       const res = await fetch("/api/bookings/reserve-slot", {
         method: "POST",
@@ -514,8 +436,8 @@ export function TestDriveChatCalendar({
       <div className="mb-3 space-y-2 p-2.5 rounded-xl bg-black/40 border border-white/10">
         <label className="text-[10.5px] font-bold text-slate-300 flex items-center justify-between">
           <span className="flex items-center gap-1">
-            <Car className="w-3 h-3 text-red-400" />
-            <span>1. Choose Vehicle &amp; Variant</span>
+            <Bike className="w-3 h-3 text-red-400" />
+            <span>1. Choose Model &amp; Variant</span>
           </span>
           <span className="text-[9px] text-red-400 font-mono font-bold">
             {activeVehicle?.price_range}
@@ -670,9 +592,9 @@ export function TestDriveChatCalendar({
           </div>
 
           <p className="text-[11px] text-slate-200">
-            Would you like to book a test drive for <strong>{activeVehicle?.name}</strong> (
+            Would you like to book a test ride for <strong>{activeVehicle?.name}</strong> (
             <span className="text-red-400">{activeVariantObj?.name || selectedVariantName}</span>) at{" "}
-            <strong>{activeDealership?.name || "Mahindra Showroom"}</strong>?
+            <strong>{activeDealership?.name || "Authorised Showroom"}</strong>?
           </p>
 
           <p className="text-[9.5px] text-slate-400">
@@ -821,7 +743,7 @@ export function TestDriveChatCalendar({
                     : "bg-white/5 border-white/10 text-slate-400"
                 }`}
               >
-                <Home className="w-3 h-3" /> Doorstep Delivery
+                <Home className="w-3 h-3" /> Doorstep Test Ride
               </button>
               <button
                 type="button"
@@ -842,12 +764,12 @@ export function TestDriveChatCalendar({
                   type="text"
                   value={deliveryAddress}
                   onChange={(e) => setDeliveryAddress(e.target.value)}
-                  placeholder="Enter Doorstep Delivery Address (e.g. Flat 301, Koregaon Park)"
+                  placeholder="Enter address for doorstep test ride (e.g. Flat 301, MG Road)"
                   className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-black/40 border border-white/10 focus:border-cyan-400 text-white placeholder-slate-500 outline-none"
                 />
                 {!deliveryAddress.trim() && (
                   <p className="text-[9.5px] text-amber-400/90 mt-1 flex items-center gap-1">
-                    <span>⚠️ Address is required for Doorstep Test Drive booking.</span>
+                    <span>⚠️ Address is required for Doorstep Test Ride booking.</span>
                   </p>
                 )}
               </div>

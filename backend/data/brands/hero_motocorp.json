@@ -1,0 +1,1053 @@
+{
+  "id": "hero_motocorp",
+  "name": "Hero MotoCorp",
+  "tagline": "The Future of Mobility",
+  "logo_url": "/uploads/hero_motocorp/logos/logo.svg",
+  "primary_color": "#e4002b",
+  "secondary_color": "#111827",
+  "accent_color": "#f59e0b",
+  "avatar_name": "Kavya",
+  "avatar_voice": "Aoede",
+  "source_urls": [
+    "https://www.heromotocorp.com/en-in.html"
+  ],
+  "is_active": false,
+  "vehicles": [
+    {
+      "id": "hero_motocorp_splendor",
+      "name": "Hero Splendor+",
+      "tagline": "World\u2019s No.1 Motorcycle | Price, Mileage & More",
+      "category": "Commuter Motorcycle",
+      "price_range": "\u20b975,141 - \u20b977,988 (approx.)",
+      "hero_image": "/uploads/hero_motocorp/vehicles/hero_motocorp_splendor.webp",
+      "engine_specs": "97.2cc Air cooled, 4-stroke, single cylinder, OHC, 5.9 kW @ 8000 rpm, 8.05 Nm @ 6000 rpm",
+      "seating_capacity": "Rider + Pillion",
+      "fuel_or_battery": "Petrol",
+      "range_or_mileage": "70 kmpl with E20 fuel",
+      "key_highlights": [
+        "Iconic Design",
+        "xSENS Fi Technology for best-in-class mileage",
+        "5-year warranty",
+        "Integrated Braking System",
+        "i3S Technology"
+      ],
+      "usp": "Decades of trust and unmatched reliability",
+      "variants": [
+        {
+          "name": "SPLENDOR+",
+          "price_ex_showroom": "\u20b975,141 (approx.)",
+          "engine_or_battery": "97.2cc Air cooled, 4-stroke, single cylinder, OHC",
+          "transmission": "4-speed manual",
+          "key_features": [
+            "Iconic Design",
+            "xSENS Fi Technology",
+            "Superior Mileage",
+            "5-year warranty",
+            "Integrated Braking System",
+            "i3S Technology"
+          ]
+        }
+      ],
+      "is_custom_source_of_truth": false,
+      "uploaded_image_url": null,
+      "source_url": "https://www.heromotocorp.com/en-in/motorcycles/splendor-plus.html",
+      "displacement_cc": "97.2",
+      "max_power": "5.9 kW @ 8000 rpm",
+      "max_torque": "8.05 Nm @ 6000 rpm",
+      "kerb_weight": "112 kg (approx.)",
+      "seat_height": "785 mm (approx.)",
+      "fuel_tank_or_battery": "9.8 L (approx.)",
+      "top_speed": "87 km/h (approx.)",
+      "braking": "Integrated Braking System",
+      "riding_modes": null,
+      "colors": null,
+      "competitors": [
+        "Bajaj Platina 100",
+        "TVS Radeon",
+        "Honda Shine 100"
+      ]
+    },
+    {
+      "id": "hero_motocorp_super_splendor_xtec",
+      "name": "Hero Super Splendor XTEC",
+      "tagline": "Advanced Features, Price & Mileage",
+      "category": "Premium Commuter",
+      "price_range": "\u20b984,448 - \u20b985,844",
+      "hero_image": "/uploads/hero_motocorp/vehicles/hero_motocorp_super_splendor_xtec.png",
+      "engine_specs": "124.7cc Air Cooled, 4-Stroke, OHC, Single Cylinder, 10.7 BHP, 10.6 Nm",
+      "seating_capacity": "Rider + Pillion",
+      "fuel_or_battery": "Petrol",
+      "range_or_mileage": "68 kmpl (claimed)",
+      "key_highlights": [
+        "Full Digital Meter",
+        "Bluetooth with Call, SMS Alert",
+        "USB Charger",
+        "i3S Technology",
+        "High Intensity Position Lamp",
+        "Autosail Engine"
+      ],
+      "usp": "A modern 125cc segment motorcycle built for riders who seek comfort, efficiency, and innovation with smart features and superior mileage.",
+      "variants": [
+        {
+          "name": "Super Splendor XTEC Drum",
+          "price_ex_showroom": "\u20b984,448",
+          "engine_or_battery": "124.7cc",
+          "transmission": "5-speed manual",
+          "key_features": [
+            "Full Digital Meter",
+            "Bluetooth Connectivity",
+            "USB Charger",
+            "i3S Technology"
+          ]
+        },
+        {
+          "name": "Super Splendor XTEC Disc",
+          "price_ex_showroom": "\u20b985,844",
+          "engine_or_battery": "124.7cc",
+          "transmission": "5-speed manual",
+          "key_features": [
+            "Full Digital Meter",
+            "Bluetooth Connectivity",
+            "USB Charger",
+            "i3S Technology",
+            "Disc Brake"
+          ]
+        }
+      ],
+      "is_custom_source_of_truth": false,
+      "uploaded_image_url": null,
+      "source_url": "https://www.heromotocorp.com/en-in/motorcycles/super-splendor-xtec.html",
+      "displacement_cc": "124.7",
+      "max_power": "10.7 BHP @ 7500 rpm",
+      "max_torque": "10.6 Nm @ 6000 rpm",
+      "kerb_weight": "122 kg (approx.)",
+      "seat_height": "799 mm (approx.)",
+      "fuel_tank_or_battery": "12 L (approx.)",
+      "top_speed": "90 km/h (approx.)",
+      "braking": "Front disc / rear drum, CBS (approx.)",
+      "riding_modes": null,
+      "colors": [
+        "Candy Blazing Red",
+        "Black",
+        "Matt Grey",
+        "Matt Nexus Blue"
+      ],
+      "competitors": [
+        "Honda SP 125",
+        "Bajaj Pulsar 125",
+        "TVS Raider 125"
+      ]
+    },
+    {
+      "id": "hero_motocorp_hf_deluxe",
+      "name": "Hero HF Deluxe",
+      "tagline": "Mileage Ka Hero",
+      "category": "Commuter Motorcycle",
+      "price_range": "\u20b962,002 - \u20b968,522 (approx.)",
+      "hero_image": "/uploads/hero_motocorp/vehicles/hero_motocorp_hf_deluxe.png",
+      "engine_specs": "97.2cc single-cylinder air-cooled, 5.9 kW @ 8000 rpm, 8.05 Nm @ 6000 rpm",
+      "seating_capacity": "Rider + Pillion",
+      "fuel_or_battery": "Petrol",
+      "range_or_mileage": "65 kmpl (claimed)",
+      "key_highlights": [
+        "New Stylish Graphics",
+        "Brighter Illumination LED Headlamp",
+        "Digital Console",
+        "i3S Technology",
+        "xSENS FI Technology",
+        "Side Stand Engine Cut-Off"
+      ],
+      "usp": "Excellent fuel efficiency and smooth performance with advanced features like i3S and xSENS FI Technology.",
+      "variants": [
+        {
+          "name": "HF Deluxe Kick Start Drum Brake Alloy Wheel",
+          "price_ex_showroom": "\u20b962,002 (approx.)",
+          "engine_or_battery": "97.2cc, Air Cooled, 4 Stroke Single Cylinder OHC",
+          "transmission": "4-speed manual",
+          "key_features": [
+            "Kick Start",
+            "Drum Brakes",
+            "Alloy Wheels"
+          ]
+        },
+        {
+          "name": "HF Deluxe Self Start Drum Brake Alloy Wheel",
+          "price_ex_showroom": "\u20b967,152 (approx.)",
+          "engine_or_battery": "97.2cc, Air Cooled, 4 Stroke Single Cylinder OHC",
+          "transmission": "4-speed manual",
+          "key_features": [
+            "Self Start",
+            "Drum Brakes",
+            "Alloy Wheels"
+          ]
+        },
+        {
+          "name": "HF Deluxe Self Start Drum Brake Alloy Wheel i3S",
+          "price_ex_showroom": "\u20b968,522 (approx.)",
+          "engine_or_battery": "97.2cc, Air Cooled, 4 Stroke Single Cylinder OHC",
+          "transmission": "4-speed manual",
+          "key_features": [
+            "Self Start",
+            "Drum Brakes",
+            "Alloy Wheels",
+            "i3S Technology"
+          ]
+        }
+      ],
+      "is_custom_source_of_truth": false,
+      "uploaded_image_url": null,
+      "source_url": "https://www.heromotocorp.com/en-in/motorcycles/hf-deluxe.html",
+      "displacement_cc": "97.2",
+      "max_power": "5.9 kW @ 8000 rpm",
+      "max_torque": "8.05 Nm @ 6000 rpm",
+      "kerb_weight": "110 kg",
+      "seat_height": "805 mm",
+      "fuel_tank_or_battery": "9.6 litres",
+      "top_speed": "85 km/h",
+      "braking": "130mm drum (front & rear)",
+      "riding_modes": null,
+      "colors": [
+        "Sports Red Black",
+        "Black Nexus Blue",
+        "Candy Blazing Red",
+        "Heavy Grey with Green",
+        "Techno Blue"
+      ],
+      "competitors": [
+        "Bajaj Platina 100",
+        "TVS Radeon",
+        "Honda Shine 100"
+      ]
+    },
+    {
+      "id": "hero_motocorp_passion_plus",
+      "name": "Hero Passion Plus",
+      "tagline": "Explore the Hero Passion Plus with impressive mileage, trusted performance, and affordable EMI options.",
+      "category": "Commuter Motorcycle",
+      "price_range": "\u20b976,941 - \u20b978,324",
+      "hero_image": "/uploads/hero_motocorp/vehicles/hero_motocorp_passion_plus.webp",
+      "engine_specs": "97.2cc single-cylinder, 5.9 kW @ 8000 rpm, 8.05 Nm @ 6000 rpm",
+      "seating_capacity": "Rider + Pillion",
+      "fuel_or_battery": "Petrol",
+      "range_or_mileage": "70 kmpl",
+      "key_highlights": [
+        "Best-in-class Mileage of 70 kmpl",
+        "LED Projector Headlamp",
+        "Full Digital Meter",
+        "i3S Technology",
+        "Bluetooth Call & SMS Alerts",
+        "USB Charging Port"
+      ],
+      "usp": "Modern features, superb graphics, great mileage and competitive price.",
+      "variants": [
+        {
+          "name": "Standard",
+          "price_ex_showroom": "\u20b976,941",
+          "engine_or_battery": "97.2cc Fuel Injection (FI)",
+          "transmission": "Constant mesh",
+          "key_features": [
+            "Bold Dual-Tone Graphics",
+            "LED Projector Headlamp",
+            "Full Digital Meter",
+            "Plush & Comfortable Seat",
+            "Bluetooth Call & SMS Alerts",
+            "Elegant Chrome Garnish"
+          ]
+        }
+      ],
+      "is_custom_source_of_truth": false,
+      "uploaded_image_url": null,
+      "source_url": "https://www.heromotocorp.com/en-in/motorcycles/passion-plus.html",
+      "displacement_cc": "97.2",
+      "max_power": "5.9 kW @ 8000 rpm",
+      "max_torque": "8.05 Nm @ 6000 rpm",
+      "kerb_weight": "115 kg (approx.)",
+      "seat_height": "790 mm (approx.)",
+      "fuel_tank_or_battery": "11 L (approx.)",
+      "top_speed": "90 km/h (approx.)",
+      "braking": "Front Disc Brake",
+      "riding_modes": null,
+      "colors": [
+        "Black Heavy Grey",
+        "Black Grey Stripe",
+        "Sport Red",
+        "Black Nexus Blue"
+      ],
+      "competitors": [
+        "Honda Shine 100",
+        "Bajaj Platina 100",
+        "TVS Radeon"
+      ]
+    },
+    {
+      "id": "hero_motocorp_glamour_x",
+      "name": "Hero Glamour X",
+      "tagline": "Premium Styling, Strong Performance & Smart Features",
+      "category": "Premium Commuter",
+      "price_range": "\u20b987,998 - \u20b991,998 (approx.)",
+      "hero_image": "/uploads/hero_motocorp/vehicles/hero_motocorp_glamour_x.webp",
+      "engine_specs": "124.7cc Air cooled, 4S, FI engine, 11.4 BHP (8.5 kW), 10.5 Nm",
+      "seating_capacity": "Rider + Pillion",
+      "fuel_or_battery": "Petrol",
+      "range_or_mileage": "65 kmpl (with E20 fuel)",
+      "key_highlights": [
+        "Muscular Design",
+        "Adaptive Display with 60+ Features",
+        "Intelligent Ride Technology",
+        "Panic Brake Alert",
+        "Cruise Control",
+        "Kickstart in Low Battery"
+      ],
+      "usp": "First in segment 3 distinct riding modes and Cruise Control technology.",
+      "variants": [
+        {
+          "name": "Glamour X Drum",
+          "price_ex_showroom": "\u20b987,998 (approx.)",
+          "engine_or_battery": "124.7cc Air cooled, 4S, FI engine",
+          "transmission": "5-speed manual",
+          "key_features": []
+        },
+        {
+          "name": "Glamour X Disc",
+          "price_ex_showroom": "\u20b991,998 (approx.)",
+          "engine_or_battery": "124.7cc Air cooled, 4S, FI engine",
+          "transmission": "5-speed manual",
+          "key_features": []
+        }
+      ],
+      "is_custom_source_of_truth": false,
+      "uploaded_image_url": null,
+      "source_url": "https://www.heromotocorp.com/en-in/motorcycles/glamour-x.html",
+      "displacement_cc": "124.7",
+      "max_power": "8.5 Kw @ 8250 rpm",
+      "max_torque": "10.5 Nm @ 6500 rpm",
+      "kerb_weight": "123 kg (approx.)",
+      "seat_height": "793 mm (approx.)",
+      "fuel_tank_or_battery": "10 L (approx.)",
+      "top_speed": "95 km/h (approx.)",
+      "braking": "Panic Brake Alert",
+      "riding_modes": [
+        "Eco",
+        "Road",
+        "Power"
+      ],
+      "colors": null,
+      "competitors": [
+        "Honda SP 125",
+        "TVS Raider 125",
+        "Bajaj Pulsar 125"
+      ]
+    },
+    {
+      "id": "hero_motocorp_xtreme_125r",
+      "name": "Hero Xtreme 125R",
+      "tagline": "Sporty 125cc Bike",
+      "category": "Naked Streetfighter",
+      "price_range": "\u20b992,500 - \u20b91,04,500",
+      "hero_image": "/uploads/hero_motocorp/vehicles/hero_motocorp_xtreme_125r.webp",
+      "engine_specs": "125cc Sprint-EBT engine, 10.5 Nm @ 6500 RPM",
+      "seating_capacity": "Rider + Pillion",
+      "fuel_or_battery": "Petrol",
+      "range_or_mileage": "66 kmpl",
+      "key_highlights": [
+        "Sprint-EBT engine",
+        "Dual/Single Channel ABS options",
+        "120/80 wide rear tyre",
+        "Monoshock suspension",
+        "4.2\" Multicolor LCD",
+        "All LED setup"
+      ],
+      "usp": "Unbelievable efficiency with an astounding 66 km/l mileage",
+      "variants": [
+        {
+          "name": "Hero Xtreme 125R (Single-Channel ABS)",
+          "price_ex_showroom": "\u20b992,500",
+          "engine_or_battery": "125cc Sprint-EBT engine",
+          "transmission": "5-speed manual",
+          "key_features": [
+            "Single-Channel ABS",
+            "120/80 wide rear tyre",
+            "Monoshock suspension",
+            "4.2\" Multicolor LCD"
+          ]
+        },
+        {
+          "name": "Hero Xtreme 125R (Dual-Channel ABS)",
+          "price_ex_showroom": "\u20b91,04,500",
+          "engine_or_battery": "125cc Sprint-EBT engine",
+          "transmission": "5-speed manual",
+          "key_features": [
+            "Dual-Channel ABS",
+            "120/80 wide rear tyre",
+            "Monoshock suspension",
+            "4.2\" Multicolor LCD",
+            "All LED setup"
+          ]
+        }
+      ],
+      "is_custom_source_of_truth": false,
+      "uploaded_image_url": null,
+      "source_url": "https://www.heromotocorp.com/en-in/motorcycles/xtreme-125r.html",
+      "displacement_cc": "125",
+      "max_power": "11.5 PS @ 8250 rpm (approx.)",
+      "max_torque": "10.5 Nm @ 6500 RPM",
+      "kerb_weight": "136 kg",
+      "seat_height": "790 mm",
+      "fuel_tank_or_battery": "10 L",
+      "top_speed": "95 km/h (approx.)",
+      "braking": "276mm front disc brakes, Dual Channel ABS / Single-Channel ABS",
+      "riding_modes": null,
+      "colors": [
+        "Black Pearl Red",
+        "Black Matshadow Grey",
+        "Black Leaf Green",
+        "Abrax Orange"
+      ],
+      "competitors": [
+        "TVS Raider 125",
+        "Bajaj Pulsar NS125",
+        "Honda SP 125"
+      ]
+    },
+    {
+      "id": "hero_motocorp_xtreme_160r_4v",
+      "name": "Hero Xtreme 160R 4V",
+      "tagline": "Street Performance Bike",
+      "category": "Naked Streetfighter",
+      "price_range": "\u20b91,27,300 - \u20b91,32,800 (approx.)",
+      "hero_image": "/uploads/hero_motocorp/vehicles/hero_motocorp_xtreme_160r_4v.webp",
+      "engine_specs": "163.2cc single-cylinder 4-valve oil-cooled, 16.9 PS, 14.6 Nm",
+      "seating_capacity": "Rider + Pillion",
+      "fuel_or_battery": "Petrol",
+      "range_or_mileage": "47 kmpl (approx.)",
+      "key_highlights": [
+        "4 Valve Engine",
+        "KYB USD Forks",
+        "Dual Channel ABS",
+        "Ride Modes",
+        "Electronic Throttle Body",
+        "Drag Race Timer"
+      ],
+      "usp": "The Fastest* 160cc Motorcycle with advanced features for precise control and performance.",
+      "variants": [
+        {
+          "name": "Xtreme 160R 4V Standard",
+          "price_ex_showroom": "\u20b91,27,300 (approx.)",
+          "engine_or_battery": "163.2cc, 4-valve, oil-cooled",
+          "transmission": "5-speed manual",
+          "key_features": [
+            "Single Channel ABS",
+            "Telescopic Front Forks"
+          ]
+        },
+        {
+          "name": "Xtreme 160R 4V Connected",
+          "price_ex_showroom": "\u20b91,32,800 (approx.)",
+          "engine_or_battery": "163.2cc, 4-valve, oil-cooled",
+          "transmission": "5-speed manual",
+          "key_features": [
+            "Dual Channel ABS",
+            "KYB USD Forks",
+            "Bluetooth Connectivity"
+          ]
+        }
+      ],
+      "is_custom_source_of_truth": false,
+      "uploaded_image_url": null,
+      "source_url": "https://www.heromotocorp.com/en-in/motorcycles/xtreme-160r-4v.html",
+      "displacement_cc": "163.2",
+      "max_power": "16.9 PS @ 8500 rpm",
+      "max_torque": "14.6 Nm @ 6500 rpm",
+      "kerb_weight": "144 kg",
+      "seat_height": "795 mm",
+      "fuel_tank_or_battery": "12 litres",
+      "top_speed": "115 km/h",
+      "braking": "Single Channel ABS / Dual Channel ABS",
+      "riding_modes": [
+        "Rain",
+        "Road",
+        "Sports"
+      ],
+      "colors": [
+        "Neon Shooting Star",
+        "Stealth Black",
+        "Kevlar Brown",
+        "Matt Shadow Grey",
+        "Matt Slate Black"
+      ],
+      "competitors": [
+        "TVS Apache RTR 160 4V",
+        "Bajaj Pulsar N160",
+        "Yamaha FZ-S Fi V3"
+      ]
+    },
+    {
+      "id": "hero_motocorp_xpulse_210",
+      "name": "Hero Xpulse 210",
+      "tagline": "Powerful Adventure Bike",
+      "category": "Adventure Tourer",
+      "price_range": "\u20b91,40,000 (approx.)",
+      "hero_image": "/uploads/hero_motocorp/vehicles/hero_motocorp_xpulse_210.png",
+      "engine_specs": "210 cc DOHC liquid-cooled, 24.6 PS, 20.7 Nm",
+      "seating_capacity": "Rider + Pillion",
+      "fuel_or_battery": "Petrol",
+      "range_or_mileage": "40 kmpl (approx.)",
+      "key_highlights": [
+        "210 cc DOHC Liquid Cooled Engine",
+        "6 Speed Transmission with Assist & Slipper Clutch",
+        "210 mm Front Suspension Travel",
+        "High Tensile Semi-Double Cradle Frame",
+        "Linkage Rear Suspension",
+        "Full Digital LCD Instrument Cluster"
+      ],
+      "usp": "Built for thrill seekers with strong off-road capability and refined performance.",
+      "variants": [
+        {
+          "name": "Standard",
+          "price_ex_showroom": "\u20b91,40,000 (approx.)",
+          "engine_or_battery": "210 cc 4 Stroke 4 Valve Single Cylinder Liquid Cooled DOHC",
+          "transmission": "6-speed manual",
+          "key_features": [
+            "Kerb Weight: 168 kg",
+            "ABS: Single Channel",
+            "Instrument Cluster: Full digital LCD"
+          ]
+        }
+      ],
+      "is_custom_source_of_truth": false,
+      "uploaded_image_url": null,
+      "source_url": "https://www.heromotocorp.com/en-in/motorcycles/xpulse-210.html",
+      "displacement_cc": "210",
+      "max_power": "24.6 PS @ 9250 rpm",
+      "max_torque": "20.7 Nm @ 7250 rpm",
+      "kerb_weight": "168 kg",
+      "seat_height": "825 mm (approx.)",
+      "fuel_tank_or_battery": "13 L (approx.)",
+      "top_speed": "120 km/h (approx.)",
+      "braking": "Single Channel ABS",
+      "riding_modes": null,
+      "colors": [
+        "#EAEAEA"
+      ],
+      "competitors": [
+        "Royal Enfield Himalayan 450",
+        "KTM 250 Adventure",
+        "Yezdi Adventure"
+      ]
+    },
+    {
+      "id": "hero_motocorp_xpulse_200_4v",
+      "name": "Hero Xpulse 200 4V",
+      "tagline": "Off-Road Adventure Bike",
+      "category": "Adventure Tourer",
+      "price_range": "\u20b91,47,000 - \u20b91,54,797 (approx.)",
+      "hero_image": "/uploads/hero_motocorp/vehicles/hero_motocorp_xpulse_200_4v.webp",
+      "engine_specs": "200cc 4-valve engine",
+      "seating_capacity": "Rider + Pillion",
+      "fuel_or_battery": "Petrol",
+      "range_or_mileage": "40 kmpl (approx.)",
+      "key_highlights": [
+        "Rally-style Windshield",
+        "Updated USB Charger",
+        "3 ABS modes",
+        "LED Projector Headlamp with LED DRLs",
+        "All new LED Winkers",
+        "Engine OBD2+E20 4 Valve Engine"
+      ],
+      "usp": "Versatile adventure motorcycle for both city rides and off-road adventures.",
+      "variants": [
+        {
+          "name": "Xpulse 200 4V",
+          "price_ex_showroom": "\u20b91,47,000 (approx.)",
+          "engine_or_battery": "200cc 4-valve engine",
+          "transmission": "5-speed manual",
+          "key_features": [
+            "Rally Windshield",
+            "USB Charger",
+            "3 ABS modes",
+            "LED Projector Headlamp"
+          ]
+        },
+        {
+          "name": "Xpulse 200 4V Pro",
+          "price_ex_showroom": "\u20b91,54,797 (approx.)",
+          "engine_or_battery": "200cc 4-valve engine",
+          "transmission": "5-speed manual",
+          "key_features": [
+            "Rally Windshield",
+            "USB Charger",
+            "3 ABS modes",
+            "LED Projector Headlamp",
+            "891 mm Seat Height",
+            "270 mm Ground Clearance"
+          ]
+        }
+      ],
+      "is_custom_source_of_truth": false,
+      "uploaded_image_url": null,
+      "source_url": "https://www.heromotocorp.com/en-in/motorcycles/xpulse-200-4v.html",
+      "displacement_cc": "200",
+      "max_power": "19.1 PS",
+      "max_torque": "17.35 Nm",
+      "kerb_weight": "158 kg",
+      "seat_height": "825 mm",
+      "fuel_tank_or_battery": "13 litres",
+      "top_speed": "115 km/h",
+      "braking": "Disc (front & rear) with ABS",
+      "riding_modes": [
+        "Road",
+        "Off-road",
+        "Rally"
+      ],
+      "colors": [
+        "Gloss Goldfish Silver",
+        "Met Nexus Blue White",
+        "Techno Blue Met Blk",
+        "Black-sports Red",
+        "Black Industrial Grey",
+        "Pearl Fadeless White"
+      ],
+      "competitors": [
+        "Royal Enfield Himalayan 450",
+        "KTM 250 Adventure",
+        "Yezdi Adventure"
+      ]
+    },
+    {
+      "id": "hero_motocorp_karizma_xmr",
+      "name": "Hero Karizma XMR",
+      "tagline": "Iconic Sports Bike | Price, Performance & Features",
+      "category": "Sports Motorcycle",
+      "price_range": "\u20b91,84,144 - \u20b91,85,757",
+      "hero_image": "/uploads/hero_motocorp/vehicles/hero_motocorp_karizma_xmr.png",
+      "engine_specs": "210cc 4V DOHC Liquid Cooled Engine, 25.5 PS @ 9250 RPM, 20.4 Nm @ 7250 RPM",
+      "seating_capacity": "Rider + Pillion",
+      "fuel_or_battery": "Petrol",
+      "range_or_mileage": "41.55 kmpl (approx.)",
+      "key_highlights": [
+        "210cc 4V DOHC Liquid Cooled Engine",
+        "6-speed transmission with Slip and Assist Clutch",
+        "Upside Down Forks",
+        "Dual Channel ABS",
+        "Adjustable Windshield",
+        "Signature H-shaped Lamps"
+      ],
+      "usp": "Most powerful in its class, aggressive design, and premium riding dynamics.",
+      "variants": [
+        {
+          "name": "Karizma XMR",
+          "price_ex_showroom": "\u20b91,84,144 - \u20b91,85,757",
+          "engine_or_battery": "210cc 4V DOHC Liquid Cooled Engine",
+          "transmission": "6-speed manual",
+          "key_features": [
+            "25.5 PS Max Power",
+            "20.4 Nm Max Torque",
+            "Dual Channel ABS",
+            "Adjustable Windshield",
+            "Slip and Assist Clutch"
+          ]
+        }
+      ],
+      "is_custom_source_of_truth": false,
+      "uploaded_image_url": null,
+      "source_url": "https://www.heromotocorp.com/en-in/motorcycles/karizma-xmr.html",
+      "displacement_cc": "210",
+      "max_power": "25.5 PS @ 9250 RPM",
+      "max_torque": "20.4 Nm @ 7250 RPM",
+      "kerb_weight": "163.5 kg (approx.)",
+      "seat_height": "810 mm (approx.)",
+      "fuel_tank_or_battery": "11 litres (approx.)",
+      "top_speed": "140 kmph (approx.)",
+      "braking": "Dual Channel ABS",
+      "riding_modes": null,
+      "colors": [
+        "Combat Grey",
+        "Phantom Black",
+        "Turbo Red",
+        "Iconic Yellow"
+      ],
+      "competitors": [
+        "Suzuki Gixxer SF 250",
+        "Bajaj Pulsar RS200",
+        "Yamaha R15 V4"
+      ]
+    },
+    {
+      "id": "hero_motocorp_destini_125",
+      "name": "Hero Destini 125",
+      "tagline": "Stylish & Comfortable Family Scooter",
+      "category": "Scooter",
+      "price_range": "\u20b975,838 - \u20b984,919",
+      "hero_image": "/uploads/hero_motocorp/vehicles/hero_motocorp_destini_125.webp",
+      "engine_specs": "124.6 cc air-cooled, 4-stroke, SI engine, 9 bhp @ 7000 rpm, 10.4 Nm",
+      "seating_capacity": "Rider + Pillion",
+      "fuel_or_battery": "Petrol",
+      "range_or_mileage": "56.2 kmpl",
+      "key_highlights": [
+        "Best in segment mileage",
+        "Projector LED with DRL",
+        "Longer Seat",
+        "Larger Wheels",
+        "Illuminated Start Button"
+      ],
+      "usp": "A perfect combination of performance, style and comfort with best-in-segment mileage.",
+      "variants": [
+        {
+          "name": "DESTINI 125 ZX+",
+          "price_ex_showroom": "\u20b975,838 - \u20b984,919",
+          "engine_or_battery": "124.6 cc air-cooled, 4-stroke, SI engine",
+          "transmission": "CVT automatic",
+          "key_features": [
+            "Cast Disc Wheel",
+            "Retro Chrome Design",
+            "Projector LED with DRL"
+          ]
+        }
+      ],
+      "is_custom_source_of_truth": false,
+      "uploaded_image_url": null,
+      "source_url": "https://www.heromotocorp.com/en-in/scooters/new-destini-125.html",
+      "displacement_cc": "124.6",
+      "max_power": "9 bhp @ 7000 rpm",
+      "max_torque": "10.4 Nm",
+      "kerb_weight": "114 kg (approx.)",
+      "seat_height": "778 mm (approx.)",
+      "fuel_tank_or_battery": "5.3L",
+      "top_speed": "90 km/h (approx.)",
+      "braking": "Front drum / rear drum, IBS (approx.)",
+      "riding_modes": null,
+      "colors": [
+        "Groovy Red",
+        "Regal Black",
+        "Eternal White",
+        "Cosmic Blue",
+        "Mystique Magenta",
+        "Gun Metal Grey"
+      ],
+      "competitors": [
+        "TVS Jupiter 125",
+        "Honda Activa 125",
+        "Suzuki Access 125"
+      ]
+    },
+    {
+      "id": "hero_motocorp_pleasure_plus_xtec",
+      "name": "Hero Pleasure Plus XTEC",
+      "tagline": "Stylish Scooter with Smart Features",
+      "category": "Scooter",
+      "price_range": "\u20b969,766 - \u20b975,712",
+      "hero_image": "/uploads/hero_motocorp/vehicles/hero_motocorp_pleasure_plus_xtec.webp",
+      "engine_specs": "110.9 cc engine",
+      "seating_capacity": "Rider + Pillion",
+      "fuel_or_battery": "Petrol",
+      "range_or_mileage": "55 kmpl",
+      "key_highlights": [
+        "Sleek Design",
+        "Chrome Fascia",
+        "Dual Tone Inner Panel",
+        "Fuel Saving Technology",
+        "Telescopic suspension",
+        "Fully Digital Speedometer"
+      ],
+      "usp": "Experience the Pleasure Plus XTEC with its smart technology, stylish design, and smooth performance.",
+      "variants": [
+        {
+          "name": "Pleasure Plus XTEC ZX",
+          "price_ex_showroom": "\u20b975,712",
+          "engine_or_battery": "110.9 cc engine",
+          "transmission": "CVT automatic",
+          "key_features": [
+            "Telescopic Suspension",
+            "Bluetooth Connectivity",
+            "Cast Wheel Type",
+            "i3s",
+            "Digital Speedometer",
+            "Dual Inner Panel Colour"
+          ]
+        },
+        {
+          "name": "Pleasure Plus XTEC LX OBD2B",
+          "price_ex_showroom": "\u20b969,766",
+          "engine_or_battery": "110.9 cc engine",
+          "transmission": "CVT automatic",
+          "key_features": []
+        }
+      ],
+      "is_custom_source_of_truth": false,
+      "uploaded_image_url": null,
+      "source_url": "https://www.heromotocorp.com/en-in/scooters/pleasure-plus-xtec.html",
+      "displacement_cc": "110.9",
+      "max_power": "8.1 PS @ 7000 rpm (approx.)",
+      "max_torque": "10.4 Nm @ 5500 rpm (approx.)",
+      "kerb_weight": "104 kg",
+      "seat_height": "764 mm (approx.)",
+      "fuel_tank_or_battery": "4.8L fuel tank",
+      "top_speed": "80 km/h (approx.)",
+      "braking": "internal expanding shoe type brakes",
+      "riding_modes": null,
+      "colors": [
+        "Pearl Blue",
+        "Copper Brown",
+        "Teal Blue",
+        "Pearl Silver White",
+        "Polestar Blue",
+        "Sport Red",
+        "Matte Black",
+        "Matte Red",
+        "Matt Vernier Grey"
+      ],
+      "competitors": [
+        "TVS Jupiter",
+        "Honda Activa 6G",
+        "Suzuki Access 125"
+      ]
+    },
+    {
+      "id": "hero_motocorp_xoom",
+      "name": "Hero Xoom",
+      "tagline": "Sporty & Feature-Rich Scooter",
+      "category": "Scooter",
+      "price_range": "\u20b972,351 - \u20b977,283",
+      "hero_image": "/uploads/hero_motocorp/vehicles/hero_motocorp_xoom.webp",
+      "engine_specs": "110.9cc engine, 8.05 bhp, 8.70 Nm",
+      "seating_capacity": "Rider + Pillion",
+      "fuel_or_battery": "Petrol",
+      "range_or_mileage": "45 kmpl (approx.)",
+      "key_highlights": [
+        "Fastest 110cc Scooter (0-60 km/h in 9.35 Sec)",
+        "Diamond cut Alloy Wheels",
+        "12 Inch Large Wheels & 100mm Wide Rear Tyres",
+        "Corner Bending Lights",
+        "Front Disc Brake",
+        "Projector LED"
+      ],
+      "usp": "Fastest acceleration in its segment, sporty design, and ultimate control with 12-inch wider tyres and front disc brake.",
+      "variants": [
+        {
+          "name": "VX",
+          "price_ex_showroom": "\u20b972,351",
+          "engine_or_battery": "110.9cc engine",
+          "transmission": "CVT automatic",
+          "key_features": [
+            "Cast Alloy Wheel Type",
+            "No Corner Bending Light",
+            "No Bluetooth Connectivity",
+            "No Diamond cut alloy wheels",
+            "No Front Disc Brake"
+          ]
+        },
+        {
+          "name": "ZX",
+          "price_ex_showroom": "\u20b977,283",
+          "engine_or_battery": "110.9cc engine",
+          "transmission": "CVT automatic",
+          "key_features": [
+            "Corner Bending Light",
+            "Bluetooth Connectivity",
+            "Diamond cut alloy wheels",
+            "Front Disc Brake"
+          ]
+        }
+      ],
+      "is_custom_source_of_truth": false,
+      "uploaded_image_url": null,
+      "source_url": "https://www.heromotocorp.com/en-in/scooters/xoom.html",
+      "displacement_cc": "110.9",
+      "max_power": "8.05 bhp",
+      "max_torque": "8.70 Nm",
+      "kerb_weight": "108 kg (approx.)",
+      "seat_height": "770 mm (approx.)",
+      "fuel_tank_or_battery": "5.2 L (approx.)",
+      "top_speed": "85 km/h (approx.)",
+      "braking": "Front Disc Brake (on some variants)",
+      "riding_modes": null,
+      "colors": [
+        "Black",
+        "Polestar Blue",
+        "Moon Yellow",
+        "Sports Red",
+        "Matt Shadow Grey"
+      ],
+      "competitors": [
+        "TVS Jupiter",
+        "Honda Activa 6G",
+        "Suzuki Access 125"
+      ]
+    },
+    {
+      "id": "hero_motocorp_xoom_125",
+      "name": "Hero Xoom 125",
+      "tagline": "Sporty 125cc Scooter",
+      "category": "Performance Scooter",
+      "price_range": "\u20b980,494 - \u20b986,025",
+      "hero_image": "/uploads/hero_motocorp/vehicles/hero_motocorp_xoom_125.webp",
+      "engine_specs": "124.6 cc air-cooled engine",
+      "seating_capacity": "Rider + Pillion",
+      "fuel_or_battery": "Petrol",
+      "range_or_mileage": "",
+      "key_highlights": [
+        "Fastest 125cc Scooter (0-60 km/h in 7.6 Sec)",
+        "120 mm Wide Rear Tyre",
+        "14 inch Large Wheels",
+        "LED Projector Headlamp",
+        "Sequential LED Winkers",
+        "Digital Speedometer with Turn-by-Turn Navigation"
+      ],
+      "usp": "Best scooter under \u20b91,00,000, balancing premium tech like turn-by-turn navigation, external fuel lid with open buzzer and LED projector headlamp for effortless rides.",
+      "variants": [
+        {
+          "name": "Hero Xoom 125 Standard",
+          "price_ex_showroom": "\u20b980,494",
+          "engine_or_battery": "124.6 cc air-cooled engine",
+          "transmission": "CVT automatic",
+          "key_features": []
+        },
+        {
+          "name": "Hero Xoom 125 ZX",
+          "price_ex_showroom": "\u20b986,025",
+          "engine_or_battery": "124.6 cc air-cooled engine",
+          "transmission": "CVT automatic",
+          "key_features": [
+            "Front Disc Brake"
+          ]
+        }
+      ],
+      "is_custom_source_of_truth": false,
+      "uploaded_image_url": null,
+      "source_url": "https://www.heromotocorp.com/en-in/scooters/xoom-125.html",
+      "displacement_cc": "124.6",
+      "max_power": "9.38 PS @ 7000 rpm (approx.)",
+      "max_torque": "10.16 Nm @ 5500 rpm (approx.)",
+      "kerb_weight": "109 kg (approx.)",
+      "seat_height": "770 mm (approx.)",
+      "fuel_tank_or_battery": "5.2 L (approx.)",
+      "top_speed": "90 km/h (approx.)",
+      "braking": "Front Disc Brake (ZX Variant)",
+      "riding_modes": null,
+      "colors": [
+        "Matt Grey",
+        "Vibrant Blue Mettalic",
+        "Candy Blazing Red",
+        "Matt Giallo Lime"
+      ],
+      "competitors": [
+        "TVS NTorq 125",
+        "Suzuki Avenis 125",
+        "Honda Dio 125"
+      ]
+    },
+    {
+      "id": "hero_motocorp_xoom_160",
+      "name": "Hero Xoom 160",
+      "tagline": "Premium 160cc Scooter | Price, Features & Performance",
+      "category": "Performance Scooter",
+      "price_range": "\u20b91,20,000 (approx.)",
+      "hero_image": "/uploads/hero_motocorp/vehicles/hero_motocorp_xoom_160.webp",
+      "engine_specs": "156cc liquid-cooled engine, 10.9 kW (14.6 bhp) @ 8000 rpm, 14 Nm",
+      "seating_capacity": "Rider + Pillion",
+      "fuel_or_battery": "Petrol",
+      "range_or_mileage": "",
+      "key_highlights": [
+        "Liquid Cooled Engine",
+        "i3s Silent Technology",
+        "14 inch Large Wheels with Block Pattern Tyres",
+        "Dual Chamber LED Headlamp",
+        "Disc Brake with ABS",
+        "Smart Key"
+      ],
+      "usp": "The Hero Xoom 160 is famous for being the best scooter under \u20b91,50,000, designed as a premium scooter suitable for both daily commuting and long-distance touring, due to its powerful engine, comfortable ergonomics, and advanced features.",
+      "variants": [
+        {
+          "name": "Standard",
+          "price_ex_showroom": "\u20b91,20,000 (approx.)",
+          "engine_or_battery": "156cc liquid-cooled engine",
+          "transmission": "CVT automatic",
+          "key_features": [
+            "Smart Key",
+            "Digital Speedometer - TBT Navigation",
+            "Dual Chamber LED Headlamp",
+            "14 inch Large Wheels with Block Pattern Tyres",
+            "Disc Brake with ABS"
+          ]
+        }
+      ],
+      "is_custom_source_of_truth": false,
+      "uploaded_image_url": null,
+      "source_url": "https://www.heromotocorp.com/en-in/scooters/xoom-160.html",
+      "displacement_cc": "156",
+      "max_power": "10.9 kW @ 8000 rpm",
+      "max_torque": "14 Nm",
+      "kerb_weight": "141 kg (approx.)",
+      "seat_height": "770 mm (approx.)",
+      "fuel_tank_or_battery": "9 L (approx.)",
+      "top_speed": "100 km/h (approx.)",
+      "braking": "Disc Brake with ABS",
+      "riding_modes": null,
+      "colors": [
+        "Matte Rainforest Green",
+        "Canyon Red",
+        "Summit White",
+        "Matte Volcanic Grey"
+      ],
+      "competitors": [
+        "Yamaha Aerox 155",
+        "Aprilia SXR 160",
+        "Ola S1 Pro"
+      ]
+    }
+  ],
+  "dealerships": [
+    {
+      "id": "hero_motocorp_mumbai",
+      "name": "Hero MotoCorp Authorised Dealer - Andheri West",
+      "address": "Andheri West, Mumbai",
+      "city": "Mumbai",
+      "phone": "",
+      "rating": 4.6,
+      "available_advisors": [
+        "Sales Consultant",
+        "Product Specialist"
+      ],
+      "has_test_drive_home_pickup": true
+    },
+    {
+      "id": "hero_motocorp_bengaluru",
+      "name": "Hero MotoCorp Authorised Dealer - Indiranagar",
+      "address": "Indiranagar, Bengaluru",
+      "city": "Bengaluru",
+      "phone": "",
+      "rating": 4.6,
+      "available_advisors": [
+        "Sales Consultant",
+        "Product Specialist"
+      ],
+      "has_test_drive_home_pickup": true
+    },
+    {
+      "id": "hero_motocorp_delhi",
+      "name": "Hero MotoCorp Authorised Dealer - Karol Bagh",
+      "address": "Karol Bagh, Delhi",
+      "city": "Delhi",
+      "phone": "",
+      "rating": 4.6,
+      "available_advisors": [
+        "Sales Consultant",
+        "Product Specialist"
+      ],
+      "has_test_drive_home_pickup": true
+    },
+    {
+      "id": "hero_motocorp_chennai",
+      "name": "Hero MotoCorp Authorised Dealer - Anna Nagar",
+      "address": "Anna Nagar, Chennai",
+      "city": "Chennai",
+      "phone": "",
+      "rating": 4.6,
+      "available_advisors": [
+        "Sales Consultant",
+        "Product Specialist"
+      ],
+      "has_test_drive_home_pickup": true
+    }
+  ]
+}
