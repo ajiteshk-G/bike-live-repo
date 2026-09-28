@@ -10,8 +10,8 @@ class BrandBase(BaseModel):
     primary_color: str = "#d71920"
     secondary_color: str = "#1e293b"
     accent_color: str = "#0ea5e9"
-    avatar_name: str = "Assistant"
-    avatar_voice: str = "Puck"
+    avatar_name: str = "Kavya"
+    avatar_voice: str = "Aoede"  # must be a female voice (see config.FEMALE_VOICES)
     source_urls: List[str] = Field(default_factory=list)
     is_active: bool = False
 

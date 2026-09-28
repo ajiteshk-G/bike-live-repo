@@ -13,7 +13,7 @@ import google.auth
 import google.auth.transport.requests
 import websockets
 
-from app.config import settings
+from app.config import settings, resolve_female_voice
 from app.database import AsyncSessionLocal, get_db
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.services.gemini_live_session import AudioSessionManager, build_brand_system_prompt
@@ -27,6 +27,8 @@ router = APIRouter(tags=["Live Audio & Multimodal Chat"])
 
 KAVYA_OUTBOUND_PROMPT = """You are Kavya, the official Proactive Post-Test Ride Experience Specialist for {brand_name}.
 You are placing an outbound phone call to the customer who recently completed a two-wheeler test ride.
+You are a young Indian WOMAN: speak with a natural, warm Indian accent (Indian English / native Hindi), never American or British,
+always use feminine grammar, and never say or imply you are male.
 
 Customer Details:
 - Customer Name: {cust_name}
@@ -271,7 +273,7 @@ async def live_audio_websocket(websocket: WebSocket):
 
     brand_name = active_b.name if active_b else "our showroom"
     avatar_name = active_b.avatar_name if active_b else "Kavya"
-    avatar_voice = active_b.avatar_voice if active_b else "Aoede"
+    avatar_voice = resolve_female_voice(active_b.avatar_voice if active_b else None)
 
     # 1. Immediate handshake to client
     await websocket.send_text(json.dumps({
@@ -322,7 +324,8 @@ async def live_audio_websocket(websocket: WebSocket):
 
                 active_system_prompt = brand_outbound_prompt if is_outbound else build_brand_system_prompt(active_b.id if active_b else None)
 
-                active_voice = "Aoede" if is_outbound else (avatar_voice if avatar_voice and avatar_voice not in ("Puck", "Charon", "Fenrir", "Orus") else "Aoede")
+                # Persona is strictly female: only whitelisted female voices are ever sent to Gemini Live.
+                active_voice = resolve_female_voice(None if is_outbound else avatar_voice)
                 active_modality = "AUDIO"
 
                 # Talk to AI Specialist uses Gemini 2.5 Native Live Audio; Outbound call uses Gemini Live Audio
@@ -453,7 +456,7 @@ async def live_audio_websocket(websocket: WebSocket):
                     "generationConfig": {
                         "responseModalities": [active_modality],
                         "speechConfig": {
-                            "languageCode": "en-IN",
+                            "languageCode": settings.VOICE_LANGUAGE_CODE,
                             "voiceConfig": {
                                 "prebuiltVoiceConfig": {
                                     "voiceName": active_voice

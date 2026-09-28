@@ -27,6 +27,27 @@ class Settings(BaseSettings):
     # SMS Dispatch Configuration (Configurable via Cloud Run environment variable)
     ENABLE_SMS_DISPATCH: bool = os.getenv("ENABLE_SMS_DISPATCH", "true").lower() in ("true", "1", "yes")
 
+    # Voice / accent for the live agent (always a female Indian-English persona)
+    VOICE_LANGUAGE_CODE: str = os.getenv("VOICE_LANGUAGE_CODE", "en-IN")
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", case_sensitive=True, extra="allow")
 
 settings = Settings()
+
+# Gemini Live / Chirp 3 HD prebuilt voices that are FEMALE. The agent persona is strictly female, so any
+# configured voice outside this list (e.g. Puck, Charon, Fenrir, Orus) is replaced with the default.
+FEMALE_VOICES = (
+    "Aoede", "Kore", "Leda", "Zephyr", "Autonoe", "Callirrhoe", "Despina", "Erinome", "Gacrux",
+    "Laomedeia", "Pulcherrima", "Sulafat", "Vindemiatrix", "Achernar",
+)
+DEFAULT_FEMALE_VOICE = "Aoede"
+
+
+def resolve_female_voice(voice: str | None) -> str:
+    """Return a female prebuilt voice name; never a male one."""
+    for candidate in (voice, settings.AVATAR_VOICE):
+        if candidate:
+            match = next((v for v in FEMALE_VOICES if v.lower() == candidate.strip().lower()), None)
+            if match:
+                return match
+    return DEFAULT_FEMALE_VOICE
